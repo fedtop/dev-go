@@ -1,0 +1,33 @@
+{
+  "name": "super-translater",
+  "displayName": "Super translater",
+  "version": "0.0.0",
+  "description": "A basic Plasmo extension.",
+  "author": "wangrongding",
+  "scripts": {
+    "dev": "plasmo dev",
+    "build": "plasmo build"
+  },
+  "dependencies": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.0.198",
+    "@types/node": "18.11.0",
+    "@types/react": "18.0.21",
+    "@types/react-dom": "18.0.6",
+    "plasmo": "0.56.0",
+    "prettier": "2.7.1",
+    "typescript": "4.8.4",
+    "@plasmohq/prettier-plugin-sort-imports": "3.5.4"
+  },
+  "manifest": {
+    "host_permissions": [
+      "https://*/*"
+    ],
+    "permissions": [
+      "tabs"
+    ]
+  }
+}

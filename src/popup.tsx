@@ -7,67 +7,35 @@ import "./style.css"
 function IndexPopup() {
   const [text, setText] = useState("")
   const [result, setResult] = useState("")
-  async function translate() {
+
+  // 翻译
+  const translate = async () => {
     const res = await youdaoTrans(text)
     console.log("🚀🚀🚀 / res", res)
     setResult(res)
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        padding: 16,
-        width: 300,
-        textAlign: "center"
-      }}>
-      <a href="https://github.com/wangrongding" className="" target={"__blank"}>
-        Github 🌸
-      </a>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "2fr 1fr",
-          justifyContent: "space-between",
-          marginTop: 16,
-          marginBottom: 16,
-          width: "100%",
-          height: 40,
-          borderRadius: 4,
-          backgroundColor: "#fff",
-          gap: "20px",
-          alignContent: "space-between"
-        }}>
+    <div className="w-80 text-center flex-col flex p-3">
+      <h1 className="text-black text-xl">🚀 Super extensions</h1>
+      <div className="my-3 w-full h-10 rounded-md bg-white">
         <input
-          style={{
-            height: 40,
-            borderRadius: 4,
-            border: "1px solid #ccc"
-          }}
+          className="w-2/3 h-10 rounded-md border border-gray-300"
           onChange={(e) => setText(e.target.value)}
           value={text}
         />
-        <button className="bg-sky-700 text-white w-20" onClick={translate}>
+        <button
+          className="bg-sky-700 text-white w-1/3 h-10"
+          onClick={translate}>
           查词
         </button>
       </div>
 
       {/* 翻译 */}
-      <div>{result}</div>
+      <div className="text-left">{result}</div>
 
       <button
-        style={{
-          width: "100%",
-          height: 40,
-          borderRadius: 4,
-          backgroundColor: "#108874",
-          color: "#fff",
-          fontSize: 16,
-          cursor: "pointer",
-          margin: "0 auto"
-        }}
+        className="text-white w-full h-10 rounded-md cursor-pointer my-4 bg-green-800 text-base mx-auto"
         onClick={() => {
           chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
             chrome.tabs.sendMessage(tabs[0].id, {})
@@ -75,6 +43,13 @@ function IndexPopup() {
         }}>
         整页翻译
       </button>
+
+      <a
+        href="https://github.com/wangrongding"
+        className="underline"
+        target={"__blank"}>
+        Github 🌸
+      </a>
     </div>
   )
 }

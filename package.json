@@ -2,7 +2,7 @@
   "name": "super-extensions",
   "displayName": "Super extensions",
   "version": "0.0.1",
-  "description": " A super unbeatable browser extension plugin for developers.",
+  "description": "A super unbeatable browser extension plugin for developers.",
   "author": "wangrongding",
   "scripts": {
     "dev": "plasmo dev",

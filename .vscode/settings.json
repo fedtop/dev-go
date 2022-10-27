@@ -1,5 +1,9 @@
 {
-  "cSpell.words": ["srclangs", "youdao"],
+  "cSpell.words": [
+    "plasmo",
+    "srclangs",
+    "youdao"
+  ],
   "editor.quickSuggestions": {
     "strings": true
   }

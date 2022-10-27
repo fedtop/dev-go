@@ -1,4 +1,6 @@
+import { githubEditOnline } from "~script/github-edit-online"
 import { injectToNode } from "~script/injector"
+import { setNotranslateNode } from "~script/set-no-translate-node"
 
 interface TranslateElements {
   elements: NodeListOf<HTMLElement>
@@ -32,3 +34,19 @@ chrome.runtime.onMessage.addListener(() => {
     })
   })
 })
+
+// 仅当DOM加载完成时
+// TODO 目前 plasmo 不支持设置 run_at: document_start
+// window.addEventListener("DOMContentLoaded", () => {
+//   githubEditOnline()
+//   console.log("DOM fully loaded and parsed")
+// })
+
+// 页面上所有的DOM,样式表,脚本,图片都已经加载完成时
+window.onload = () => {
+  console.log("🚀🚀🚀 / 😀onload", document.readyState)
+  // 在 github 中添加在线编辑按钮
+  githubEditOnline()
+  // 优化浏览器自带的页面翻译，设置不自动翻译的元素
+  setNotranslateNode()
+}

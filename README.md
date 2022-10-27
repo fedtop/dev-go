@@ -18,6 +18,18 @@
 
 这两天加上
 
+### github 添加在线编辑按钮
+
+方便快速使用 `1s` 查看代码，（1s 比 快捷键句号调出的 github.dev 要快）
+
+![](https://assets.fedtop.com/picbed/202210280045252.png)
+
+### 优化浏览器中自带的翻译页面
+
+所有站点过滤掉代码块等不需要翻译的元素，为 github 定制化过滤了不需要翻译的元素
+
+![](https://assets.fedtop.com/picbed/202210280048017.png)
+
 ### 保存页面为 PDF -（wip）
 
 ### 保存页面为 MarkDown -（wip）

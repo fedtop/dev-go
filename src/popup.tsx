@@ -15,6 +15,21 @@ function IndexPopup() {
     setResult(res)
   }
 
+  // 翻译页面
+  const translatePage = async () => {
+    chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, {})
+    })
+  }
+
+  //  YouTube 视频翻译
+  const translateYoutube = async () => {
+    chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, { type: "youtube" })
+    })
+    console.log("🚀🚀🚀 / translateYoutube")
+  }
+
   return (
     <div className="w-80 text-center flex-col flex p-3">
       <h1 className="text-black text-xl">🚀 Super extensions</h1>
@@ -36,12 +51,14 @@ function IndexPopup() {
 
       <button
         className="text-white w-full h-10 rounded-md cursor-pointer my-4 bg-green-800 text-base mx-auto"
-        onClick={() => {
-          chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
-            chrome.tabs.sendMessage(tabs[0].id, {})
-          })
-        }}>
+        onClick={translatePage}>
         整页翻译
+      </button>
+
+      <button
+        className="text-white w-full h-10 rounded-md cursor-pointer my-4 bg-green-800 text-base mx-auto"
+        onClick={translateYoutube}>
+        YouTube 视频翻译
       </button>
 
       <a

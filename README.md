@@ -22,7 +22,7 @@
 
 方便快速使用 `1s` 查看代码，（1s 比 快捷键句号调出的 github.dev 要快）
 
-![](https://assets.fedtop.com/picbed/202210280045252.png)
+![](https://assets.fedtop.com/picbed/202210280935904.png)
 
 ### 优化浏览器中自带的翻译页面
 

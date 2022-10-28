@@ -4,10 +4,8 @@ export function githubEditOnline() {
   const nav =
     document.querySelector(".file-navigation") ||
     document.querySelector(".gh-header-actions")
-  console.log("🚀🚀🚀 / nav", nav)
-
   // 判断是否为 github 的 code 页面
-  if (!url.includes("github.com") || (url.includes("github.com") && !nav)) {
+  if (!url.includes("github.com") || !nav) {
     return
   }
   const btn = document.createElement("BUTTON")
@@ -29,6 +27,8 @@ export function githubEditOnline() {
     user-select: none;
     border: 1px solid rgba(205, 217, 229, 0.1);
     border-radius: 6px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
     background: rgb(52, 125, 57);
     appearance: none;
     `

@@ -1,7 +1,5 @@
 // 设置不自动翻译的元素
 export function setNotranslateNode() {
-  console.log("🚀🚀🚀 / setNotranslateNode")
-
   // 翻译忽略的元素
   const passTransList = ["pre"]
   if (window.location.hostname.indexOf("github") !== -1) {

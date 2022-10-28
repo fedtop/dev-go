@@ -3,7 +3,7 @@
   "displayName": "Super extensions",
   "version": "0.0.1",
   "description": "A super unbeatable browser extension plugin for developers.",
-  "author": "wangrongding",
+  "author": "荣顶",
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build"
@@ -30,7 +30,15 @@
       "https://*/*"
     ],
     "permissions": [
-      "---tabs"
+      "activeTab",
+      "contextMenus",
+      "tabs",
+      "notifications",
+      "webRequest",
+      "webRequestBlocking",
+      "storage",
+      "http://*/*",
+      "https://*/*"
     ],
     "homepage_url": "https://github.com/wangrongding"
   }

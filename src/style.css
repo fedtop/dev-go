@@ -9,6 +9,18 @@
 */
 @tailwind components;
 
+@layer components {
+  .btn {
+    @apply rounded-md h-8 px-4 text-base;
+  }
+  .btn-primary {
+    @apply btn bg-slate-700 text-white ;
+  }
+  .btn-info {
+    @apply btn bg-slate-500 text-white border-2 border-slate-900;
+  }
+}
+
 /**
 * This injects Tailwind's utility classes and any utility classes registered
 * by plugins.

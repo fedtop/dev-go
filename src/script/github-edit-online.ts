@@ -1,15 +1,13 @@
 export function githubEditOnline() {
   // 获取当前页面的 url
   const url = window.location.href
-  const nav =
-    document.querySelector(".file-navigation") ||
-    document.querySelector(".gh-header-actions")
+  const branchBtn = document.querySelector('.js-branch-select-menu')
   // 判断是否为 github 的 code 页面
-  if (!url.includes("github.com") || !nav) {
+  if (!url.includes('github.com') || !branchBtn) {
     return
   }
-  const btn = document.createElement("BUTTON")
-  btn.innerText = "在线编辑"
+  const btn = document.createElement('BUTTON')
+  btn.innerText = '在线编辑'
   btn.style.cssText = `
     color:white;
     color-scheme:dark;
@@ -35,5 +33,18 @@ export function githubEditOnline() {
   btn.onclick = () => {
     window.open(`${`https://github1s.com${window.location.pathname}`}`)
   }
-  nav.appendChild(btn)
+  if (document.querySelector('.file-navigation')) {
+    document.querySelector('.file-navigation').appendChild(btn)
+    return
+  }
+  if (document.querySelector('#blob-more-options-details')) {
+    document
+      .querySelector('#blob-more-options-details')
+      .parentNode.insertBefore(
+        btn,
+        document.querySelector('#blob-more-options-details').nextSibling,
+      )
+  } else {
+    document.querySelector('.pagehead-actions')?.appendChild(btn)
+  }
 }

@@ -37,14 +37,14 @@ function IndexPopup() {
   }, [])
 
   return (
-    <div className='w-80 text-center flex flex-col  p-3'>
+    <div className='w-80 text-center flex flex-col bg-slate-300 p-3'>
       <h1 className='text-slate-800 text-xl font-extrabold'>
         🤖Super extensions
       </h1>
 
       <div className='my-3 w-full flex justify-between'>
         <textarea
-          className='w-[220px] h-8 mr-2 rounded-md border border-gray-300'
+          className='w-[220px] h-8 mr-2 px-1 rounded-md border border-gray-300'
           onChange={(e) => setText(e.target.value)}
           value={text}
           ref={input}

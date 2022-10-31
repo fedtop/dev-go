@@ -61,3 +61,19 @@ chrome.i18n
 chrome.runtime
 chrome.storage
 ```
+
+## 相关链接
+
+- [Chrome 插件开发教程](https://xieyufei.com/2021/11/09/Chrome-Plugin.html)
+- [创建 Chrome 应用集 ](https://support.google.com/chrome/a/answer/2649489)
+
+- [Workspace Cloud](https://workspace.google.com/)
+- [console.cloud.google](https://console.cloud.google.com/apis)
+- [Admin google](https://admin.google.com/)
+- [Google Cloud](https://cloud.google.com/)
+- [创建 Play 管理中心开发者帐号 25$](https://play.google.com/console/u/0/signup)
+
+## 一些注册教程
+
+- [](https://blog.csdn.net/ytlzq0228/article/details/105682567)
+- [土豪专用！Google 企业邮箱注册试用及详细使用教程（图文）](https://www.imhunk.com/how-to-apply-for-google-company-email-g-suite/)

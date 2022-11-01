@@ -1,7 +1,7 @@
-import { googleTrans, youdaoTrans } from "~script/translator"
+import { googleTrans, youdaoTrans } from '~script/translator'
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log("🚀🚀🚀 / message", message)
+  console.log('🚀🚀🚀 / message', message)
   // 翻译
   googleTrans(message.text).then((text) => {
     sendResponse({ text })
@@ -11,14 +11,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 })
 
 // 监听命令执行事件
-// chrome.commands.onCommand.addListener((command) => {
-//   console.log(`Command: ${command}`)
-// })
+chrome.commands.onCommand.addListener((command) => {
+  console.log(`Command: ${command}`)
+})
 
 // 监听tab页面加载状态，添加处理事件
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   // 设置判断条件，页面加载完成才添加事件，否则会导致事件重复添加触发多次
-  if (changeInfo.status === "complete" && /^http/.test(tab.url)) {
+  if (changeInfo.status === 'complete' && /^http/.test(tab.url)) {
     // chrome.scripting
     //   .executeScript({
     //     target: { tabId: tabId },
@@ -37,7 +37,7 @@ chrome.runtime.onInstalled.addListener(() => {
   // chrome.storage.sync.set({
   //   linkOpen: true
   // })
-  console.log("onInstalled")
+  console.log('onInstalled')
 })
 
 async function translate(text) {

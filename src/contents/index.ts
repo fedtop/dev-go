@@ -29,7 +29,7 @@ const filterTagsFn = (tag) => {
   if (
     tag?.nodeType === 1 &&
     !passTransList.includes(tag?.tagName?.toLowerCase()) &&
-    !passTransClass.includes(tag?.className)
+    [...tag?.classList].every((item) => !passTransClass.includes(item))
   ) {
     return tag
   }
@@ -48,7 +48,7 @@ function loopTransNode(element) {
       // 发送翻译请求
       chrome.runtime.sendMessage({ text: tag.textContent }, (res) => {
         // 插入翻译后的文本到元素中
-        tag.textContent += `（ ${res.text} ）`
+        tag.textContent += `${res.text}`
       })
     } else {
       tag && loopTransNode(tag)

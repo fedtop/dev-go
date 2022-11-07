@@ -64,14 +64,10 @@ chrome.storage
 
 ## 相关链接
 
-- [如何注册 Google Play 开发者账号（含收款设置）](https://juejin.cn/post/6844903829033484302)
-- [如何注册 Google Play 开发者账号（含收款设置）](https://juejin.cn/post/6907214824216723464)
-- [pingpongx](https://joy.pingpongx.com/index)
+- [谷歌开发文档](https://developer.chrome.com/)
 - [Chrome 插件开发教程](https://xieyufei.com/2021/11/09/Chrome-Plugin.html)
 - [Chrome 插件开发教程](https://blog.csdn.net/qq_34998786/article/details/121782426)
 - [创建 Chrome 应用集 ](https://support.google.com/chrome/a/answer/2649489)
-- [创建 Play 管理中心开发者帐号 25$](https://play.google.com/console/u/0/signup)
-- [注册为 Chrome 应用商店开发者 5$](https://chrome.google.com/webstore/devconsole/register)
 
 - [Workspace Cloud](https://workspace.google.com/)
 - [console.cloud.google](https://console.cloud.google.com/apis)
@@ -82,3 +78,10 @@ chrome.storage
 
 - [](https://blog.csdn.net/ytlzq0228/article/details/105682567)
 - [土豪专用！Google 企业邮箱注册试用及详细使用教程（图文）](https://www.imhunk.com/how-to-apply-for-google-company-email-g-suite/)
+
+- [注册为 Chrome 应用商店开发者 5$](https://chrome.google.com/webstore/devconsole/register)
+- [创建 Play 管理中心开发者帐号 25$](https://play.google.com/console/u/0/signup)
+- [如何注册 Google Play 开发者账号（含收款设置）](https://juejin.cn/post/6844903829033484302)
+- [如何注册 Google Play 开发者账号（含收款设置）](https://juejin.cn/post/6907214824216723464)
+- [如何注册 visa 卡](https://www.bilibili.com/read/cv11596922)
+- [Google Play](https://pay.google.com/gp/w/u/0/home/signup)

@@ -39,7 +39,7 @@ function IndexPopup() {
   return (
     <div className='w-80 text-center flex flex-col bg-slate-300 p-3'>
       <h1 className='text-slate-800 text-xl font-extrabold'>
-        🤖 Dev Buff
+        🤖 DevMan
       </h1>
 
       <div className='my-3 w-full flex justify-between'>

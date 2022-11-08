@@ -1,6 +1,6 @@
 {
-  "name": "super-extensions",
-  "displayName": "Super extensions",
+  "name": "dev-buff",
+  "displayName": "Dev Buff",
   "version": "0.0.1",
   "description": "A super unbeatable browser extension plugin for developers.",
   "author": "荣顶",
@@ -37,11 +37,18 @@
       "tabs",
       "notifications",
       "webRequest",
-      "webRequestBlocking",
-      "storage",
-      "http://*/*",
-      "https://*/*"
+      "storage"
     ],
-    "homepage_url": "https://github.com/wangrongding"
+    "homepage_url": "https://github.com/wangrongding",
+    "commands": {
+      "_execute_action": {
+        "suggested_key": {
+          "default": "Ctrl+E",
+          "windows": "Ctrl+E",
+          "mac": "Command+E",
+          "linux": "Ctrl+E"
+        }
+      }
+    }
   }
 }

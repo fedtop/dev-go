@@ -4,9 +4,18 @@ import {
   setNotranslateNode,
 } from '~script/set-no-translate-node'
 
-chrome.runtime.onMessage.addListener(() => {
-  // 翻译所有的标签
-  loopTransNode(document.body)
+interface TranslateElements {
+  elements: NodeListOf<HTMLElement>
+  tag: keyof HTMLElementTagNameMap
+}
+chrome.runtime.onMessage.addListener((message, sender, res) => {
+  const { type } = message
+  if (type === 'inline') {
+    // 翻译所有的标签
+    loopTransNode(document.body)
+  } else {
+    paragraphTrans()
+  }
 })
 
 // 要过滤的标签
@@ -48,11 +57,58 @@ function loopTransNode(element) {
       // 发送翻译请求
       chrome.runtime.sendMessage({ text: tag.textContent }, (res) => {
         // 插入翻译后的文本到元素中
-        tag.textContent += res.text ? `(${res.text})` : null
+        tag.textContent += res?.text ? `(${res.text})` : null
       })
     } else {
       tag && loopTransNode(tag)
     }
+  })
+}
+
+// 段落对比翻译
+function paragraphTrans() {
+  // 需要翻译的元素
+  const translateElements: TranslateElements[] = [
+    {
+      elements: document.querySelectorAll('h1,h2,h3,h4,h5,h6'),
+      tag: 'p',
+    },
+    {
+      elements: document.querySelectorAll('p'),
+      tag: 'p',
+    },
+    {
+      elements: document.querySelectorAll('li'),
+      tag: 'p',
+    },
+  ]
+  // 遍历需要翻译的元素
+  translateElements.forEach(({ elements, tag }) => {
+    elements.forEach((item) => {
+      // 发送翻译请求
+      chrome.runtime.sendMessage({ text: item.innerText }, (res) => {
+        // 插入翻译后的文本到元素中
+        // const transNode = document.createElement(tag)
+        const transNode = document.createElement('font')
+        const color = '#a4a4a4'
+        transNode.className = 'translate-node'
+        transNode.style.cssText = `
+            color: ${color};
+            line-height: 1.5;
+            display: block;
+            margin: 0;
+            padding: 0;
+            font-size: 14px;
+            border: 1px solid ${color};
+            border-radius: 4px;
+            width:fit-content;
+          `
+        // 在节点中追加翻译后的内容
+        transNode.innerHTML = res?.text || null
+        // node.appendChild(transNode)
+        item.parentNode.insertBefore(transNode, item.nextSibling)
+      })
+    })
   })
 }
 

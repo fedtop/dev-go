@@ -16,9 +16,9 @@ function IndexPopup() {
   }
 
   // 翻译页面
-  const translatePage = async () => {
+  const translatePage = async (type) => {
     chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, {})
+      chrome.tabs.sendMessage(tabs[0].id, { type })
     })
   }
 
@@ -75,12 +75,15 @@ function IndexPopup() {
       <hr />
 
       <div className='flex my-4 gap-2 justify-between'>
-        <button className='btn-primary' onClick={translatePage}>
-          整页对比翻译
+        <button className='btn-primary' onClick={() => translatePage('inline')}>
+          行内对比翻译
         </button>
-        <button className='btn-primary' onClick={translateYoutube}>
+        <button className='btn-primary' onClick={() => translatePage('block')}>
+          段落对比翻译
+        </button>
+        {/* <button className='btn-primary' onClick={translateYoutube}>
           YouTube视频翻译
-        </button>
+        </button> */}
       </div>
 
       {/* 快捷方式说明 */}

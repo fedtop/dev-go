@@ -8,6 +8,12 @@ pnpm create plasmo --with-src
 npx init-plasmo --with-src
 ```
 
+## 发布到 Chrome 商店
+
+首先，你需要一个 Chrome 开发者账号。如果你还没有，请访问[这里](https://chrome.google.com/webstore/developer/dashboard)。需要缴纳 5$ 的费用。而且这里很坑的是，我每一次填写信息绑定卡片的时候都会扣 1$的费用，选择香港，转大陆，信用卡，visa 等几种支持的。
+
+然后，第一次上传扩展程序时，你需要手动把构建好的文件夹压缩成 zip 文件，然后上传到 Chrome 商店。
+
 ## chrome 插件开发本地调试
 
 - 调试 popup.html 页面：右键点击浏览器右上角插件图标，然后选择点击"审查弹出内容"。

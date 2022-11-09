@@ -18,14 +18,14 @@ document.querySelectorAll('*').forEach((element: HTMLElement) => {
 let eventList = [
   'copy',
   'cut',
-  'contextmenu',
-  'selectstart',
-  'mousedown',
-  'mouseup',
-  'mousemove',
-  'keydown',
-  'keypress',
-  'keyup',
+  // 'contextmenu',
+  // 'selectstart',
+  // 'mousedown',
+  // 'mouseup',
+  // 'mousemove',
+  // 'keydown',
+  // 'keypress',
+  // 'keyup',
 ]
 
 function t(e) {

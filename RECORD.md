@@ -70,15 +70,17 @@ chrome.storage
 
 ## 相关链接
 
-- [谷歌开发文档](https://developer.chrome.com/)
-- [Chrome 插件开发教程](https://xieyufei.com/2021/11/09/Chrome-Plugin.html)
-- [Chrome 插件开发教程](https://blog.csdn.net/qq_34998786/article/details/121782426)
-- [创建 Chrome 应用集 ](https://support.google.com/chrome/a/answer/2649489)
-
+- [应用商店管理后台](https://chrome.google.com/webstore/devconsole)
 - [Workspace Cloud](https://workspace.google.com/)
 - [console.cloud.google](https://console.cloud.google.com/apis)
 - [Admin google](https://admin.google.com/)
 - [Google Cloud](https://cloud.google.com/)
+
+- [谷歌开发文档](https://developer.chrome.com/)
+- [Chrome 插件开发教程](https://xieyufei.com/2021/11/09/Chrome-Plugin.html)
+- [Chrome 插件开发教程](https://blog.csdn.net/qq_34998786/article/details/121782426)
+- [创建 Chrome 应用集 ](https://support.google.com/chrome/a/answer/2649489)
+- [插件权限说明](https://developer.chrome.com/docs/extensions/mv3/declare_permissions/)
 
 ## 一些注册教程
 

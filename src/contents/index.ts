@@ -89,19 +89,18 @@ function paragraphTrans() {
       chrome.runtime.sendMessage({ text: item.innerText }, (res) => {
         // 插入翻译后的文本到元素中
         const transNode = document.createElement(tag)
-        // const transNode = document.createElement('font')
         const color = '#a4a4a4'
         transNode.className = 'translate-node'
         transNode.style.cssText = `
-            color: ${color};
-            line-height: 1.5;
-            margin: 0;
-            padding: 0 20px;
-            font-size: 14px;
-            border: 1px solid ${color};
-            border-radius: 4px;
-            width:fit-content;
-          `
+        line-height: 1.5;
+        margin: 0;
+        padding: 0 20px;
+        font-size: 14px;
+        border-radius: 4px;
+        width:fit-content;
+        border: 1px solid;
+        `
+        // color: ${color};
         // 在节点中追加翻译后的内容
         transNode.innerHTML = res?.text || null
         // node.appendChild(transNode)

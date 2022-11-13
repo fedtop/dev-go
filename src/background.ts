@@ -34,14 +34,15 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 // 用户首次安装插件时执行一次，后面不会再重新执行。(除非用户重新安装插件)
 chrome.runtime.onInstalled.addListener(() => {
   // 插件功能安装默认启用
-  // chrome.storage.sync.set({
+  // chrome.st1o2r3age.sync.set({
   //   linkOpen: true
   // })
   console.log('onInstalled')
 })
 
-async function translate(text) {
-  // const res = await youdaoTrans(text)
-  const res = await googleTrans(text)
-  return res
-}
+// 翻译
+// async function translate(text) {
+//   // const res = await youdaoTrans(text)
+//   const res = await googleTrans(text)
+//   return res
+// }

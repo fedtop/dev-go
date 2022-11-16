@@ -1,7 +1,7 @@
 {
   "name": "dev-go",
   "displayName": "DevGo",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A super unbeatable browser extension plugin for developers.",
   "author": "荣顶",
   "scripts": {
@@ -31,10 +31,10 @@
     "commands": {
       "_execute_action": {
         "suggested_key": {
-          "default": "Ctrl+E",
-          "windows": "Ctrl+E",
-          "mac": "Command+E",
-          "linux": "Ctrl+E"
+          "default": "Alt+Q",
+          "windows": "Alt+Q",
+          "mac": "Alt+Q",
+          "linux": "Alt+Q"
         }
       }
     }

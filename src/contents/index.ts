@@ -54,10 +54,16 @@ function loopTransNode(element) {
   childrenList.forEach((tag) => {
     // 如果是文本节点，且不为空时，发送翻译请求
     if (tag?.nodeType === 3 && tag.textContent.trim() !== '') {
+      // 如果文本中全是中文或空，不翻译
+      if (!tag.textContent || /^[\u4e00-\u9fa5]+$/.test(tag.textContent)) return
       // 发送翻译请求
       chrome.runtime.sendMessage({ text: tag.textContent }, (res) => {
+        // 如何返回值中不包含中文或者为空时候，不插入到页面中
+        if (!res?.text || !/[\u4e00-\u9fa5]/.test(res?.text)) return
+        // 如果本文开头包含中文标点符号，去除
+        res.text = res.text.replace(/^[，。？！：；、]/, '')
         // 插入翻译后的文本到元素中
-        tag.textContent += res?.text ? `(${res.text})` : null
+        tag.textContent += `(${res.text})`
       })
     } else {
       tag && loopTransNode(tag)
@@ -85,6 +91,8 @@ function paragraphTrans() {
   // 遍历需要翻译的元素
   translateElements.forEach(({ elements, tag }) => {
     elements.forEach((item) => {
+      // // 如果文本中全是中文或空，不翻译
+      // if (!item.innerText || /^[\u4e00-\u9fa5]+$/.test(item.innerText)) return
       // 发送翻译请求
       chrome.runtime.sendMessage({ text: item.innerText }, (res) => {
         // 插入翻译后的文本到元素中
@@ -101,8 +109,18 @@ function paragraphTrans() {
         border: 1px solid;
         `
         // color: ${color};
+
+        // 如何返回值中不包含中文或者为空时候，不插入到页面中
+        if (!res?.text || !/[\u4e00-\u9fa5]/.test(res?.text)) return
+        // 去除文本首部的中文标点符号
+        // const text = res.text.replace(/^[\u4e00-\u9fa5]+[，。？！：；、]/, '')
+
+        // 如果本文开头包含中文标点符号，去除
+        res.text = res.text.replace(/^[，。？！：；、]/, '')
+
         // 在节点中追加翻译后的内容
-        transNode.innerHTML = res?.text || null
+        // transNode.innerHTML = text
+        transNode.innerHTML = res.text
         // node.appendChild(transNode)
         item.parentNode.insertBefore(transNode, item.nextSibling)
       })

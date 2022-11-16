@@ -38,9 +38,7 @@ function IndexPopup() {
 
   return (
     <div className='w-80 text-center flex flex-col bg-slate-300 p-3'>
-      <h1 className='text-slate-800 text-xl font-extrabold'>
-        🤖 DevGo
-      </h1>
+      <h1 className='text-slate-800 text-xl font-extrabold'>🤖 DevGo</h1>
 
       <div className='my-3 w-full flex justify-between'>
         <textarea
@@ -88,7 +86,7 @@ function IndexPopup() {
 
       {/* 快捷方式说明 */}
       <p className='text-left'>
-        快捷键 Ctrl + E 快速切换该面板,配合 Tab，回车键快速控制
+        快捷键 Alt+Q 快速切换该面板,配合 Tab，回车键快速控制
       </p>
       <a
         href='https://github.com/wangrongding'

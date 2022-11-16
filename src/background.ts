@@ -5,6 +5,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // 翻译
   googleTrans(message.text).then((text) => {
     sendResponse({ text })
+    return true
   })
   // 等待响应保持通道打开
   return true

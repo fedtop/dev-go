@@ -27,7 +27,6 @@ export async function youdaoTrans(queryStr: string): Promise<string> {
   const url = `http://aidemo.youdao.com/trans?q=${queryStr}&from=Auto&to=Auto`
   const res = await fetch(url)
   const data: YoudaoTransRes = await res.json()
-  console.log("🚀🚀🚀 / data", data)
   return data.translation[0]
 }
 
@@ -35,17 +34,26 @@ export async function youdaoTrans(queryStr: string): Promise<string> {
 export async function googleTrans(
   text: string,
   options: Options = {
-    from: "auto",
-    to: "zh-CN"
-  }
+    from: 'auto',
+    to: 'zh-CN',
+  },
 ): Promise<string> {
   const { from, to } = options
   const plainText = encodeURI(text)
   const url = `https://translate.google.com/translate_a/single?client=gtx&dt=t&dt=bd&dj=1&source=input&q=${plainText}&sl=${from}&tl=${to}`
+  // const url = `https://translate.googleapis.com/translate_a/single?client=gtx&dj=1&dt=t&dt=at&dt=bd&dt=ex&dt=md&dt=rw&dt=ss&dt=rm&sl=auto&tl=zh-cn&tk=886650.730963&q=why%20you%20so%20builty`
 
   const res = await fetch(url)
-  const data: GoogleTransRes = await res.json()
-  return data.sentences.map((it) => it.trans).join("")
+  try {
+    // JSON.parse(JSON.stringify(res))
+    const data: GoogleTransRes = await res.json()
+    return data.sentences.map((it) => it.trans).join('')
+  } catch (error) {
+    console.log('🚀🚀🚀', error)
+    return ''
+  }
+  // const data: GoogleTransRes = await res.json()
+  // return data.sentences.map((it) => it.trans).join('')
 }
 
 // let aaa =

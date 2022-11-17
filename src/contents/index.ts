@@ -30,6 +30,8 @@ const passTransList = [
   'link',
   'code',
 ].concat(passTransNode)
+// 要过滤的 class 名
+const passTransClassList = ['translated', ...passTransClass]
 
 // 过滤标签
 const filterTagsFn = (tag) => {
@@ -38,7 +40,7 @@ const filterTagsFn = (tag) => {
   if (
     tag?.nodeType === 1 &&
     !passTransList.includes(tag?.tagName?.toLowerCase()) &&
-    [...tag?.classList].every((item) => !passTransClass.includes(item))
+    [...tag?.classList].every((item) => !passTransClassList.includes(item))
   ) {
     return tag
   }
@@ -71,21 +73,27 @@ function paragraphTrans() {
   // 需要翻译的元素
   const translateElements: TranslateElements[] = [
     {
-      elements: document.querySelectorAll('h1,h2,h3,h4,h5,h6'),
+      elements: document.querySelectorAll(
+        'h1:not(.translated),h2:not(.translated),h3:not(.translated),h4:not(.translated),h5:not(.translated),h6:not(.translated)',
+      ),
       tag: 'p',
     },
     {
-      elements: document.querySelectorAll('p'),
+      elements: document.querySelectorAll('p:not(.translated)'),
       tag: 'p',
     },
     {
-      elements: document.querySelectorAll('li'),
+      elements: document.querySelectorAll('li:not(.translated)'),
       tag: 'li',
     },
   ]
+
   // 遍历需要翻译的元素
   translateElements.forEach(({ elements, tag }) => {
+    // 遍历所有的元素
     elements.forEach((item) => {
+      // 给所有的元素添加翻译标识
+      item.classList.add('translated')
       // // 如果文本中全是中文或空，不翻译
       // if (!item.innerText || /^[\u4e00-\u9fa5]+$/.test(item.innerText)) return
       // 发送翻译请求
@@ -109,7 +117,7 @@ export function insertTransResult(
   transResult = transResult.replace(/^[，。？！：；、]/, '')
   // 插入翻译后的文本到元素中
   const transNode = document.createElement(resultTag || 'font')
-  transNode.className = 'translate-node'
+  transNode.className = 'translated'
   transNode.style.cssText = `
     color:red;
     padding: 0 4px;
@@ -117,6 +125,10 @@ export function insertTransResult(
   `
   transNode.innerText = transResult
   node.parentNode?.insertBefore(transNode, node.nextSibling)
+  const parent = node.parentNode as HTMLElement
+  if (parent?.nodeType === 1) {
+    parent?.classList.add('translated')
+  }
 }
 
 // 页面上所有的DOM,样式表,脚本,图片都已经加载完成时

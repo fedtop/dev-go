@@ -58,12 +58,7 @@ function loopTransNode(element) {
       if (!tag.textContent || /^[\u4e00-\u9fa5]+$/.test(tag.textContent)) return
       // 发送翻译请求
       chrome.runtime.sendMessage({ text: tag.textContent }, (res) => {
-        // 如何返回值中不包含中文或者为空时候，不插入到页面中
-        if (!res?.text || !/[\u4e00-\u9fa5]/.test(res?.text)) return
-        // 如果本文开头包含中文标点符号，去除
-        res.text = res.text.replace(/^[，。？！：；、]/, '')
-        // 插入翻译后的文本到元素中
-        tag.textContent += `(${res.text})`
+        insertTransResult(tag, res.text)
       })
     } else {
       tag && loopTransNode(tag)
@@ -96,36 +91,32 @@ function paragraphTrans() {
       // 发送翻译请求
       chrome.runtime.sendMessage({ text: item.innerText }, (res) => {
         // 插入翻译后的文本到元素中
-        const transNode = document.createElement(tag)
-        const color = '#a4a4a4'
-        transNode.className = 'translate-node'
-        transNode.style.cssText = `
-        line-height: 1.5;
-        margin: 0;
-        padding: 0 20px;
-        font-size: 14px;
-        border-radius: 4px;
-        width:fit-content;
-        border: 1px solid;
-        `
-        // color: ${color};
-
-        // 如何返回值中不包含中文或者为空时候，不插入到页面中
-        if (!res?.text || !/[\u4e00-\u9fa5]/.test(res?.text)) return
-        // 去除文本首部的中文标点符号
-        // const text = res.text.replace(/^[\u4e00-\u9fa5]+[，。？！：；、]/, '')
-
-        // 如果本文开头包含中文标点符号，去除
-        res.text = res.text.replace(/^[，。？！：；、]/, '')
-
-        // 在节点中追加翻译后的内容
-        // transNode.innerHTML = text
-        transNode.innerHTML = res.text
-        // node.appendChild(transNode)
-        item.parentNode.insertBefore(transNode, item.nextSibling)
+        insertTransResult(item, res.text, tag)
       })
     })
   })
+}
+
+// 插入翻译结果
+export function insertTransResult(
+  node: HTMLElement,
+  transResult: string,
+  resultTag?: string,
+) {
+  // 如何返回值中不包含中文或者为空时候，不插入到页面中
+  if (!transResult || !/[\u4e00-\u9fa5]/.test(transResult)) return
+  // 如果本文开头包含中文标点符号，去除
+  transResult = transResult.replace(/^[，。？！：；、]/, '')
+  // 插入翻译后的文本到元素中
+  const transNode = document.createElement(resultTag || 'font')
+  transNode.className = 'translate-node'
+  transNode.style.cssText = `
+    color:red;
+    padding: 0 4px;
+    font-size: 14px;
+  `
+  transNode.innerText = transResult
+  node.parentNode?.insertBefore(transNode, node.nextSibling)
 }
 
 // 页面上所有的DOM,样式表,脚本,图片都已经加载完成时

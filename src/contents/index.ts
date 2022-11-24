@@ -1,14 +1,17 @@
-import {
-  passTransClass,
-  passTransNode,
-  setNotranslateNode,
-} from '~script/set-no-translate-node'
+import { passTransClass, passTransNode, setNotranslateNode } from '~script/set-no-translate-node'
 
 interface TranslateElements {
   elements: NodeListOf<HTMLElement>
   tag: keyof HTMLElementTagNameMap
 }
 chrome.runtime.onMessage.addListener((message, sender, res) => {
+  // 测试连接性
+  chrome.runtime.sendMessage({ type: 'test' }, (res) => {
+    if (!res) {
+      alert('连接失败！Google翻译服务需要翻墙，请检查你的网络。')
+    }
+  })
+
   const { type } = message
   if (type === 'inline') {
     // 翻译所有的标签
@@ -19,17 +22,7 @@ chrome.runtime.onMessage.addListener((message, sender, res) => {
 })
 
 // 要过滤的标签
-const passTransList = [
-  'html',
-  'head',
-  'meta',
-  'title',
-  'body',
-  'script',
-  'style',
-  'link',
-  'code',
-].concat(passTransNode)
+const passTransList = ['html', 'head', 'meta', 'title', 'body', 'script', 'style', 'link', 'code'].concat(passTransNode)
 // 要过滤的 class 名
 const passTransClassList = ['translated', ...passTransClass]
 
@@ -37,11 +30,7 @@ const passTransClassList = ['translated', ...passTransClass]
 const filterTagsFn = (tag) => {
   if (tag?.nodeType === 3) return tag
   // 过滤掉在过滤标签中的标签
-  if (
-    tag?.nodeType === 1 &&
-    !passTransList.includes(tag?.tagName?.toLowerCase()) &&
-    [...tag?.classList].every((item) => !passTransClassList.includes(item))
-  ) {
+  if (tag?.nodeType === 1 && !passTransList.includes(tag?.tagName?.toLowerCase()) && [...tag?.classList].every((item) => !passTransClassList.includes(item))) {
     return tag
   }
 }
@@ -59,7 +48,7 @@ function loopTransNode(element) {
       // 如果文本中全是中文或空，不翻译
       if (!tag.textContent || /^[\u4e00-\u9fa5]+$/.test(tag.textContent)) return
       // 发送翻译请求
-      chrome.runtime.sendMessage({ text: tag.textContent }, (res) => {
+      chrome.runtime.sendMessage({ text: tag.textContent, type: 'translate' }, (res) => {
         insertTransResult(tag, res.text)
       })
     } else {
@@ -73,9 +62,7 @@ function paragraphTrans() {
   // 需要翻译的元素
   const translateElements: TranslateElements[] = [
     {
-      elements: document.querySelectorAll(
-        'h1:not(.translated),h2:not(.translated),h3:not(.translated),h4:not(.translated),h5:not(.translated),h6:not(.translated)',
-      ),
+      elements: document.querySelectorAll('h1:not(.translated),h2:not(.translated),h3:not(.translated),h4:not(.translated),h5:not(.translated),h6:not(.translated)'),
       tag: 'p',
     },
     {
@@ -97,7 +84,7 @@ function paragraphTrans() {
       // // 如果文本中全是中文或空，不翻译
       // if (!item.innerText || /^[\u4e00-\u9fa5]+$/.test(item.innerText)) return
       // 发送翻译请求
-      chrome.runtime.sendMessage({ text: item.innerText }, (res) => {
+      chrome.runtime.sendMessage({ text: item.innerText, type: 'translate' }, (res) => {
         // 插入翻译后的文本到元素中
         insertTransResult(item, res.text, tag)
       })
@@ -106,11 +93,7 @@ function paragraphTrans() {
 }
 
 // 插入翻译结果
-export function insertTransResult(
-  node: HTMLElement,
-  transResult: string,
-  resultTag?: string,
-) {
+export function insertTransResult(node: HTMLElement, transResult: string, resultTag?: string) {
   // 如何返回值中不包含中文或者为空时候，不插入到页面中
   if (!transResult || !/[\u4e00-\u9fa5]/.test(transResult)) return
   // 如果本文开头包含中文标点符号，去除

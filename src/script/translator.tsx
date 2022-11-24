@@ -41,7 +41,6 @@ export async function googleTrans(
   const { from, to } = options
   const plainText = encodeURI(text)
   const url = `https://translate.google.com/translate_a/single?client=gtx&dt=t&dt=bd&dj=1&source=input&q=${plainText}&sl=${from}&tl=${to}`
-  // const url = `https://translate.googleapis.com/translate_a/single?client=gtx&dj=1&dt=t&dt=at&dt=bd&dt=ex&dt=md&dt=rw&dt=ss&dt=rm&sl=auto&tl=zh-cn&tk=886650.730963&q=why%20you%20so%20builty`
 
   const res = await fetch(url)
   try {
@@ -50,11 +49,24 @@ export async function googleTrans(
     return data.sentences.map((it) => it.trans).join('')
   } catch (error) {
     console.log('🚀🚀🚀', error)
-    return ''
+    // return ''
   }
   // const data: GoogleTransRes = await res.json()
   // return data.sentences.map((it) => it.trans).join('')
 }
+// 测试 google 翻译联通情况
+export async function testGoogleTrans() {
+  try {
+    const res = await fetch(`https://translate.google.com/translate_a/single?client=gtx&dt=t&dt=bd&dj=1&source=input&q=hello&sl=auto&tl=zh-CN`)
+    const data: GoogleTransRes = await res.json()
+    console.log('🚀请求成功', data)
+    return true
+  } catch (e) {
+    console.log('❌请求失败', e)
+    return false
+  }
+}
 
-// let aaa =
-//   "https://translate.googleapis.com/translate_a/t?anno=3&client=te_lib&format=html&v=1.0&key=AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw&logld=vTE_20221023&sl=en&tl=zh-CN&tc=2&sr=1&tk=406349.74544&mode=1"
+// const testUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&dj=1&dt=t&dt=at&dt=bd&dt=ex&dt=md&dt=rw&dt=ss&dt=rm&sl=auto&tl=zh-cn&tk=886650.730963&q=why%20you%20so%20builty`
+// const testUrl =
+//   'https://translate.googleapis.com/translate_a/t?anno=3&client=te_lib&format=html&v=1.0&key=AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw&logld=vTE_20221023&sl=en&tl=zh-CN&tc=2&sr=1&tk=406349.74544&mode=1'

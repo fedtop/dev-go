@@ -1,4 +1,4 @@
-import { googleTrans, youdaoTrans } from '~script/translator'
+import { googleTrans, testGoogleTrans, youdaoTrans } from '~script/translator'
 
 // 翻译页面
 const translatePage = async (type) => {
@@ -9,12 +9,21 @@ const translatePage = async (type) => {
 
 // 监听 message 事件
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('🚀🚀🚀 / message', message)
-  // 翻译
-  googleTrans(message.text).then((text) => {
-    sendResponse({ text })
-    return true
-  })
+  const { type, text } = message
+
+  if (type === 'test') {
+    // 测试翻译服务
+    testGoogleTrans().then((res) => {
+      console.log('🚀🚀🚀 / res', res)
+      sendResponse(res)
+    })
+  } else {
+    // 翻译
+    googleTrans(text).then((text) => {
+      sendResponse({ text })
+      return true
+    })
+  }
   // 等待响应保持通道打开
   return true
 })
@@ -22,7 +31,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // 创建右键菜单
 chrome.contextMenus.create({
   id: 'inline-translate',
-  title: '行内对比翻译',
+  title: '对比翻译',
 })
 
 // 监听右键菜单点击事件

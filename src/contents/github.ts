@@ -9,7 +9,7 @@ export const config: PlasmoContentScript = {
 
 // 仅当DOM加载完成时
 window.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM fully loaded and parsed')
+  // console.log('DOM fully loaded and parsed')
   githubEditOnline()
 })
 

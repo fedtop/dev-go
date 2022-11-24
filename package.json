@@ -6,7 +6,7 @@
   "author": "荣顶",
   "scripts": {
     "dev": "plasmo dev",
-    "build": "plasmo build"
+    "build": "plasmo build -- --zip"
   },
   "dependencies": {
     "react": "18.2.0",
@@ -28,14 +28,28 @@
   "homepage": "https://github.com/wangrongding",
   "manifest": {
     "homepage_url": "https://github.com/wangrongding",
+    "permissions": [
+      "contextMenus"
+    ],
     "commands": {
       "_execute_action": {
         "suggested_key": {
           "default": "Alt+Q",
           "windows": "Alt+Q",
           "mac": "Alt+Q",
+          "chromeos": "Alt+Q",
           "linux": "Alt+Q"
         }
+      },
+      "inline-translate": {
+        "suggested_key": {
+          "default": "Ctrl+Shift+E",
+          "windows": "Ctrl+Shift+E",
+          "chromeos": "Ctrl+Shift+E",
+          "linux": "Ctrl+Shift+E",
+          "mac": "Command+Shift+E"
+        },
+        "description": "inline-translate"
       }
     }
   }

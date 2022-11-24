@@ -8,6 +8,14 @@ pnpm create plasmo --with-src
 npx init-plasmo --with-src
 ```
 
+## 右键菜单
+
+<!-- TODO -->
+
+## 快捷键
+
+<!-- TODO -->
+
 ## content-scripts
 
 是 Chrome 插件中向页面注入脚本的一种形式。 content-scripts 能访问 DOM，但 不能访问绝大部分 `chrome.xxx.api`。
@@ -222,6 +230,9 @@ chrome.storage
 
 ## Manifest V3
 
+- [升级到 V3 遇到的一些问题：](https://blog.csdn.net/lxm1353723767/article/details/127706101)
+-
+
 ```
 {
   // 清单文件的版本，这个必须写，而且必须是2
@@ -321,7 +332,21 @@ chrome.storage
 }
 ```
 
-## 相关链接
+## 开发相关链接
+
+- [Plasmo 文档](https://www.plasmo.com/)
+- [谷歌开发文档](https://developer.chrome.com/docs/)
+- [Chrome 扩展开发文档](https://wizardforcel.gitbooks.io/chrome-doc/content/1.html)
+- [手把手教你写扩展](https://juejin.cn/post/6844904077889912839)
+- [示例](https://github.com/GoogleChrome/chrome-extensions-samples)
+- [Chrome 插件开发教程](https://xieyufei.com/2021/11/09/Chrome-Plugin.html)
+- [Chrome 插件开发教程](https://blog.csdn.net/qq_34998786/article/details/121782426)
+- [谷歌开发文档](https://developer.chrome.com/)
+- [创建 Chrome 应用集 ](https://support.google.com/chrome/a/answer/2649489)
+- [插件权限说明](https://developer.chrome.com/docs/extensions/mv3/declare_permissions/)
+- [Chrome 插件开发全攻略](https://github.com/sxei/chrome-plugin-demo)
+
+## 发布相关链接
 
 - [应用商店管理后台](https://chrome.google.com/webstore/devconsole)
 - [Workspace Cloud](https://workspace.google.com/)
@@ -329,19 +354,14 @@ chrome.storage
 - [Admin google](https://admin.google.com/)
 - [Google Cloud](https://cloud.google.com/)
 
-- [谷歌开发文档](https://developer.chrome.com/)
-- [Chrome 插件开发教程](https://xieyufei.com/2021/11/09/Chrome-Plugin.html)
-- [Chrome 插件开发教程](https://blog.csdn.net/qq_34998786/article/details/121782426)
-- [创建 Chrome 应用集 ](https://support.google.com/chrome/a/answer/2649489)
-- [插件权限说明](https://developer.chrome.com/docs/extensions/mv3/declare_permissions/)
-- [官方开发者文档](https://developers.chrome.com/extensions/api_index)
-- [Chrome 插件开发全攻略](https://github.com/sxei/chrome-plugin-demo)
+- [自动发布](https://www.jianshu.com/p/6c552290ccea)
+- https://github.com/PlasmoHQ/chrome-webstore-api/blob/main/token.md
 
 ## 一些注册教程
 
+- [注册扩展开发者](https://www.zhihu.com/column/p/27203832)
 - [](https://blog.csdn.net/ytlzq0228/article/details/105682567)
 - [土豪专用！Google 企业邮箱注册试用及详细使用教程（图文）](https://www.imhunk.com/how-to-apply-for-google-company-email-g-suite/)
-
 - [注册为 Chrome 应用商店开发者 5$](https://chrome.google.com/webstore/devconsole/register)
 - [创建 Play 管理中心开发者帐号 25$](https://play.google.com/console/u/0/signup)
 - [如何注册 Google Play 开发者账号（含收款设置）](https://juejin.cn/post/6844903829033484302)

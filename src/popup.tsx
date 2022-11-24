@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { youdaoTrans } from '~script/translator'
+import { googleTrans, youdaoTrans } from '~script/translator'
 
 import './style.css'
 
@@ -22,13 +22,21 @@ function IndexPopup() {
     })
   }
 
-  //  YouTube 视频翻译
-  const translateYoutube = async () => {
-    chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, { type: 'youtube' })
-    })
-    console.log('🚀🚀🚀 / translateYoutube')
-  }
+  // //  YouTube 视频翻译
+  // const translateYoutube = async () => {
+  //   chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
+  //     chrome.tabs.sendMessage(tabs[0].id, { type: 'youtube' })
+  //   })
+  //   console.log('🚀🚀🚀 / translateYoutube')
+  // }
+
+  // //  整页翻译
+  // const googleTransPage = async () => {
+  //   chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
+  //     chrome.tabs.sendMessage(tabs[0].id, { type: 'google' })
+  //   })
+  //   console.log('🚀🚀🚀 / googleTransPage')
+  // }
 
   // react 页面加载完成时，输入框自动获取焦点
   const input = useRef(null)
@@ -41,14 +49,7 @@ function IndexPopup() {
       <h1 className='text-slate-800 text-xl font-extrabold'>🤖 DevGo</h1>
 
       <div className='my-3 w-full flex justify-between'>
-        <textarea
-          className='w-[220px] h-8 mr-2 px-1 rounded-md border border-gray-300'
-          onChange={(e) => setText(e.target.value)}
-          value={text}
-          ref={input}
-          name=''
-          id=''
-        ></textarea>
+        <textarea className='w-[220px] h-8 mr-2 px-1 rounded-md border border-gray-300' onChange={(e) => setText(e.target.value)} value={text} ref={input} name='' id=''></textarea>
         <button className='btn-primary w-auto h-8' onClick={translate}>
           查词
         </button>
@@ -76,23 +77,21 @@ function IndexPopup() {
         <button className='btn-primary' onClick={() => translatePage('inline')}>
           行内对比翻译
         </button>
-        <button className='btn-primary' onClick={() => translatePage('block')}>
+        <button className='btn-primary' onClick={() => translatePage('paragraph')}>
           段落对比翻译
         </button>
+
+        {/* <button className='btn-primary' onClick={() => googleTransPage}>
+          谷歌整页翻译
+        </button> */}
         {/* <button className='btn-primary' onClick={translateYoutube}>
           YouTube视频翻译
         </button> */}
       </div>
 
       {/* 快捷方式说明 */}
-      <p className='text-left'>
-        快捷键 Alt+Q 快速切换该面板,配合 Tab，回车键快速控制
-      </p>
-      <a
-        href='https://github.com/wangrongding'
-        className='underline text-fuchsia-400'
-        target={'__blank'}
-      >
+      <p className='text-left'>快捷键 Alt+Q 快速切换该面板,配合 Tab，回车键快速控制</p>
+      <a href='https://github.com/wangrongding' className='underline text-fuchsia-400' target={'__blank'}>
         Github 🌸
       </a>
     </div>

@@ -6,15 +6,17 @@
 
 ### 翻译
 
-查单词短句
+查单词短句，可以通过快捷键 `Alt+Q`/`Option+Q` 或者点击插件图标打开该窗口。
 
 ![](https://assets.fedtop.com/picbed/202211161444676.png)
 
 翻译页面-通过中英文对照的形式阅读，在快速阅读页面的同时，也很好的解决了目前市面上翻译软件对专业词汇翻译不准确的问题。
 
-![](https://assets.fedtop.com/picbed/202210270939667.png) 划词翻译、右键菜单翻译
+可以通过快捷键 `Ctrl+Shift+E`/`Command+Shift+E` 快速翻译当前页面。
 
-这两天加上
+![](https://assets.fedtop.com/picbed/202210270939667.png)
+
+划词翻译、右键菜单翻译,这两天加上
 
 ### github 添加在线编辑按钮
 

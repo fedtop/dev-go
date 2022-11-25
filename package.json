@@ -6,9 +6,11 @@
   "author": "荣顶",
   "scripts": {
     "dev": "plasmo dev",
-    "build": "plasmo build -- --zip"
+    "build": "plasmo build",
+    "build:zip": "plasmo build -- --zip"
   },
   "dependencies": {
+    "antd": "^5.0.1",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },

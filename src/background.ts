@@ -1,4 +1,4 @@
-import { googleTrans, testGoogleTrans, youdaoTrans } from '~script/translator'
+import { googleTrans, testGoogleTrans } from '~script/translator'
 
 // 翻译页面
 const translatePage = async (type) => {
@@ -50,7 +50,9 @@ chrome.commands.onCommand.addListener((command) => {
 chrome.runtime.onInstalled.addListener(() => {
   console.log('onInstalled')
   // 打开使用帮助
-  chrome.tabs.create({ url: 'https://github.com/wangrongding/dev-go#devgo' })
+  if (process.env.NODE_ENV !== 'development') {
+    chrome.tabs.create({ url: 'https://github.com/wangrongding/dev-go#devgo' })
+  }
 })
 
 // 监听tab页面加载状态，添加处理事件

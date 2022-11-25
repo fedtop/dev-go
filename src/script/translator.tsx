@@ -1,11 +1,26 @@
-interface YoudaoTransRes {
-  type: string
-  errorCode: number
-  isWord: boolean
+export interface YoudaoTransRes {
   query: string
-  elapsedTime: number
+  isWord: boolean
+  // 译文发音 mp3
+  tSpeakUrl: string
+  // 原文发音 mp3
+  speakUrl: string
+  // 翻译信息
+  basic: {
+    // 发音
+    phonetic: string
+    // 释义
+    explains: string[]
+  }
+  // 网络释义
+  web: {
+    key: string
+    value: string[]
+  }[]
+  // 机器翻译
   translation: string[]
 }
+
 interface GoogleTransRes {
   sentences: { trans: string; orig: string; backend: number }[]
   src: string
@@ -23,11 +38,12 @@ interface Options {
 }
 
 // youdao 翻译
-export async function youdaoTrans(queryStr: string): Promise<string> {
+export async function youdaoTrans(queryStr: string): Promise<YoudaoTransRes> {
   const url = `http://aidemo.youdao.com/trans?q=${queryStr}&from=Auto&to=Auto`
   const res = await fetch(url)
   const data: YoudaoTransRes = await res.json()
-  return data.translation[0]
+  console.log('🚀🚀🚀 / data', data)
+  return data
 }
 
 // google 翻译
@@ -57,7 +73,9 @@ export async function googleTrans(
 // 测试 google 翻译联通情况
 export async function testGoogleTrans() {
   try {
-    const res = await fetch(`https://translate.google.com/translate_a/single?client=gtx&dt=t&dt=bd&dj=1&source=input&q=hello&sl=auto&tl=zh-CN`)
+    const res = await fetch(
+      `https://translate.google.com/translate_a/single?client=gtx&dt=t&dt=bd&dj=1&source=input&q=hello&sl=auto&tl=zh-CN`,
+    )
     const data: GoogleTransRes = await res.json()
     console.log('🚀请求成功', data)
     return true

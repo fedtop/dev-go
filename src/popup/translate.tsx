@@ -4,8 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import CopyIcon from '~assets/copy.svg'
 import { YoudaoTransRes, youdaoTrans } from '~script/translator'
 
-import './style.css'
-
 // 翻译页面
 const translatePage = async (type) => {
   chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
@@ -14,9 +12,8 @@ const translatePage = async (type) => {
 }
 
 const { TextArea } = Input
-function IndexPopup() {
-  // const [text, setText] = useState('')
-  const [text, setText] = useState('hi')
+function TranslatePage() {
+  const [text, setText] = useState('')
   const [result, setResult] = useState({} as YoudaoTransRes)
   const [loading, setLoading] = useState('')
   // 翻译
@@ -51,21 +48,10 @@ function IndexPopup() {
   const input = useRef(null)
   useEffect(() => {
     input.current.focus()
-    translate()
   }, [])
 
   return (
-    <div className='w-[500px] text-center flex flex-col bg-slate-300 p-3'>
-      <div className='flex gap-4'>
-        <h1 className='text-slate-800 text-xl font-extrabold'>
-          🤖 {process.env.PLASMO_PUBLIC_SHIP_NAME}
-        </h1>
-        <span className='text-lg'>|</span>
-        <div className='flex gap-2 text-lg'>
-          <div>翻译</div>
-          <div>其他...</div>
-        </div>
-      </div>
+    <div className='w-full'>
       <div className='my-3 w-full gap-2 flex justify-between'>
         <Select
           defaultValue='youdao'
@@ -187,20 +173,8 @@ function IndexPopup() {
           YouTube视频翻译
         </button> */}
       </div>
-
-      {/* 快捷方式说明 */}
-      <p className='flex justify-between'>
-        <span className='text-slate-500'>快捷键 Alt+Q 快速切换该面板</span>
-        <a
-          href={process.env.PLASMO_PUBLIC_SITE_URL}
-          className='underline text-fuchsia-400'
-          target={'__blank'}
-        >
-          Github 🌸
-        </a>
-      </p>
     </div>
   )
 }
 
-export default IndexPopup
+export default TranslatePage

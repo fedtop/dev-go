@@ -52,3 +52,10 @@
   text-decoration: none;
   width: 100%;
 }
+
+/* antd 单选框选中样式覆盖 */
+.ant-radio-button-wrapper-checked{
+  background:rgb(51, 65 ,85 ) !important;
+  border-color:rgb(51, 65 ,85 ) !important;
+  color: #fff !important;
+}

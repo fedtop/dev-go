@@ -1,6 +1,6 @@
 import { Radio } from 'antd'
 
-export default function Header({ active, setActive }) {
+export default function Header({ active, setActive, pages }) {
   return (
     <div className='flex gap-4 mb-[10px]'>
       <h1 className='text-slate-800 text-xl font-extrabold'>
@@ -15,8 +15,11 @@ export default function Header({ active, setActive }) {
         buttonStyle='solid'
         size='small'
       >
-        <Radio.Button value='translate'>翻译</Radio.Button>
-        <Radio.Button value='tools'>工具页</Radio.Button>
+        {pages.map((page) => (
+          <Radio.Button key={page.key} value={page.key}>
+            {page.name}
+          </Radio.Button>
+        ))}
       </Radio.Group>
     </div>
   )

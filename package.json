@@ -1,7 +1,7 @@
 {
   "name": "dev-go",
   "displayName": "DevGo",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A super unbeatable browser extension plugin for developers.",
   "author": "荣顶",
   "scripts": {
@@ -32,7 +32,8 @@
   "manifest": {
     "homepage_url": "https://github.com/wangrongding",
     "permissions": [
-      "contextMenus"
+      "contextMenus",
+      "scripting"
     ],
     "commands": {
       "_execute_action": {

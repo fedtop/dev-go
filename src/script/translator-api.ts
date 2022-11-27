@@ -41,9 +41,16 @@ interface Options {
 export async function youdaoTrans(queryStr: string): Promise<YoudaoTransRes> {
   const url = `http://aidemo.youdao.com/trans?q=${queryStr}&from=Auto&to=Auto`
   const res = await fetch(url)
-  const data: YoudaoTransRes = await res.json()
-  console.log('🚀🚀🚀 / data', data)
-  return data
+
+  let data: YoudaoTransRes
+  if (res.status >= 200 && res.status < 300) {
+    data = await res.json()
+    console.log('🚀🚀🚀 / data', data)
+    return data
+  } else {
+    // throw new Error(res.statusText)
+    return data
+  }
 }
 
 // google 翻译

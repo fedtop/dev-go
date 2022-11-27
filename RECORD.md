@@ -337,14 +337,17 @@ chrome.storage
 - [Plasmo 文档](https://www.plasmo.com/)
 - [谷歌开发文档](https://developer.chrome.com/docs/)
 - [Chrome 扩展开发文档](https://wizardforcel.gitbooks.io/chrome-doc/content/1.html)
-- [手把手教你写扩展](https://juejin.cn/post/6844904077889912839)
 - [示例](https://github.com/GoogleChrome/chrome-extensions-samples)
 - [Chrome 插件开发教程](https://xieyufei.com/2021/11/09/Chrome-Plugin.html)
 - [Chrome 插件开发教程](https://blog.csdn.net/qq_34998786/article/details/121782426)
-- [谷歌开发文档](https://developer.chrome.com/)
-- [创建 Chrome 应用集 ](https://support.google.com/chrome/a/answer/2649489)
-- [插件权限说明](https://developer.chrome.com/docs/extensions/mv3/declare_permissions/)
+- [手把手教你写扩展](https://juejin.cn/post/6844904077889912839)
+- [创建 Chrome 应用集](https://support.google.com/chrome/a/answer/2649489)
 - [Chrome 插件开发全攻略](https://github.com/sxei/chrome-plugin-demo)
+
+### mv3 相关资料
+
+- [谷歌开发文档](https://developer.chrome.com/)
+- [Chrome 插件权限说明](https://developer.chrome.com/docs/extensions/mv3/declare_permissions/)
 
 ## 发布相关链接
 

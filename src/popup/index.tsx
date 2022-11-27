@@ -1,30 +1,49 @@
-import { Radio } from 'antd'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import Footer from '~components/Footer'
 import Header from '~components/Header'
+import FunctionPage from '~popup/function'
+import ToolsPage from '~popup/tools'
+import TranslatePage from '~popup/translate'
 
-import ToolsPage from './tools'
-import TranslatePage from './translate'
-
+import 'antd/dist/reset.css'
 import '~style/index.css'
 
-function IndexPopup() {
+const pages = [
+  {
+    key: 'translate',
+    name: '翻译页',
+  },
+  {
+    key: 'tools',
+    name: '工具页',
+  },
+  {
+    key: 'function',
+    name: '功能页',
+  },
+]
+export default function IndexPopup() {
   const [active, setActive] = useState('translate')
+  // const [active, setActive] = useState('tools')
 
   return (
-    <div className='w-[500px] text-center flex flex-col bg-slate-300 p-3'>
+    <div className='w-[500px] flex flex-col bg-slate-300 p-3'>
       {/* 头部 */}
-      <Header active={active} setActive={setActive} />
+      <Header active={active} pages={pages} setActive={setActive} />
       <hr />
       {/* 各个标签页 */}
-      {active === 'translate' && <TranslatePage />}
-      {active === 'tools' && <ToolsPage />}
-
+      <div className='my-[10px]'>
+        {/* 翻译页 */}
+        {active === 'translate' && <TranslatePage />}
+        {/* 工具页 */}
+        {active === 'tools' && <ToolsPage />}
+        {/* 功能页 */}
+        {active === 'function' && <FunctionPage />}
+      </div>
+      <hr />
       {/* 页脚 */}
       <Footer />
     </div>
   )
 }
-
-export default IndexPopup

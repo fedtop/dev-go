@@ -59,3 +59,9 @@
   border-color:rgb(51, 65 ,85 ) !important;
   color: #fff !important;
 }
+
+/* 防止切换标签页的高度问题 */
+html,body{
+  height:unset !important;
+}
+

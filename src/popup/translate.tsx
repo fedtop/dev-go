@@ -2,7 +2,7 @@ import { Button, Input, Select } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 
 import CopyIcon from '~assets/copy.svg'
-import { YoudaoTransRes, youdaoTrans } from '~script/translator'
+import { YoudaoTransRes, youdaoTrans } from '~script/translator-api'
 
 // 翻译页面
 const translatePage = async (type) => {
@@ -10,12 +10,26 @@ const translatePage = async (type) => {
     chrome.tabs.sendMessage(tabs[0].id, { type })
   })
 }
+const wip = async (type) => {
+  chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
+    chrome.tabs.sendMessage(tabs[0].id, { type: 'wip' })
+  })
+}
+
+// const test = async (type) => {
+//   chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
+//     chrome.tabs.executeScript(tabs[0].id, {
+//       code: 'document.body.style.backgroundColor = red;',
+//     })
+//   })
+// }
 
 const { TextArea } = Input
 function TranslatePage() {
   const [text, setText] = useState('')
   const [result, setResult] = useState({} as YoudaoTransRes)
   const [loading, setLoading] = useState('')
+
   // 翻译
   const translate = async () => {
     setLoading('trans-loading')
@@ -47,12 +61,15 @@ function TranslatePage() {
   // react 页面加载完成时，输入框自动获取焦点
   const input = useRef(null)
   useEffect(() => {
-    input.current.focus()
+    if (input.current) {
+      input.current.focus()
+    }
+    // input && input.current.focus()
   }, [])
 
   return (
     <div className='w-full'>
-      <div className='my-3 w-full gap-2 flex justify-between'>
+      <div className='mb-3 w-full gap-2 flex justify-between'>
         <Select
           defaultValue='youdao'
           style={{ width: 100 }}
@@ -154,24 +171,20 @@ function TranslatePage() {
 
       <hr />
 
-      <div className='flex my-4 gap-2 justify-between'>
-        <button className='btn-primary' onClick={() => translatePage('inline')}>
+      <div className='flex mt-2 gap-2 justify-between'>
+        <button className='btn-primary' onClick={() => translatePage('translate-inline')}>
           整页行间对比翻译
         </button>
-        <button className='btn-primary' onClick={() => translatePage('paragraph')}>
+        <button className='btn-primary' onClick={() => translatePage('translate-paragraph')}>
           整页段落对比翻译
         </button>
-        <button className='btn-primary' onClick={() => translatePage('paragraph')}>
-          整页翻译(wip...)
-        </button>
-
         {/* TODO */}
-        {/* <button className='btn-primary' onClick={() => googleTransPage}>
-          谷歌整页翻译
-        </button> */}
-        {/* <button className='btn-primary' onClick={translateYoutube}>
-          YouTube视频翻译
-        </button> */}
+        <button className='btn-primary' onClick={wip}>
+          整页翻译
+        </button>
+        <button className='btn-primary' onClick={wip}>
+          视频翻译
+        </button>
       </div>
     </div>
   )

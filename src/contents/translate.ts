@@ -1,28 +1,57 @@
+import type { PlasmoContentScript } from 'plasmo'
+
 import { passTransClass, passTransNode, setNotranslateNode } from '~script/set-no-translate-node'
+
+export const config: PlasmoContentScript = {
+  matches: ['<all_urls>'],
+  run_at: 'document_start',
+}
 
 interface TranslateElements {
   elements: NodeListOf<HTMLElement>
   tag: keyof HTMLElementTagNameMap
 }
+
 chrome.runtime.onMessage.addListener((message, sender, res) => {
+  const { type } = message
+  console.log('🚀🚀🚀 / type', type)
+  switch (type) {
+    case 'translate-inline':
+      // 翻译所有的标签
+      loopTransNode(document.body)
+      break
+    case 'translate-paragraph':
+      paragraphTrans()
+      break
+    default:
+      break
+  }
+  console.log('🚀🚀🚀 / 测试连接性')
   // 测试连接性
+  testConnection()
+})
+
+// 测试连接性
+function testConnection() {
   chrome.runtime.sendMessage({ type: 'test' }, (res) => {
     if (!res) {
       alert('连接失败！Google翻译服务需要翻墙，请检查你的网络。')
     }
   })
-
-  const { type } = message
-  if (type === 'inline') {
-    // 翻译所有的标签
-    loopTransNode(document.body)
-  } else {
-    paragraphTrans()
-  }
-})
+}
 
 // 要过滤的标签
-const passTransList = ['html', 'head', 'meta', 'title', 'body', 'script', 'style', 'link', 'code'].concat(passTransNode)
+const passTransList = [
+  'html',
+  'head',
+  'meta',
+  'title',
+  'body',
+  'script',
+  'style',
+  'link',
+  'code',
+].concat(passTransNode)
 // 要过滤的 class 名
 const passTransClassList = ['translated', ...passTransClass]
 
@@ -30,7 +59,11 @@ const passTransClassList = ['translated', ...passTransClass]
 const filterTagsFn = (tag) => {
   if (tag?.nodeType === 3) return tag
   // 过滤掉在过滤标签中的标签
-  if (tag?.nodeType === 1 && !passTransList.includes(tag?.tagName?.toLowerCase()) && [...tag?.classList].every((item) => !passTransClassList.includes(item))) {
+  if (
+    tag?.nodeType === 1 &&
+    !passTransList.includes(tag?.tagName?.toLowerCase()) &&
+    [...tag?.classList].every((item) => !passTransClassList.includes(item))
+  ) {
     return tag
   }
 }
@@ -62,7 +95,9 @@ function paragraphTrans() {
   // 需要翻译的元素
   const translateElements: TranslateElements[] = [
     {
-      elements: document.querySelectorAll('h1:not(.translated),h2:not(.translated),h3:not(.translated),h4:not(.translated),h5:not(.translated),h6:not(.translated)'),
+      elements: document.querySelectorAll(
+        'h1:not(.translated),h2:not(.translated),h3:not(.translated),h4:not(.translated),h5:not(.translated),h6:not(.translated)',
+      ),
       tag: 'p',
     },
     {

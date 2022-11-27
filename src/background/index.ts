@@ -1,8 +1,8 @@
-import injectGoogleTranslate from 'raw:../../assets/google/injection.js'
+// import injectGoogleTranslate from 'raw:../../assets/google/injection.js'
 
 import { googleTrans, testGoogleTrans } from '~script/translator-api'
 
-console.log('😀😀', injectGoogleTranslate) // chrome-extension://<extension-id>/image.<hashA>.png
+// console.log('😀😀', injectGoogleTranslate) // chrome-extension://<extension-id>/image.<hashA>.png
 
 // 翻译页面
 const translatePage = async (type) => {
@@ -62,19 +62,19 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   // 设置判断条件，页面加载完成才添加事件，否则会导致事件重复添加触发多次
   if (changeInfo.status === 'complete') {
-    console.log('🚀🚀🚀 / onUpdated', changeInfo)
-    chrome.scripting
-      .executeScript({
-        target: { tabId },
-        // files: ['./inject-script.js'],
-        // files: [injectGoogleTranslate],
-        files: ['https//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'],
-        // https://docs.plasmo.com/browser-extension/import#raw
-      })
-      .then(() => {
-        console.log('🚀🚀🚀 / inject-script')
-      })
-      .catch((err) => console.log(err))
+    // console.log('🚀🚀🚀 / onUpdated', changeInfo)
+    // chrome.scripting
+    //   .executeScript({
+    //     target: { tabId },
+    //     // files: ['./inject-script.js'],
+    //     // files: [injectGoogleTranslate],
+    //     files: ['https//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'],
+    //     // https://docs.plasmo.com/browser-extension/import#raw
+    //   })
+    //   .then(() => {
+    //     console.log('🚀🚀🚀 / inject-script')
+    //   })
+    //   .catch((err) => console.log(err))
   }
 })
 

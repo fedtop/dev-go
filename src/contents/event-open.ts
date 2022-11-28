@@ -2,17 +2,11 @@ import type { PlasmoContentScript } from 'plasmo'
 
 export const config: PlasmoContentScript = {
   matches: ['<all_urls>'],
-  run_at: 'document_start',
+  run_at: 'document_end',
 }
 
 window.addEventListener('DOMContentLoaded', () => {
   eventOpen()
-})
-
-document.querySelectorAll('*').forEach((element: HTMLElement) => {
-  'none' ===
-    window.getComputedStyle(element, null).getPropertyValue('user-select') &&
-    element.style.setProperty('user-select', 'text', 'important')
 })
 
 let eventList = [
@@ -29,8 +23,7 @@ let eventList = [
 ]
 
 function t(e) {
-  e.stopPropagation(),
-    e.stopImmediatePropagation && e.stopImmediatePropagation()
+  e.stopPropagation(), e.stopImmediatePropagation && e.stopImmediatePropagation()
 }
 // 清除网站中被开发者限制的用户行为
 export default function eventOpen() {
@@ -38,3 +31,13 @@ export default function eventOpen() {
     document.documentElement.addEventListener(event, t, { capture: !0 })
   })
 }
+
+document
+  .querySelectorAll(
+    // 不能用*,会导致部分网站无法正常copy
+    'div,p,span,a,ul,li,ol,h1,h2,h3,h4,article,section,header,footer,aside,nav,main,a',
+  )
+  .forEach((element: HTMLElement) => {
+    'none' === window.getComputedStyle(element, null).getPropertyValue('user-select') &&
+      element.style.setProperty('user-select', 'text', 'important')
+  })

@@ -2,6 +2,8 @@
 
 这个项目用来帮助我们在日常开发中完成一些繁杂的工作，以及一些提升效率的工具。
 
+下载插件：👉🏻 [Chrome 应用商店的链接](https://chrome.google.com/webstore/detail/devgo/kcofdbjhicjdbmldlcffcijglkifnnjn)
+
 ## 目前的功能
 
 ### 翻译

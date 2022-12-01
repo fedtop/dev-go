@@ -1,10 +1,18 @@
 # DevGo
 
-这个项目用来帮助我们在日常开发中完成一些繁杂的工作，以及一些提升效率的工具。
+这个项目包含一些提升效率的工具。用来在浏览器中帮助我们完成一些繁杂或者重复的工作，或者提升我们使用浏览器的阅读体验。
 
 下载插件：👉🏻 [Chrome 应用商店的链接](https://chrome.google.com/webstore/detail/devgo/kcofdbjhicjdbmldlcffcijglkifnnjn)
 
-## 目前的功能
+## 贡献者们
+
+[Contributors](https://github.com/wangrongding/dev-go/graphs/contributors) 是 DevGo 的未来。
+
+<a href="https://github.com/wangrongding/dev-go/contributors">
+  <img src="https://contrib.rocks/image?repo=wangrongding/dev-go" />
+</a>
+
+## 目前已有的功能
 
 ### 翻译
 
@@ -46,23 +54,18 @@ github 添加在线编辑按钮，方便快速使用 `1s` 查看代码，（为�
 
 ![](https://assets.fedtop.com/picbed/202211091038829.png)
 
-### 保存页面为 PDF -（wip）
+### 将要做的功能
 
-### 保存页面为 MarkDown -（wip）
-
-### 浏览器代理 -（wip）
-
-### 图片处理工具 -（wip）
-
-### Json 格式化 -（wip）
-
-### 视频解析 -（wip）
-
-### Mock 数据 -（wip）
-
-### 番茄钟 -（wip）
-
-### 代办事项提醒 -（wip）
+- P2P 传输文件 -（wip）
+- 保存页面为 PDF
+- 保存页面为 MarkDown
+- 浏览器代理
+- 图片处理工具
+- Json 格式化
+- 视频解析
+- Mock 数据
+- 番茄钟
+- 代办事项提醒
 
 欢迎提 Issue 和 PR。共同完善这个插件集合。
 
@@ -99,3 +102,7 @@ pnpm build
 ## 提交到网上商店
 
 部署 plasmo 扩展最简单的方法是使用内置的[bpp](https://bpp.browser.market) GitHub action 。但是，在使用此操作之前，请确保构建您的扩展并将第一个版本上传到存储中以建立基本凭证。然后，只需遵循 [此设置说明](https://docs.plasmo.com/workflows/submit)，您就可以自动提交了!
+
+## 赞赏
+
+🌸 Star it~ and enjoy it！

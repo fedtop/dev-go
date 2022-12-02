@@ -10,6 +10,7 @@ const translatePage = async (type) => {
     chrome.tabs.sendMessage(tabs[0].id, { type })
   })
 }
+// 开发中
 const wip = async (type) => {
   chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
     chrome.tabs.sendMessage(tabs[0].id, { type: 'wip' })

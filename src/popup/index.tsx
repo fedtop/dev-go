@@ -4,7 +4,7 @@ import Footer from '~components/Footer'
 import Header from '~components/Header'
 import FunctionPage from '~popup/function-page'
 import ToolsPage from '~popup/tool-page'
-import TranslatePage from '~popup/translate'
+import TranslatePage from '~popup/translation-page'
 
 import 'antd/dist/reset.css'
 import '~style/index.css'

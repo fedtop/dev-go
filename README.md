@@ -30,7 +30,7 @@
 
 ### github 添加在线编辑按钮
 
-github 添加在线编辑按钮，方便快速使用 `1s` 查看代码，（为什么？因为 1s 比 通过 github 页面中快捷键"句号"调出的 github.dev 要快）。
+github 添加在线编辑按钮并且可以使用快捷键 ","直接进入。 方便快速使用 `1s` 查看代码，（为什么？因为 1s 比 通过 github 页面中快捷键"句号"调出的 github.dev 要快）。
 
 ![](https://assets.fedtop.com/picbed/202210280935904.png)
 

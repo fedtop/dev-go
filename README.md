@@ -8,8 +8,8 @@
 
 [Contributors](https://github.com/wangrongding/dev-go/graphs/contributors) 是 DevGo 的未来。
 
-<a href="https://github.com/wangrongding/dev-go/contributors">
-  <img src="https://contrib.rocks/image?repo=wangrongding/dev-go" />
+<a href="https://github.com/fedtop/dev-go/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=fedtop/dev-go" />
 </a>
 
 ## 目前已有的功能

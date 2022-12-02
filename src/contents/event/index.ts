@@ -1,5 +1,7 @@
+import { isHasReadmeDom } from '../utils/is';
+
 function toGithub1s () {
-  if (!window) {
+  if (!window || !isHasReadmeDom()) {
     return;
   }
 

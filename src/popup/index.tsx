@@ -2,8 +2,8 @@ import { useState } from 'react'
 
 import Footer from '~components/Footer'
 import Header from '~components/Header'
-import FunctionPage from '~popup/function'
-import ToolsPage from '~popup/tools'
+import FunctionPage from '~popup/function-page'
+import ToolsPage from '~popup/tool-page'
 import TranslatePage from '~popup/translate'
 
 import 'antd/dist/reset.css'

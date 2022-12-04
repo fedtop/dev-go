@@ -6,7 +6,7 @@ const keyCodeEventMap: Record<string, () => void> = {
 }
 
 const keyDownListen = () => {
-  window.addEventListener('keydown', function (e) {
+  window.addEventListener('keydown', (e) => {
     keyCodeEventMap[e.code]()
   })
 }

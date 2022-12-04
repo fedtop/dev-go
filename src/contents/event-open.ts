@@ -23,7 +23,8 @@ const eventList = [
 ]
 
 function t(e) {
-  e.stopPropagation(), e.stopImmediatePropagation && e.stopImmediatePropagation()
+  e.stopPropagation()
+  e.stopImmediatePropagation && e.stopImmediatePropagation()
 }
 // 清除网站中被开发者限制的用户行为
 export default function eventOpen() {
@@ -38,6 +39,7 @@ document
     'div,p,span,a,ul,li,ol,h1,h2,h3,h4,article,section,header,footer,aside,nav,main,a',
   )
   .forEach((element: HTMLElement) => {
-    window.getComputedStyle(element, null).getPropertyValue('user-select') === 'none' &&
+    if (window.getComputedStyle(element, null).getPropertyValue('user-select')) {
       element.style.setProperty('user-select', 'text', 'important')
+    }
   })

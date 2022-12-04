@@ -1,7 +1,5 @@
 const windowChanger = (): void => {
-  const anotherFunc = (): number => {
-    return 42
-  }
+  const anotherFunc = (): number => 42
   // Here's an example where we can reference the window object
   // and add a new property to it
   window.customProp = {

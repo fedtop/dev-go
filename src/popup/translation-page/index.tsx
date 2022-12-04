@@ -11,19 +11,11 @@ const translatePage = (type): void => {
   })
 }
 // 开发中
-const wip = (type): void => {
+const wip = (): void => {
   chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, { type: 'wip' })
+    chrome.tabs.sendMessage(tabs[0].id, { type: 'tip', msg: '开发中...' })
   })
 }
-
-// const test = async (type) => {
-//   chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
-//     chrome.tabs.executeScript(tabs[0].id, {
-//       code: 'document.body.style.backgroundColor = red;',
-//     })
-//   })
-// }
 
 const { TextArea } = Input
 function TranslatePage() {

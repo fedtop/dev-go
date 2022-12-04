@@ -47,10 +47,9 @@ export async function youdaoTrans(queryStr: string): Promise<YoudaoTransRes> {
     data = await res.json()
     console.log('🚀🚀🚀 / data', data)
     return data
-  } else {
-    // throw new Error(res.statusText)
-    return data
   }
+  // throw new Error(res.statusText)
+  return data
 }
 
 // google 翻译
@@ -71,8 +70,8 @@ export async function googleTrans(
     const data: GoogleTransRes = await res.json()
     return data.sentences.map((it) => it.trans).join('')
   } catch (error) {
-    console.log('🚀🚀🚀', error)
-    // return ''
+    console.error('🚀🚀🚀', error)
+    return ''
   }
   // const data: GoogleTransRes = await res.json()
   // return data.sentences.map((it) => it.trans).join('')

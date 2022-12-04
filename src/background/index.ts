@@ -1,14 +1,6 @@
-// import injectGoogleTranslate from 'raw:../../assets/google/injection.js'
 import { googleTrans, testGoogleTrans } from '~script/translator-api'
-
+// import injectGoogleTranslate from 'raw:../../assets/google/injection.js'
 // console.log('😀😀', injectGoogleTranslate) // chrome-extension://<extension-id>/image.<hashA>.png
-
-// 翻译页面
-const translatePage = async (type) => {
-  chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, { type })
-  })
-}
 
 // 监听 message 事件
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -20,9 +12,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse(res)
     })
   } else {
-    // 翻译
-    googleTrans(text).then((text) => {
-      sendResponse({ text })
+    // 通过谷歌翻译 api 翻译文本
+    googleTrans(text).then((res) => {
+      res && sendResponse({ text: res })
       return true
     })
   }
@@ -30,11 +22,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true
 })
 
-// 创建右键菜单
-chrome.contextMenus.create({
-  id: 'inline-translate',
-  title: '对比翻译',
-})
+// 通知 contents 中的 translate.ts 翻译页面
+const translatePage = async (type) => {
+  chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
+    chrome.tabs.sendMessage(tabs[0].id, { type })
+  })
+}
 
 // 监听右键菜单点击事件
 chrome.contextMenus.onClicked.addListener((info, tab) => {
@@ -46,6 +39,12 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 chrome.commands.onCommand.addListener((command) => {
   console.log(`Command: ${command}`)
   translatePage('translate-inline')
+})
+
+// 创建右键菜单
+chrome.contextMenus.create({
+  id: 'inline-translate',
+  title: '对比翻译',
 })
 
 // 用户首次安装插件时执行一次，后面不会再重新执行。(除非用户重新安装插件)

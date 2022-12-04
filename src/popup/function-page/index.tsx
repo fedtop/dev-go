@@ -7,7 +7,7 @@ const onChange = (checked: boolean) => {
 
 export default function FunctionPage() {
   return (
-    <div className='w-full text-left h-full'>
+    <div className='h-full w-full text-left'>
       <div>
         <label htmlFor='github'>github 快捷在线编辑</label>{' '}
         <Switch id='github' defaultChecked onChange={onChange} />

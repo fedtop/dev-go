@@ -8,8 +8,8 @@ interface Props {
 
 export default function Header({ active, setActive, pages }: Props) {
   return (
-    <div className='flex gap-4 mb-[10px]'>
-      <h1 className='text-slate-800 text-xl font-extrabold'>
+    <div className='mb-[10px] flex gap-4'>
+      <h1 className='text-xl font-extrabold text-slate-800'>
         🤖 {process.env.PLASMO_PUBLIC_SHIP_NAME}
       </h1>
       <span className='text-lg'>|</span>

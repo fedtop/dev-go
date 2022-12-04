@@ -28,7 +28,7 @@ export default function IndexPopup() {
   // const [active, setActive] = useState('tools')
 
   return (
-    <div className='w-[500px] flex flex-col bg-slate-300 p-3'>
+    <div className='flex w-[500px] flex-col bg-slate-300 p-3'>
       {/* 头部 */}
       <Header active={active} pages={pages} setActive={setActive} />
       <hr />

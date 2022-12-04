@@ -11,13 +11,13 @@
 
 @layer components {
   .btn {
-    @apply rounded-md h-8 px-4;
+    @apply h-8 rounded-md px-4;
   }
   .btn-primary {
     @apply btn bg-slate-700 text-white;
   }
   .btn-info {
-    @apply btn bg-slate-500 text-white border-2 border-slate-900;
+    @apply btn border-2 border-slate-900 bg-slate-500 text-white;
   }
 }
 

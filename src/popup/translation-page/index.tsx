@@ -70,7 +70,7 @@ function TranslatePage() {
 
   return (
     <div className='w-full'>
-      <div className='mb-3 w-full gap-2 flex justify-between'>
+      <div className='mb-3 flex w-full justify-between gap-2'>
         <Select
           defaultValue='youdao'
           style={{ width: 100 }}
@@ -87,7 +87,7 @@ function TranslatePage() {
           ]}
         />
         <TextArea
-          className='flex-1 h-8 px-1 rounded-md border border-gray-300'
+          className='h-8 flex-1 rounded-md border border-gray-300 px-1'
           rows={1}
           placeholder='请输入单词/短句'
           onChange={(e) => setText(e.target.value)}
@@ -104,7 +104,7 @@ function TranslatePage() {
 
         <Button
           type='primary'
-          className='bg-slate-700 w-auto h-8'
+          className='h-8 w-auto bg-slate-700'
           onClick={translate}
           loading={loading === 'trans-loading'}
         >
@@ -114,10 +114,10 @@ function TranslatePage() {
       {
         // 翻译结果
         result?.translation && (
-          <div className='w-full max-h-[200px] rounded-md bg-slate-400 p-[10px] relative'>
+          <div className='relative max-h-[200px] w-full rounded-md bg-slate-400 p-[10px]'>
             {/* 复制按钮 */}
             <img
-              className='w-[20px] absolute top-[10px] right-[10px] cursor-pointer'
+              className='absolute top-[10px] right-[10px] w-[20px] cursor-pointer'
               onClick={() => {
                 navigator.clipboard.writeText(result.translation[0])
               }}
@@ -125,7 +125,7 @@ function TranslatePage() {
               alt=''
             />
             {/* 翻译的内容区域 */}
-            <div className='text-left text-black text-sm max-h-[180px] overflow-y-scroll'>
+            <div className='max-h-[180px] overflow-y-scroll text-left text-sm text-black'>
               <div className='flex justify-start gap-4'>
                 <span className='text-base font-bold'>翻译结果：</span>
                 {/* 发音 */}
@@ -172,7 +172,7 @@ function TranslatePage() {
 
       <hr />
 
-      <div className='flex mt-2 gap-2 justify-between'>
+      <div className='mt-2 flex justify-between gap-2'>
         <button className='btn-primary' onClick={async () => translatePage('translate-inline')}>
           整页行间对比翻译
         </button>

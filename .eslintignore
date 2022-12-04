@@ -11,5 +11,6 @@ yarn.lock
 .eslintrc.js
 postcss.config.js
 tailwind.config.js
+commitlint.config.js
 assets/*
 

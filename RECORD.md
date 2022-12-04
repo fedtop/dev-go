@@ -332,6 +332,22 @@ chrome.storage
 }
 ```
 
+## 相关校验
+
+### eslint
+
+初始化 eslint 配置文件
+
+```sh
+npx eslint --init
+```
+
+```sh
+pn add eslint-config-airbnb-base eslint-plugin-import eslint-config-prettier -D
+```
+
+![](https://assets.fedtop.com/picbed/202212041123165.png)
+
 ## 开发相关链接
 
 - [Plasmo 文档](https://www.plasmo.com/)

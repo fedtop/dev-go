@@ -1,0 +1,15 @@
+# eslint ignore list
+.output
+.plasmo
+.vscode
+
+build/*
+node_modules
+package-lock.json
+yarn.lock
+.env
+.eslintrc.js
+postcss.config.js
+tailwind.config.js
+assets/*
+

@@ -40,6 +40,8 @@ document
   )
   .forEach((element: HTMLElement) => {
     if (window.getComputedStyle(element, null).getPropertyValue('user-select')) {
-      element.style.setProperty('user-select', 'text', 'important')
+      // TODO，+ important 会导致部分网页白屏
+      // element.style.setProperty('user-select', 'text', 'important')
+      element.style.setProperty('user-select', 'text')
     }
   })

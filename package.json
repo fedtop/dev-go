@@ -18,8 +18,7 @@
       "prettier --write"
     ],
     "*.{ts,js,tsx,jsx}": [
-      "eslint",
-      "echo '没问题！'"
+      "eslint"
     ]
   },
   "dependencies": {

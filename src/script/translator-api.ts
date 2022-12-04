@@ -13,19 +13,19 @@ export interface YoudaoTransRes {
     explains: string[]
   }
   // 网络释义
-  web: {
+  web: Array<{
     key: string
     value: string[]
-  }[]
+  }>
   // 机器翻译
   translation: string[]
 }
 
 interface GoogleTransRes {
-  sentences: { trans: string; orig: string; backend: number }[]
+  sentences: Array<{ trans: string; orig: string; backend: number }>
   src: string
   confidence: number
-  spell: {}
+  spell: object
   ld_result: {
     srclangs: string[]
     srclangs_confidences: number[]

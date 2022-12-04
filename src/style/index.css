@@ -14,7 +14,7 @@
     @apply rounded-md h-8 px-4;
   }
   .btn-primary {
-    @apply btn bg-slate-700 text-white ;
+    @apply btn bg-slate-700 text-white;
   }
   .btn-info {
     @apply btn bg-slate-500 text-white border-2 border-slate-900;
@@ -36,7 +36,6 @@
 */
 @tailwind variants;
 
-
 .new-tab {
   background-color: #f0f0f0;
   border: 1px solid #ccc;
@@ -54,14 +53,14 @@
 }
 
 /* antd 单选框选中样式覆盖 */
-.ant-radio-button-wrapper-checked{
-  background:rgb(51, 65 ,85 ) !important;
-  border-color:rgb(51, 65 ,85 ) !important;
+.ant-radio-button-wrapper-checked {
+  background: rgb(51, 65, 85) !important;
+  border-color: rgb(51, 65, 85) !important;
   color: #fff !important;
 }
 
 /* 防止切换标签页的高度问题 */
-html,body{
-  height:unset !important;
+html,
+body {
+  height: unset !important;
 }
-

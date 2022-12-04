@@ -13,13 +13,13 @@ export const passTransClass = [
   '.BorderGrid-cell > div.mt-3 > a.muted-link',
   '.BorderGrid-cell > ul.list-style-none',
   '.hx_page-header-bg',
-  '.list-style-none', //仓库名
-  '.text-bold', //首页人名,仓库名
+  '.list-style-none', // 仓库名
+  '.text-bold', // 首页人名,仓库名
   'div[data-repository-hovercards-enabled] .body > div .flex-items-baseline',
-  '.js-header-wrapper', //nav
-  '.file-navigation', //代码仓库按钮
-  '.Details:not(.Details--on) .Details-content--hidden-not-important', //代码仓库和顶部导航
-  //对于github的插件(我使用的octotree)👇
+  '.js-header-wrapper', // nav
+  '.file-navigation', // 代码仓库按钮
+  '.Details:not(.Details--on) .Details-content--hidden-not-important', // 代码仓库和顶部导航
+  // 对于github的插件(我使用的octotree)👇
   '.github-repo-size-div',
   '.octotree-tree-view',
   'notranslate',
@@ -30,9 +30,9 @@ export const passTransClass = [
 
 // 设置不自动翻译的元素
 export function setNotranslateNode() {
-  if (window.location.hostname.indexOf('github') !== -1) {
+  if (window.location.hostname.includes('github')) {
     // 以下为github中不需要翻译的元素,可根据需求自定义配置
-    //对于github的插件(我使用的octotree)
+    // 对于github的插件(我使用的octotree)
     passTransNode.push(...passTransClass)
   } else {
     passTransNode.push(

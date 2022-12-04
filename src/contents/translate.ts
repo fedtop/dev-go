@@ -35,7 +35,7 @@ chrome.runtime.onMessage.addListener((message, sender, res) => {
 function testConnection() {
   chrome.runtime.sendMessage({ type: 'test' }, (res) => {
     if (!res) {
-      alert('连接失败！Google翻译服务需要翻墙，请检查你的网络。')
+      alert('Google翻译服务不稳定！请检查您的网络，大陆的朋友需要翻墙。')
     }
   })
 }

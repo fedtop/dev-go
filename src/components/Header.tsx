@@ -1,6 +1,12 @@
 import { Radio } from 'antd'
 
-export default function Header({ active, setActive, pages }) {
+interface Props {
+  active: string
+  setActive: (active: string) => void
+  pages: { key: string; name: string }[]
+}
+
+export default function Header({ active, setActive, pages }: Props) {
   return (
     <div className='flex gap-4 mb-[10px]'>
       <h1 className='text-slate-800 text-xl font-extrabold'>

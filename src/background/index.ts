@@ -1,5 +1,4 @@
 // import injectGoogleTranslate from 'raw:../../assets/google/injection.js'
-
 import { googleTrans, testGoogleTrans } from '~script/translator-api'
 
 // console.log('😀😀', injectGoogleTranslate) // chrome-extension://<extension-id>/image.<hashA>.png

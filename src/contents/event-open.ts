@@ -9,7 +9,7 @@ window.addEventListener('DOMContentLoaded', () => {
   eventOpen()
 })
 
-let eventList = [
+const eventList = [
   'copy',
   'cut',
   // 'contextmenu',
@@ -38,6 +38,6 @@ document
     'div,p,span,a,ul,li,ol,h1,h2,h3,h4,article,section,header,footer,aside,nav,main,a',
   )
   .forEach((element: HTMLElement) => {
-    'none' === window.getComputedStyle(element, null).getPropertyValue('user-select') &&
+    window.getComputedStyle(element, null).getPropertyValue('user-select') === 'none' &&
       element.style.setProperty('user-select', 'text', 'important')
   })

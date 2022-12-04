@@ -1,19 +1,19 @@
-import { useEffect, useMemo } from 'react';
-import registerKeyDownListen from '../register/keydownListen';
+import { useEffect, useMemo } from 'react'
+
+import registerKeyDownListen from '../register/keydownListen'
 
 const useGitHub = () => {
-
   useEffect(() => {
-    registerKeyDownListen();
+    registerKeyDownListen()
   }, [])
 
   const isCodePage = useMemo<boolean>(() => {
-    const url = window.location.href;
-    const fileNavigation = document.querySelectorAll('.file-navigation');
-    const isHasBlob = url.includes('/blob/');
-    const isHasTree = url.includes('/tree/');
+    const url = window.location.href
+    const fileNavigation = document.querySelectorAll('.file-navigation')
+    const isHasBlob = url.includes('/blob/')
+    const isHasTree = url.includes('/tree/')
 
-    return  fileNavigation.length > 0 || isHasBlob || isHasTree;
+    return fileNavigation.length > 0 || isHasBlob || isHasTree
   }, [])
 
   return {
@@ -21,6 +21,4 @@ const useGitHub = () => {
   }
 }
 
-export {
-  useGitHub
-}
+export { useGitHub }

@@ -1,10 +1,10 @@
-import type { PlasmoContentScript } from "plasmo"
+import type { PlasmoContentScript } from 'plasmo'
 
 export const config: PlasmoContentScript = {
-  matches: ["https://www.plasmo.com/*"]
+  matches: ['https://www.plasmo.com/*'],
 }
-window.addEventListener("load", () => {
-  console.log("content script loaded")
+window.addEventListener('load', () => {
+  console.log('content script loaded')
 
-  document.body.style.background = "pink"
+  document.body.style.background = 'pink'
 })

@@ -1,11 +1,9 @@
-function toGithub1s () {
+function toGithub1s() {
   if (!window) {
-    return;
+    return
   }
 
-  window.open(`${`https://github1s.com${window.location.pathname}`}`);
+  window.open(`${`https://github1s.com${window.location.pathname}`}`)
 }
 
-export {
-  toGithub1s
-}
+export { toGithub1s }

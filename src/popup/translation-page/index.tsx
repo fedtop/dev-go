@@ -5,13 +5,13 @@ import CopyIcon from '~assets/copy.svg'
 import { YoudaoTransRes, youdaoTrans } from '~script/translator-api'
 
 // 翻译页面
-const translatePage = async (type) => {
+const translatePage = (type): void => {
   chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
     chrome.tabs.sendMessage(tabs[0].id, { type })
   })
 }
 // 开发中
-const wip = async (type) => {
+const wip = (type): void => {
   chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
     chrome.tabs.sendMessage(tabs[0].id, { type: 'wip' })
   })
@@ -74,7 +74,7 @@ function TranslatePage() {
         <Select
           defaultValue='youdao'
           style={{ width: 100 }}
-          onChange={(value) => {}}
+          onChange={(value) => 0}
           options={[
             {
               value: 'youdao',
@@ -155,7 +155,7 @@ function TranslatePage() {
                 <div>
                   <p className='text-yellow-300'>网咯释义：</p>
                   {result.web.map((item) => (
-                    <p>{`${item.key}： ${item.value.join()}`}</p>
+                    <p key={item.key}>{`${item.key}： ${item.value.join()}`}</p>
                   ))}
                 </div>
               )}
@@ -173,10 +173,10 @@ function TranslatePage() {
       <hr />
 
       <div className='flex mt-2 gap-2 justify-between'>
-        <button className='btn-primary' onClick={() => translatePage('translate-inline')}>
+        <button className='btn-primary' onClick={async () => translatePage('translate-inline')}>
           整页行间对比翻译
         </button>
-        <button className='btn-primary' onClick={() => translatePage('translate-paragraph')}>
+        <button className='btn-primary' onClick={async () => translatePage('translate-paragraph')}>
           整页段落对比翻译
         </button>
         {/* TODO */}

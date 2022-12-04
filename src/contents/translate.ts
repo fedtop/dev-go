@@ -82,34 +82,22 @@ function loopTransNode(element) {
 
   // 遍历所有的子节点,  需要翻译的元素
   childrenList.forEach((tag) => {
-    // 如果是文本节点，且不为空时，发送翻译请求
-    if (tag?.nodeType === 3 && tag.textContent.trim() !== '') {
-      // 如果文本中全是中文或空，不翻译
-      if (!tag.textContent || /^[\u4e00-\u9fa5]+$/.test(tag.textContent)) return
-      // 发送翻译请求
-      chrome.runtime.sendMessage({ text: tag.textContent, type: 'translate' }, (res) => {
-        insertTransResult(tag, res.text)
-      })
-    } else {
-      tag && loopTransNode(tag)
-    }
+    if (hasTransTextNode(tag)) {
+      // 不需要翻译的元素
+      if (!hasTranslate(tag.textContent)) return;
 
-    // if (hasTransTextNode(tag)) {
-    //   // 不需要翻译的元素
-    //   if (!hasTranslate(tag.textContent)) return;
-    //
-    //   // 拼接需要翻译的文本
-    //   translateText += tag.textContent
-    //   lastElement = tag
-    // } else {
-    //   // 进入到这里证明一个段落已经结束，开始翻译
-    //   sentenceTrans(translateText, lastElement)
-    //   translateText = ''
-    //   lastElement = null
-    //
-    //   // 递归处理非内联元素或者文本节点
-    //   loopTransNode(tag)
-    // }
+      // 拼接需要翻译的文本
+      translateText += tag.textContent
+      lastElement = tag
+    } else {
+      // 进入到这里证明一个段落已经结束，开始翻译
+      sentenceTrans(translateText, lastElement)
+      translateText = ''
+      lastElement = null
+
+      // 递归处理非内联元素或者文本节点
+      loopTransNode(tag)
+    }
   })
 
   // 最后一个段落的翻译

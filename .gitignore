@@ -38,4 +38,7 @@ keys.json
 .tsbuildinfo
 
 # ========
-assets/google
+assets/google、
+
+# idea
+.idea

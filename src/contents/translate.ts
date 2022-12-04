@@ -1,6 +1,6 @@
-import type { PlasmoContentScript } from 'plasmo'
+import type {PlasmoContentScript} from 'plasmo'
 
-import { passTransClass, passTransNode, setNotranslateNode } from '~script/set-no-translate-node'
+import {passTransClass, passTransNode, setNotranslateNode} from '~script/set-no-translate-node'
 
 export const config: PlasmoContentScript = {
   matches: ['<all_urls>'],
@@ -35,7 +35,7 @@ chrome.runtime.onMessage.addListener((message, sender, res) => {
 function testConnection() {
   chrome.runtime.sendMessage({ type: 'test' }, (res) => {
     if (!res) {
-      alert('Google翻译服务不稳定！请检查您的网络，大陆的朋友需要翻墙。')
+      alert('连接失败！Google翻译服务需要翻墙，请检查你的网络。')
     }
   })
 }
@@ -72,8 +72,14 @@ const filterTagsFn = (tag) => {
 function loopTransNode(element) {
   // 当子元素为空时，中断
   if (element.childNodes.length === 0) return
+
   // 获取所有的子节点
-  const childrenList = Array.from(element?.childNodes, filterTagsFn)
+  const childrenList = Array.from(element?.childNodes, filterTagsFn).filter((item) => item)
+
+  // 存储需要翻译的文本
+  let translateText = ''
+  let lastElement: HTMLElement = null
+
   // 遍历所有的子节点,  需要翻译的元素
   childrenList.forEach((tag) => {
     // 如果是文本节点，且不为空时，发送翻译请求
@@ -87,6 +93,68 @@ function loopTransNode(element) {
     } else {
       tag && loopTransNode(tag)
     }
+
+    // if (hasTransTextNode(tag)) {
+    //   // 不需要翻译的元素
+    //   if (!hasTranslate(tag.textContent)) return;
+    //
+    //   // 拼接需要翻译的文本
+    //   translateText += tag.textContent
+    //   lastElement = tag
+    // } else {
+    //   // 进入到这里证明一个段落已经结束，开始翻译
+    //   sentenceTrans(translateText, lastElement)
+    //   translateText = ''
+    //   lastElement = null
+    //
+    //   // 递归处理非内联元素或者文本节点
+    //   loopTransNode(tag)
+    // }
+  })
+
+  // 最后一个段落的翻译
+  sentenceTrans(translateText, lastElement)
+  translateText = ''
+  lastElement = null
+}
+
+// 判断节点是否是段落
+function hasTransTextNode(element: HTMLElement) {
+  if (element == null) return false;
+
+  // 如果是文本节点，直接返回
+  if (element.nodeType === 3) {
+    return true;
+  }
+
+  // 换行元素过滤掉
+  const lineBreakList = ['BR', 'HR'];
+  if (lineBreakList.includes(element.tagName)) {
+    return false;
+  }
+
+  // display 属性为 inline/inline-block 的元素是符合条件的
+  const {display} = window.getComputedStyle(element);
+  if (display === 'inline' || display === 'inline-block') {
+    return true;
+  }
+
+  return false;
+}
+
+// 判断是否需要翻译，只检测中文
+function hasTranslate(str: string) {
+  if (!str) return false
+
+  return !/[\u4e00-\u9fa5]/.test(str)
+}
+
+// 发送翻译请求
+function sentenceTrans(text: string, insetBefore: HTMLElement) {
+  if (text.trim() === '') return
+
+  chrome.runtime.sendMessage({ text: text.replace(/[\r\n]/g, ''), type: 'translate' }, (res) => {
+    insertTransResult(insetBefore, res.text)
   })
 }
 
@@ -111,7 +179,7 @@ function paragraphTrans() {
   ]
 
   // 遍历需要翻译的元素
-  translateElements.forEach(({ elements, tag }) => {
+  translateElements.forEach(({elements, tag}) => {
     // 遍历所有的元素
     elements.forEach((item) => {
       // 给所有的元素添加翻译标识
@@ -119,7 +187,7 @@ function paragraphTrans() {
       // // 如果文本中全是中文或空，不翻译
       // if (!item.innerText || /^[\u4e00-\u9fa5]+$/.test(item.innerText)) return
       // 发送翻译请求
-      chrome.runtime.sendMessage({ text: item.innerText, type: 'translate' }, (res) => {
+      chrome.runtime.sendMessage({text: item.innerText, type: 'translate'}, (res) => {
         // 插入翻译后的文本到元素中
         insertTransResult(item, res.text, tag)
       })

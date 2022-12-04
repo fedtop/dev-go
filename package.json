@@ -1,7 +1,7 @@
 {
   "name": "dev-go",
   "displayName": "DevGo",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "A super unbeatable browser extension plugin for developers.",
   "author": "荣顶",
   "scripts": {
@@ -11,7 +11,9 @@
     "package": "plasmo package",
     "prettier": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,scss,less,html,json,md}\"",
     "eslint": "eslint \"./**/*{.js,.ts,.jsx,.tsx}\" --fix",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "release": "standard-version",
+    "commit": "cz"
   },
   "lint-staged": {
     "*.{js,ts,jsx,tsx,css,sass,scss,less,md,json,html}": [
@@ -50,6 +52,7 @@
     "postcss": "^8.4.19",
     "prettier": "2.8.0",
     "prettier-plugin-tailwindcss": "^0.2.0",
+    "standard-version": "^9.5.0",
     "tailwindcss": "^3.2.4",
     "typescript": "*"
   },

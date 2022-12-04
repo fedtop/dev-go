@@ -72,21 +72,75 @@ const filterTagsFn = (tag) => {
 function loopTransNode(element) {
   // 当子元素为空时，中断
   if (element.childNodes.length === 0) return
+
   // 获取所有的子节点
-  const childrenList = Array.from(element?.childNodes, filterTagsFn)
+  const childrenList = Array.from(element?.childNodes, filterTagsFn).filter((item) => item)
+
+  // 存储需要翻译的文本
+  let translateText = ''
+  let lastElement: HTMLElement = null
+
   // 遍历所有的子节点,  需要翻译的元素
   childrenList.forEach((tag) => {
-    // 如果是文本节点，且不为空时，发送翻译请求
-    if (tag?.nodeType === 3 && tag.textContent.trim() !== '') {
-      // 如果文本中全是中文或空，不翻译
-      if (!tag.textContent || /^[\u4e00-\u9fa5]+$/.test(tag.textContent)) return
-      // 发送翻译请求
-      chrome.runtime.sendMessage({ text: tag.textContent, type: 'translate' }, (res) => {
-        insertTransResult(tag, res.text)
-      })
+    if (hasTransTextNode(tag)) {
+      // 不需要翻译的元素
+      if (!hasTranslate(tag.textContent)) return
+
+      // 拼接需要翻译的文本
+      translateText += tag.textContent
+      lastElement = tag
     } else {
-      tag && loopTransNode(tag)
+      // 进入到这里证明一个段落已经结束，开始翻译
+      sentenceTrans(translateText, lastElement)
+      translateText = ''
+      lastElement = null
+
+      // 递归处理非内联元素或者文本节点
+      loopTransNode(tag)
     }
+  })
+
+  // 最后一个段落的翻译
+  sentenceTrans(translateText, lastElement)
+}
+
+// 判断节点是否是段落
+function hasTransTextNode(element: HTMLElement) {
+  if (element == null) return false
+
+  // 如果是文本节点，直接返回
+  if (element.nodeType === 3) {
+    return true
+  }
+
+  // 换行元素过滤掉
+  const lineBreakList = ['BR', 'HR']
+  if (lineBreakList.includes(element.tagName)) {
+    return false
+  }
+
+  // display 属性为 inline/inline-block 的元素是符合条件的
+  const { display } = window.getComputedStyle(element)
+  if (display === 'inline' || display === 'inline-block') {
+    return true
+  }
+
+  return false
+}
+
+// 判断是否需要翻译，只检测中文
+function hasTranslate(str: string) {
+  if (!str) return false
+
+  return !/[\u4e00-\u9fa5]/.test(str)
+}
+
+// 发送翻译请求
+function sentenceTrans(text: string, insetBefore: HTMLElement) {
+  if (text.trim() === '') return
+
+  chrome.runtime.sendMessage({ text: text.replace(/[\r\n]/g, ''), type: 'translate' }, (res) => {
+    insertTransResult(insetBefore, res.text)
   })
 }
 

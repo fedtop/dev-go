@@ -1,16 +1,16 @@
 export default function FunctionPage() {
+  // TODO 使用组件库的提示
   // const [messageApi, contextHolder] = message.useMessage()
-  function wip() {
-    alert('开发中...')
+  function tip(msg: string) {
+    alert(msg)
   }
+
   chrome.runtime.onMessage.addListener((message, sender, res) => {
+    console.log('🚀🚀🚀 / message', message)
     const { type } = message
     switch (type) {
-      case 'wip':
-        wip()
-        break
-      case 'passTransNode':
-        wip()
+      case 'tip':
+        tip(message.msg)
         break
       default:
         break

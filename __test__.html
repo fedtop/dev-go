@@ -8,129 +8,144 @@
   </head>
 
   <body>
+    <h1>Test content</h1>
+    <p>
+      our answer could be improved with additional supporting information. Please edit to add
+      further details, such as citations or documentation, so that others can confirm that your
+      answer is correct. You can find more information on how to write good answers in the help
+      center. – Community Bot
+    </p>
     <div>
-      <h1>Test content</h1>
+      This is a piece of test text, which will include some tags, such as
+      <a href="https://www.google.com">link</a>
+      、
+      <strong>strong</strong>
+      、
+      <em>em</em>
+      、
+      <del>del</del>
+      、
+      <ins>ins</ins>
+      、
+      <sub>sub</sub>
+      、
+      <sup>sup</sup>
+      、
+      <mark>mark</mark>
+      、
+      <small>small</small>
+      、
+      <big>big</big>
+      、
+      <u>u</u>
+      、
+      <s>s</s>
+      、
+      <q>q</q>
+      、
+      <cite>cite</cite>
+      、
+      <abbr>abbr</abbr>
+      、
+      <dfn>dfn</dfn>
+      、
+      <time>time</time>
+      、
+      <var>var</var>
+      、
+      <samp>samp</samp>
+      、
+      <kbd>kbd</kbd>
+      、
+      <i>i</i>
+      、
+      <b>b</b>
+      、
+      <span>span</span>
+      The expectation is that these tags will not be understood as a node alone, but together with
+      the parent node.
+
+      <br />
+
+      But for block-level elements, it will be understood as a separate node, such as
+      <div>
+        this is a
+        <b>div</b>
+        element
+      </div>
       <p>
-        our answer could be improved with additional supporting information. Please edit to add
-        further details, such as citations or documentation, so that others can confirm that your
-        answer is correct. You can find more information on how to write good answers in the help
-        center. – Community Bot
+        this is a
+        <b>p</b>
+        element
       </p>
+      <h1>this is a h1 element</h1>
+      <ul>
+        <li>this is a li element</li>
+      </ul>
+      <dl>
+        <dt>this is a dt element</dt>
+        <dd>this is a dd element</dd>
+      </dl>
 
-      <div>
-        This is a piece of test text, which will include some tags, such as
-        <a href="https://www.google.com">link</a>
-        、
-        <strong>strong</strong>
-        、
-        <em>em</em>
-        、
-        <del>del</del>
-        、
-        <ins>ins</ins>
-        、
-        <sub>sub</sub>
-        、
-        <sup>sup</sup>
-        、
-        <mark>mark</mark>
-        、
-        <small>small</small>
-        、
-        <big>big</big>
-        、
-        <u>u</u>
-        、
-        <s>s</s>
-        、
-        <q>q</q>
-        、
-        <cite>cite</cite>
-        、
-        <abbr>abbr</abbr>
-        、
-        <dfn>dfn</dfn>
-        、
-        <time>time</time>
-        、
-        <var>var</var>
-        、
-        <samp>samp</samp>
-        、
-        <kbd>kbd</kbd>
-        、
-        <i>i</i>
-        、
-        <b>b</b>
-        、
-        <span>span</span>
-        The expectation is that these tags will not be understood as a node alone, but together with
-        the parent node.
+      <br />
 
-        <br />
-
-        But for block-level elements, it will be understood as a separate node, such as
-        <div>
-          this is a
-          <b>div</b>
-          element
-        </div>
-        <p>
-          this is a
-          <b>p</b>
-          element
-        </p>
-        <h1>this is a h1 element</h1>
-        <ul>
-          <li>this is a li element</li>
-        </ul>
-        <dl>
-          <dt>this is a dt element</dt>
-          <dd>this is a dd element</dd>
-        </dl>
-
-        <br />
-
-        There are also some special tags, such as
-        <b>br</b>
-        ,
-        <b>hr</b>
-        should also be understood as a sign of the end of a paragraph. here is a br tag:
-        <br />
-        here is a hr tag:
-        <hr />
-        They will both be understood as the end of a paragraph.
-      </div>
-
-      <div>
-        <ul>
-          <li>
-            <a href="">our answer could be improved with additional supporting information.</a>
-          </li>
-
-          <li>
-            <a href="">our answer could be improved with additional supporting information.</a>
-          </li>
-          <li>
-            <a href="">our answer could be improved with additional supporting information.</a>
-          </li>
-          <li>
-            <a href="">our answer could be improved with additional supporting information.</a>
-          </li>
-        </ul>
-      </div>
-      <!-- <script type="text/javascript">
-      function googleTranslateElementInit() {
-        new google.translate.TranslateElement(
-          { pageLanguage: 'en' },
-          'google_translate_element',
-        )
-      }
-    </script>
-    <script
-      type="text/javascript"
-      src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
-    ></script> -->
+      There are also some special tags, such as
+      <b>br</b>
+      ,
+      <b>hr</b>
+      should also be understood as a sign of the end of a paragraph. here is a br tag:
+      <br />
+      here is a hr tag:
+      <hr />
+      They will both be understood as the end of a paragraph.
     </div>
+    <h3>Test list and link</h3>
+    <ul>
+      <li>
+        You can find more information on
+        <a href="">test link</a>
+        how to write good answers in the help center
+      </li>
+      <li>
+        You can find more information on
+        <a href="">test link</a>
+        how to write good answers in the help center
+      </li>
+      <li>
+        You can find more information on
+        <a href="">test link</a>
+        how to write good answers in the help center
+      </li>
+    </ul>
+    <h3>Test code</h3>
+    <pre>
+      <code>
+        const test = 'test';
+        console.log(test);
+      </code>
+      <code>
+        const a = 123; 
+        function test (){
+          let b=333;
+        }
+      </code>
+    </pre>
+    <h3>Test table</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Test</th>
+          <th>Test</th>
+          <th>Test</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Test</td>
+          <td>Test</td>
+          <td>Test</td>
+        </tr>
+      </tbody>
+    </table>
   </body>
 </html>

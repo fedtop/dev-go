@@ -17,18 +17,19 @@ chrome.runtime.onMessage.addListener((message, sender, res) => {
   console.log('🚀🚀🚀 / type', type)
   switch (type) {
     case 'translate-inline':
+      // 测试连接性
+      testConnection()
       // 翻译所有的标签
       loopTransNode(document.body)
       break
     case 'translate-paragraph':
+      // 测试连接性
+      testConnection()
       paragraphTrans()
       break
     default:
       break
   }
-  console.log('🚀🚀🚀 / 测试连接性')
-  // 测试连接性
-  testConnection()
 })
 
 // 测试连接性
@@ -56,7 +57,7 @@ const passTransList = [
 const passTransClassList = ['translated', ...passTransClass]
 
 // 过滤标签
-const filterTagsFn = (tag) => {
+function filterTagsFn(tag): HTMLElement | null {
   if (tag?.nodeType === 3) return tag
   // 过滤掉在过滤标签中的标签
   if (
@@ -66,6 +67,7 @@ const filterTagsFn = (tag) => {
   ) {
     return tag
   }
+  return null
 }
 
 // 递归处理所有的标签
@@ -186,7 +188,7 @@ export function insertTransResult(node: HTMLElement, transResult: string, result
   // 如何返回值中不包含中文或者为空时候，不插入到页面中
   if (!transResult || !/[\u4e00-\u9fa5]/.test(transResult)) return
   // 如果本文开头包含中文标点符号，去除
-  transResult = transResult.replace(/^[，。？！：；、]/, '')
+  const text = transResult.replace(/^[，。？！：；、]/, '')
   // 插入翻译后的文本到元素中
   const transNode = document.createElement(resultTag || 'font')
   transNode.className = 'translated'
@@ -195,7 +197,7 @@ export function insertTransResult(node: HTMLElement, transResult: string, result
     padding: 0 4px;
     font-size: 14px;
   `
-  transNode.innerText = transResult
+  transNode.innerText = text
   node.parentNode?.insertBefore(transNode, node.nextSibling)
   const parent = node.parentNode as HTMLElement
   if (parent?.nodeType === 1) {
@@ -203,14 +205,13 @@ export function insertTransResult(node: HTMLElement, transResult: string, result
   }
 }
 
-// 页面上所有的DOM,样式表,脚本,图片都已经加载完成时
-window.onload = () => {
-  // 优化浏览器自带的页面翻译，设置不自动翻译的元素
-  setNotranslateNode()
-}
+// // 页面上所有的DOM,样式表,脚本,图片都已经加载完成时
+// window.onload = () => {
+//   // 优化浏览器自带的页面翻译，设置不自动翻译的元素
+//   setNotranslateNode()
+// }
+
 // 仅当DOM加载完成时
-// TODO 目前 plasmo 貌似不支持注入的 run_at: document_start
-// window.addEventListener("DOMContentLoaded", () => {
-//   githubEditOnline()
-//   console.log("DOM fully loaded and parsed")
-// })
+window.addEventListener('DOMContentLoaded', () => {
+  setNotranslateNode()
+})

@@ -6,10 +6,10 @@ module.exports = {
     { value: 'style', name: 'style: 代码风格,格式修复' },
     {
       value: 'refactor',
-      name: 'refactor: 代码重构,注意和feat、fix区分开',
+      name: 'refactor: 代码重构,（既不增加feature，也不是修复bug）',
     },
-    { value: 'perf', name: 'perf: 码优化,改善性能' },
-    { value: 'test', name: 'test: 测试' },
+    { value: 'perf', name: 'perf: 代码优化,改善性能' },
+    { value: 'test', name: 'test: 增加测试' },
     { value: 'chore', name: 'chore: 变更构建流程或辅助工具' },
     { value: 'revert', name: 'revert: 代码回退' },
     { value: 'init', name: 'init: 项目初始化' },

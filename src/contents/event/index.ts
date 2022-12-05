@@ -1,5 +1,7 @@
+import { isGithubCodePage } from '../utils/is'
+
 function toGithub1s() {
-  if (!window) {
+  if (!isGithubCodePage()) {
     return
   }
 

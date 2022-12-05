@@ -4,6 +4,8 @@
 
 下载插件：👉🏻 [Chrome 应用商店的链接](https://chrome.google.com/webstore/detail/devgo/kcofdbjhicjdbmldlcffcijglkifnnjn)
 
+使用文档：👉🏻 [DevGo 使用文档](https://fedtop.github.io/dev-go-docs)
+
 ## 贡献者们
 
 [Contributors](https://github.com/wangrongding/dev-go/graphs/contributors) 是 DevGo 的未来。
@@ -18,21 +20,15 @@
 
 查单词短句，可以通过快捷键 `Alt+Q`/`Option+Q` 或者点击插件图标打开该窗口。
 
-![](https://assets.fedtop.com/picbed/202211271606483.png)
+<img src='https://assets.fedtop.com/picbed/202212052303602.png' width='700px'>
 
 翻译页面-通过中英文对照的形式阅读，在快速阅读页面的同时，也很好的解决了目前市面上翻译软件对专业词汇翻译不准确的问题。
 
 可以通过快捷键 `Ctrl+Shift+E`/`Command+Shift+E` 快速翻译当前页面。
 
-![](https://assets.fedtop.com/picbed/202210270939667.png)
+<img src='https://assets.fedtop.com/picbed/202212052313001.png' width='700px'>
 
 划词翻译、右键菜单翻译,这两天加上
-
-### github 添加在线编辑按钮
-
-github 添加在线编辑按钮并且可以使用快捷键 ","直接进入。 方便快速使用 `1s` 查看代码，（为什么？因为 1s 比 通过 github 页面中快捷键"句号"调出的 github.dev 要快）。
-
-![](https://assets.fedtop.com/picbed/202210280935904.png)
 
 ### 优化浏览器中自带的翻译页面
 
@@ -40,19 +36,25 @@ github 添加在线编辑按钮并且可以使用快捷键 ","直接进入。 �
 
 优化浏览器中自带的翻译，标记了一些不该被翻译的元素（比如代码块，github 中一些导航），让浏览器自带的翻译在翻译页面时跳过被标记的标签。
 
-![](https://assets.fedtop.com/picbed/202210280048017.png)
+<img src='https://assets.fedtop.com/picbed/202212052322835.png' width='700px'>
+
+### github 添加在线编辑按钮
+
+github 添加在线编辑按钮并且可以使用快捷键 ","直接进入。 方便快速使用 `1s` 查看代码，（为什么？因为 1s 比 通过 github 页面中快捷键"句号"调出的 github.dev 要快）。
+
+<img src='https://assets.fedtop.com/picbed/202210280935904.png' width='700px'>
 
 ### 去除外链跳转的提示
 
 每次在知乎，掘金，简书...中打开外链，都有一个跳转提示，需要手动点击确定才能跳转，很难受，这里捕获后直接重定向到目标链接。
 
-![](https://assets.fedtop.com/picbed/202211091022789.png)
+<img src='https://assets.fedtop.com/picbed/202211091022789.png' width='700px'>
 
 ### 清除用户事件的限制
 
 在一些网站中 copy 文本后常常后面附带一些版权信息等，很烦,清除了网站对用户行为进行了限制（比如右击菜单，选择文本，拷贝，剪切，键盘鼠标事件等）
 
-![](https://assets.fedtop.com/picbed/202211091038829.png)
+<img src='https://assets.fedtop.com/picbed/202212052328159.png' width='700px'>
 
 ### 将要做的功能
 
@@ -105,4 +107,6 @@ pnpm build
 
 ## 赞赏
 
-🌸 Star it~ and enjoy it！
+只需要点一个 Star⭐️ 支持我们~
+
+🌸Let's enjoy it!

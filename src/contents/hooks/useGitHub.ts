@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react'
 
+import { isGithubCodePage } from '../utils/is'
 import registerKeyDownListen from '../register/keydownListen'
 
 const useGitHub = () => {
@@ -7,17 +8,8 @@ const useGitHub = () => {
     registerKeyDownListen()
   }, [])
 
-  const isCodePage = useMemo<boolean>(() => {
-    const url = window.location.href
-    const fileNavigation = document.querySelectorAll('.file-navigation')
-    const isHasBlob = url.includes('/blob/')
-    const isHasTree = url.includes('/tree/')
-
-    return fileNavigation.length > 0 || isHasBlob || isHasTree
-  }, [])
-
   return {
-    isCodePage,
+    isCodePage: isGithubCodePage(),
   }
 }
 

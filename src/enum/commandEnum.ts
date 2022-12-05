@@ -1,5 +1,5 @@
 //
 export enum keyCodeEnums {
-  /** 逗号的 code  */
-  comma = 'Comma',
+  /** 逗号的 按键  */
+  Comma = 'Comma',
 }

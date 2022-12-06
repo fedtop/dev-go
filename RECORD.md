@@ -157,11 +157,11 @@ chrome.runtime.sendMessage({
 
 ```
 // 读取数据，第一个参数是指定要读取的key以及设置默认值
-chrome.storage.sync.get({color: 'red', age: 18}, function(items) {
+chrome.storage.sync.get(['color', 'age'], function(items) {
   console.log(items.color, items.age);
 });
 // 保存数据
-chrome.storage.sync.set({color: 'blue'}, function() {
+chrome.storage.sync.set({ color: 'blue', age: 18 }, function() {
   console.log('保存成功！');
 })
 ```

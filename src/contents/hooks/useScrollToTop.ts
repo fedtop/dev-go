@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { throttle } from '../utils/lodash'
+import { throttle } from 'lodash'
 
-const useScrollToTop = () => {
+const useScrollToTop = (): [boolean, () => void] => {
   const [isTop, setTop] = useState(true)
 
   const scrollToTop = () => {

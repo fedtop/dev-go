@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "antd": "^5.0.3",
+    "lodash": "^4.17.21",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },
@@ -56,7 +57,7 @@
     "eslint-plugin-react": "^7.31.11",
     "husky": "^8.0.2",
     "lint-staged": "^13.0.4",
-    "plasmo": "0.59.1",
+    "plasmo": "0.59.3",
     "postcss": "^8.4.19",
     "prettier": "2.8.0",
     "prettier-plugin-tailwindcss": "^0.2.0",

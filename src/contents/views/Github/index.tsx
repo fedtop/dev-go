@@ -7,11 +7,12 @@ import ScrollToTopBtn from './components/ScrollToTopBtn'
 
 export const config: PlasmoContentScript = {
   matches: ['https://github.com/*/*'],
+  run_at: 'document_start',
 }
 
 export default function FunctionPage() {
   const { isCodePage } = useGitHub()
-  const [isTopPage, setToTop] = useScrollToTop() as [boolean, () => void]
+  const [isTopPage, setToTop] = useScrollToTop()
   return (
     <>
       {isCodePage && <OnlineEditBtn title='在线编辑' />}

@@ -49,6 +49,11 @@ export default defineConfig({
         suggested_key: { default: 'Alt+2' },
         description: '对当前页面进行行间对比翻译',
       },
+      // 打开 popup 并定位到「待办」Tab
+      'open-todo': {
+        suggested_key: { default: 'Alt+3' },
+        description: '打开待办面板',
+      },
     },
   }),
 })

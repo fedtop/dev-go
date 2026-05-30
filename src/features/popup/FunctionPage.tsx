@@ -10,6 +10,7 @@ import Switch from '@/ui/Switch'
 const COMMAND_LABELS: Record<string, string> = {
   _execute_action: '打开面板',
   'inline-translate': '整页行间翻译',
+  'open-todo': '打开待办面板',
 }
 
 interface ShortcutItem {

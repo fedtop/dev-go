@@ -1,20 +1,33 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { SHIP_NAME, SITE_URL } from '@/utils/constants'
 import FunctionPage from '@/features/popup/FunctionPage'
+import TodoPage from '@/features/popup/TodoPage'
 import ToolsPage from '@/features/popup/ToolsPage'
 import TranslatePage from '@/features/popup/TranslatePage'
 import Tabs from '@/ui/Tabs'
+import { popupInitialTab } from '@/utils/settings'
 import { formatShortcut } from '@/utils/shortcut'
 
 const pages = [
   { value: 'translate', label: '翻译' },
+  { value: 'todo', label: '待办' },
   { value: 'tools', label: '工具' },
   { value: 'function', label: '功能' },
 ]
 
+const PAGE_VALUES = new Set(pages.map((p) => p.value))
+
 export default function App() {
   const [active, setActive] = useState('translate')
+
+  // Alt+3 等入口会写入一次性信号，指定打开时定位的 Tab；读取后立即清空。
+  useEffect(() => {
+    popupInitialTab.getValue().then((tab) => {
+      if (tab && PAGE_VALUES.has(tab)) setActive(tab)
+      if (tab) popupInitialTab.setValue('')
+    })
+  }, [])
 
   return (
     <div className='flex w-[420px] flex-col bg-slate-50 text-slate-800'>
@@ -30,6 +43,7 @@ export default function App() {
       {/* 内容区 */}
       <main className='px-4 py-4'>
         {active === 'translate' && <TranslatePage />}
+        {active === 'todo' && <TodoPage />}
         {active === 'tools' && <ToolsPage />}
         {active === 'function' && <FunctionPage />}
       </main>

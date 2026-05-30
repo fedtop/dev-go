@@ -60,3 +60,27 @@ export const quickNavItems = storage.defineItem<QuickNavItem[]>('local:quickNavI
 export const themeMode = storage.defineItem<StoredThemeMode>('local:themeMode', {
   fallback: 'auto',
 })
+
+/** 任务状态：待办 / 进行中 / 已完成 */
+export type TodoStatus = 'todo' | 'doing' | 'done'
+
+/** TODO 任务项 */
+export interface TodoItem {
+  id: string
+  text: string
+  status: TodoStatus
+  createdAt: number
+}
+
+/** 新标签页 TODO 任务列表（持久化、跨页面共享） */
+export const todoItems = storage.defineItem<TodoItem[]>('local:todoItems', {
+  fallback: [],
+})
+
+/**
+ * popup 下次打开时要定位的 Tab（一次性信号）。
+ * Alt+3 经后台写入 'todo'，popup 读取后立即清空。
+ */
+export const popupInitialTab = storage.defineItem<string>('local:popupInitialTab', {
+  fallback: '',
+})

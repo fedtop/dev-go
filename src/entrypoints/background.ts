@@ -7,7 +7,7 @@ import {
   type CorsProxyResponse,
   type RuntimeMessage,
 } from '@/utils/messaging'
-import { enableCorsBypass, translateProvider } from '@/utils/settings'
+import { enableCorsBypass, popupInitialTab, translateProvider } from '@/utils/settings'
 import type { DictResult } from '@/types/dict'
 
 const CORS_BYPASS_RULE_ID = 9001
@@ -264,10 +264,17 @@ export default defineBackground(() => {
     }
   })
 
-  // 快捷键命令 -> 通知当前页面进行整页对比翻译
+  // 快捷键命令
   browser.commands.onCommand.addListener((command) => {
     if (command === 'inline-translate') {
       sendTabMessage({ type: 'translate-page' })
+    } else if (command === 'open-todo') {
+      // 打开 popup 并定位到「待办」Tab：先写一次性信号，再主动弹出 popup。
+      popupInitialTab.setValue('todo').then(() => {
+        browser.action.openPopup?.().catch((error) => {
+          console.warn('[DevGo] openPopup failed:', error)
+        })
+      })
     }
   })
 

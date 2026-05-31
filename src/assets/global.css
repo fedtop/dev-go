@@ -1,0 +1,20 @@
+@import 'tailwindcss';
+
+/* 暗色变体：由 <html class="dark"> 控制（见 src/utils/theme.ts） */
+@custom-variant dark (&:where(.dark, .dark *));
+
+html,
+body {
+  height: unset !important;
+  margin: 0;
+}
+
+/* 细滚动条 */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.3);
+  border-radius: 3px;
+}

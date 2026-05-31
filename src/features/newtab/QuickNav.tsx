@@ -1,0 +1,161 @@
+/**
+ * 快捷导航卡片栅格：展示 + 增 / 删 / 改，数据持久化到 storage。
+ */
+
+import { useEffect, useState } from 'react'
+
+import type { QuickNavItem } from '@/utils/settings'
+import { faviconUrl } from './engines'
+
+interface QuickNavProps {
+  items: QuickNavItem[]
+  onChange: (items: QuickNavItem[]) => void
+}
+
+interface EditState {
+  id: string | null // null 表示新增
+  title: string
+  url: string
+}
+
+const EMPTY: EditState = { id: null, title: '', url: '' }
+
+/** 规范化 url：缺协议时补 https:// */
+function normalizeUrl(url: string): string {
+  const u = url.trim()
+  if (!u) return ''
+  return /^https?:\/\//i.test(u) ? u : `https://${u}`
+}
+
+export default function QuickNav({ items, onChange }: QuickNavProps) {
+  const [edit, setEdit] = useState<EditState | null>(null)
+
+  const openAdd = () => setEdit({ ...EMPTY })
+  const openEdit = (item: QuickNavItem) => setEdit({ ...item })
+
+  const remove = (id: string) => onChange(items.filter((i) => i.id !== id))
+
+  const save = () => {
+    if (!edit) return
+    const title = edit.title.trim()
+    const url = normalizeUrl(edit.url)
+    if (!title || !url) return
+    if (edit.id) {
+      onChange(items.map((i) => (i.id === edit.id ? { ...i, title, url } : i)))
+    } else {
+      onChange([...items, { id: crypto.randomUUID(), title, url }])
+    }
+    setEdit(null)
+  }
+
+  return (
+    <div className='w-full'>
+      <div className='grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8'>
+        {items.map((item) => (
+          <div key={item.id} className='group relative'>
+            <a
+              href={item.url}
+              className='flex flex-col items-center gap-2 rounded-2xl border border-transparent bg-white/70 px-2 py-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-200 hover:shadow-md dark:bg-slate-800/60 dark:hover:border-slate-700'
+            >
+              <img
+                src={faviconUrl(item.url)}
+                alt=''
+                className='h-8 w-8 rounded-lg'
+                onError={(e) => {
+                  ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
+                }}
+              />
+              <span className='line-clamp-1 w-full text-xs text-slate-600 dark:text-slate-300'>
+                {item.title}
+              </span>
+            </a>
+            {/* 悬停操作 */}
+            <div className='absolute right-1 top-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100'>
+              <button
+                type='button'
+                title='编辑'
+                onClick={() => openEdit(item)}
+                className='flex h-5 w-5 items-center justify-center rounded-full bg-slate-200/90 text-[10px] text-slate-600 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-200'
+              >
+                ✎
+              </button>
+              <button
+                type='button'
+                title='删除'
+                onClick={() => remove(item.id)}
+                className='flex h-5 w-5 items-center justify-center rounded-full bg-slate-200/90 text-[10px] text-slate-600 hover:bg-red-500 hover:text-white dark:bg-slate-700 dark:text-slate-200'
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {/* 新增卡片 */}
+        <button
+          type='button'
+          onClick={openAdd}
+          className='flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 px-2 py-4 text-slate-400 transition-colors hover:border-blue-400 hover:text-blue-500 dark:border-slate-600'
+        >
+          <span className='text-2xl leading-none'>+</span>
+          <span className='text-xs'>添加</span>
+        </button>
+      </div>
+
+      {/* 编辑弹层 */}
+      {edit && (
+        <div
+          className='fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4'
+          onClick={() => setEdit(null)}
+        >
+          <div
+            className='w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-slate-800'
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className='mb-4 text-sm font-semibold text-slate-800 dark:text-slate-100'>
+              {edit.id ? '编辑导航' : '添加导航'}
+            </h3>
+            <div className='flex flex-col gap-3'>
+              <label className='flex flex-col gap-1'>
+                <span className='text-xs text-slate-500 dark:text-slate-400'>名称</span>
+                <input
+                  autoFocus
+                  value={edit.title}
+                  onChange={(e) => setEdit({ ...edit, title: e.target.value })}
+                  placeholder='GitHub'
+                  className='rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100'
+                />
+              </label>
+              <label className='flex flex-col gap-1'>
+                <span className='text-xs text-slate-500 dark:text-slate-400'>网址</span>
+                <input
+                  value={edit.url}
+                  onChange={(e) => setEdit({ ...edit, url: e.target.value })}
+                  onKeyDown={(e) => e.key === 'Enter' && save()}
+                  placeholder='https://github.com'
+                  className='rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100'
+                />
+              </label>
+            </div>
+            <div className='mt-5 flex justify-end gap-2'>
+              <button
+                type='button'
+                onClick={() => setEdit(null)}
+                className='rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700'
+              >
+                取消
+              </button>
+              <button
+                type='button'
+                onClick={save}
+                className='rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-500'
+              >
+                保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

@@ -4,12 +4,17 @@
   "version": "0.0.6",
   "description": "A super unbeatable browser extension plugin for developers.",
   "author": "荣顶",
+  "type": "module",
   "scripts": {
-    "dev": "plasmo dev",
-    "build": "plasmo build",
-    "build:zip": "plasmo build -- --zip",
-    "package": "plasmo package",
-    "prettier": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,scss,less,html,json,md}\"",
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "compile": "tsc --noEmit",
+    "postinstall": "wxt prepare",
+    "prettier": "prettier --write \"**/*.{js,jsx,ts,tsx,css,scss,less,html,json,md}\"",
     "eslint": "eslint \"./**/*{.js,.ts,.jsx,.tsx}\" --fix",
     "prepare": "husky install",
     "release": "standard-version",
@@ -26,26 +31,30 @@
   "config": {
     "commitizen": {
       "path": "node_modules/cz-customizable"
+    },
+    "cz-customizable": {
+      "config": ".cz-config.cjs"
     }
   },
   "dependencies": {
-    "antd": "^5.0.3",
-    "lodash": "^4.17.21",
-    "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "lodash-es": "^4.17.21",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.8.1",
     "@commitlint/config-conventional": "^17.8.1",
     "@commitlint/cz-commitlint": "^17.8.1",
-    "@plasmohq/prettier-plugin-sort-imports": "3.5.4",
-    "@types/chrome": "0.0.198",
-    "@types/node": "18.11.0",
-    "@types/react": "18.0.21",
-    "@types/react-dom": "18.0.6",
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/chrome": "^0.0.287",
+    "@types/lodash-es": "^4.17.12",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
     "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.45.0",
-    "autoprefixer": "^10.4.13",
+    "@wxt-dev/auto-icons": "^1.1.1",
+    "@wxt-dev/module-react": "^1.2.2",
     "commitizen": "^4.2.5",
     "commitlint-config-cz": "^0.13.3",
     "cz-customizable": "^7.0.0",
@@ -57,41 +66,18 @@
     "eslint-plugin-react": "^7.31.11",
     "husky": "^8.0.2",
     "lint-staged": "^13.0.4",
-    "plasmo": "^0.84.0",
-    "postcss": "^8.4.19",
     "prettier": "2.8.0",
-    "prettier-plugin-tailwindcss": "^0.2.0",
     "standard-version": "^9.5.0",
-    "tailwindcss": "^3.2.4",
-    "typescript": "*"
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.2",
+    "wxt": "^0.20.6"
   },
   "homepage": "https://github.com/wangrongding",
-  "manifest": {
-    "homepage_url": "https://github.com/wangrongding",
-    "permissions": [
-      "contextMenus",
-      "scripting"
-    ],
-    "commands": {
-      "_execute_action": {
-        "suggested_key": {
-          "default": "Alt+Q",
-          "windows": "Alt+Q",
-          "mac": "Alt+Q",
-          "chromeos": "Alt+Q",
-          "linux": "Alt+Q"
-        }
-      },
-      "inline-translate": {
-        "suggested_key": {
-          "default": "Ctrl+Shift+E",
-          "windows": "Ctrl+Shift+E",
-          "chromeos": "Ctrl+Shift+E",
-          "linux": "Ctrl+Shift+E",
-          "mac": "Command+Shift+E"
-        },
-        "description": "inline-translate"
-      }
-    }
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp",
+      "spawn-sync"
+    ]
   }
 }

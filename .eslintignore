@@ -1,16 +1,13 @@
 # eslint ignore list
 .output
-.plasmo
+.wxt
 .vscode
 
 build/*
 node_modules
 package-lock.json
+pnpm-lock.yaml
 yarn.lock
 .env
-.eslintrc.js
-postcss.config.js
-tailwind.config.js
-commitlint.config.js
-assets/*
-
+.eslintrc.cjs
+commitlint.config.cjs

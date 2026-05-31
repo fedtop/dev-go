@@ -1,11 +1,5 @@
 {
-  "cSpell.words": [
-    "antd",
-    "chromeos",
-    "plasmo",
-    "srclangs",
-    "youdao"
-  ],
+  "cSpell.words": ["antd", "chromeos", "github1s", "wxt", "srclangs", "youdao"],
   "editor.quickSuggestions": {
     "strings": true
   }

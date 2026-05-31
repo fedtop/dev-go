@@ -28,8 +28,12 @@ out/
 build/
 dist/
 
-# plasmo - https://www.plasmo.com
-.plasmo
+# wxt - https://wxt.dev
+.wxt/
+.output/
+web-ext.config.ts
+stats.html
+stats-*.json
 
 # bpp - http://bpp.browser.market/
 keys.json
@@ -48,3 +52,6 @@ assets/google
 *.njsproj
 *.sln
 *.sw?
+
+.agents
+skills-lock.json

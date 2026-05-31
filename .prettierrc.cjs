@@ -2,12 +2,6 @@
  * @type {import('prettier').Options}
  */
 module.exports = {
-  plugins: [require.resolve("@plasmohq/prettier-plugin-sort-imports"), require.resolve("prettier-plugin-tailwindcss")],
-  tailwindConfig: './tailwind.config.js',
-  importOrder: ["^@plasmohq/(.*)$", "^~(.*)$", "^[./]"],
-  importOrderSeparation: true,
-  importOrderSortSpecifiers: true,
-
   tabWidth: 2, // 空格数
   useTabs: false, // 是否开启tab
   printWidth: 100, // 换行的宽度

@@ -3,6 +3,7 @@
 .wxt
 .vscode
 
+assets/google
 build/*
 node_modules
 package-lock.json

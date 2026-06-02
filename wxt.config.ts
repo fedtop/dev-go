@@ -30,13 +30,14 @@ export default defineConfig({
     ...(mode === 'development' ? { key: DEV_EXTENSION_KEY } : {}),
     name: 'DevGo',
     homepage_url: 'https://github.com/wangrongding',
-    permissions: ['contextMenus', 'tabs', 'storage', 'bookmarks'],
-    // 翻译接口需要的跨域访问权限
-    host_permissions: [
-      'https://translate.google.com/*',
-      'http://aidemo.youdao.com/*',
-      'https://edge.microsoft.com/*',
-      'https://api-edge.cognitive.microsofttranslator.com/*',
+    permissions: ['contextMenus', 'tabs', 'storage', 'bookmarks', 'declarativeNetRequest'],
+    // 内容脚本、CORS 动态规则和后台代理都需要全站访问能力。
+    host_permissions: ['<all_urls>'],
+    web_accessible_resources: [
+      {
+        resources: ['cors-proxy.js'],
+        matches: ['<all_urls>'],
+      },
     ],
     commands: {
       // 打开/切换 popup 面板。Alt 在 Win/Linux 为 Alt，在 Mac 自动映射为 Option(⌥)

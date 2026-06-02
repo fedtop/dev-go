@@ -28,6 +28,11 @@ export const enableGithubEnhance = storage.defineItem<boolean>('local:enableGith
   fallback: true,
 })
 
+/** 开发调试：为网页 XHR/fetch 响应补充 CORS 头（默认关闭） */
+export const enableCorsBypass = storage.defineItem<boolean>('local:enableCorsBypass', {
+  fallback: false,
+})
+
 /* ------------------------------- 新标签页 ------------------------------- */
 
 /** 主题模式：自动（按本地时间） / 浅色 / 深色 */

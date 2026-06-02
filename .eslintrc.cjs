@@ -45,6 +45,7 @@ module.exports = {
     'import/extensions': 'off', // 关闭文件后缀名的规则
     'import/no-unresolved': 'off', // 关闭文件路径的规则
     'import/no-extraneous-dependencies': 'off', // 关闭依赖来源校验（构建配置会引用 devDeps）
+    'no-param-reassign': 'off', // 允许修改函数参数属性（如 modifyScript(script)）
     'no-use-before-define': 'off', // 关闭变量使用前定义的规则
     'import/prefer-default-export': 'off', // 关闭默认导出的规则
     'no-unused-expressions': 'off', // 关闭未使用表达式的规则 (可以使用 && || 等)

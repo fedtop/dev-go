@@ -8,17 +8,40 @@
 
 import type { DictResult } from '@/types/dict'
 
+export interface CorsProxyRequest {
+  url: string
+  method: string
+  headers: [string, string][]
+  body?: string
+  credentials?: RequestCredentials
+  redirect?: RequestRedirect
+}
+
+export interface CorsProxyResponse {
+  url: string
+  status: number
+  statusText: string
+  headers: [string, string][]
+  body: string
+  redirected: boolean
+  error?: string
+}
+
 /** Background 负责响应的请求消息（runtime 通道） */
 export type RuntimeMessage =
   | { type: 'translate'; text: string; html?: boolean }
   | { type: 'lookup'; word: string }
   | { type: 'test' }
+  | { type: 'sync-cors-bypass' }
+  | { type: 'cors-proxy-fetch'; request: CorsProxyRequest }
 
 /** Background 对 RuntimeMessage 的响应 */
 export interface RuntimeResponseMap {
   translate: { text: string }
   lookup: DictResult | null
   test: boolean
+  'sync-cors-bypass': boolean
+  'cors-proxy-fetch': CorsProxyResponse
 }
 
 /** 发给内容脚本的指令消息（tab 通道） */

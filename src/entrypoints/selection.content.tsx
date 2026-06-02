@@ -1,14 +1,22 @@
 import ReactDOM from 'react-dom/client'
 
 import SelectionApp from '@/features/selection/SelectionApp'
-import { enableSelectionTranslate } from '@/utils/settings'
+import {
+  getLocalBooleanSetting,
+  hasExtensionRuntime,
+  watchLocalBooleanSetting,
+} from '@/utils/content-settings'
 import '@/features/selection/style.css'
+
+const ENABLE_SELECTION_TRANSLATE_KEY = 'enableSelectionTranslate'
 
 export default defineContentScript({
   matches: ['<all_urls>'],
   cssInjectionMode: 'ui',
   runAt: 'document_idle',
   async main(ctx) {
+    if (!hasExtensionRuntime()) return
+
     const ui = await createShadowRootUi(ctx, {
       name: 'devgo-selection-ui',
       position: 'inline',
@@ -27,14 +35,16 @@ export default defineContentScript({
     })
 
     // 按开关挂载 / 卸载，并监听设置变化动态启停
-    const sync = async () => {
-      const enabled = await enableSelectionTranslate.getValue()
+    const applyEnabled = (enabled: boolean) => {
       if (enabled) ui.mount()
       else ui.remove()
     }
+    const sync = async () => {
+      applyEnabled(await getLocalBooleanSetting(ENABLE_SELECTION_TRANSLATE_KEY, true))
+    }
 
     await sync()
-    const unwatch = enableSelectionTranslate.watch(sync)
+    const unwatch = watchLocalBooleanSetting(ENABLE_SELECTION_TRANSLATE_KEY, true, applyEnabled)
     ctx.onInvalidated(unwatch)
   },
 })

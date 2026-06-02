@@ -30,8 +30,9 @@ export const enableGithubEnhance = storage.defineItem<boolean>('local:enableGith
 
 /* ------------------------------- 新标签页 ------------------------------- */
 
-/** 主题模式：跟随系统 / 浅色 / 深色 */
-export type ThemeMode = 'system' | 'light' | 'dark'
+/** 主题模式：自动（按本地时间） / 浅色 / 深色 */
+export type ThemeMode = 'auto' | 'light' | 'dark'
+export type StoredThemeMode = ThemeMode | 'system'
 
 /** 快捷导航卡片 */
 export interface QuickNavItem {
@@ -50,7 +51,7 @@ export const quickNavItems = storage.defineItem<QuickNavItem[]>('local:quickNavI
   fallback: [],
 })
 
-/** 主题模式：默认跟随系统 */
-export const themeMode = storage.defineItem<ThemeMode>('local:themeMode', {
-  fallback: 'system',
+/** 主题模式：默认自动（18:00-06:00 深色，其余浅色） */
+export const themeMode = storage.defineItem<StoredThemeMode>('local:themeMode', {
+  fallback: 'auto',
 })

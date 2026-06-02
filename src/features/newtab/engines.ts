@@ -79,14 +79,44 @@ export const DEFAULT_QUICK_NAV: QuickNavItem[] = [
   { id: 'caniuse', title: 'Can I Use', url: 'https://caniuse.com' },
   { id: 'devdocs', title: 'DevDocs', url: 'https://devdocs.io' },
   { id: 'vercel', title: 'Vercel', url: 'https://vercel.com/dashboard' },
+  {
+    id: 'chrome-extensions',
+    title: 'Chrome Extensions',
+    url: 'https://developer.chrome.com/docs/extensions',
+  },
+  { id: 'web-dev', title: 'web.dev', url: 'https://web.dev' },
+  { id: 'bundlephobia', title: 'Bundlephobia', url: 'https://bundlephobia.com' },
+  { id: 'docker-hub', title: 'Docker Hub', url: 'https://hub.docker.com' },
+  { id: 'codepen', title: 'CodePen', url: 'https://codepen.io' },
 ]
 
-/** 取站点 favicon（用 Google s2 服务，免维护图标资源） */
-export function faviconUrl(url: string, size = 64): string {
+function uniq(values: string[]): string[] {
+  return Array.from(new Set(values))
+}
+
+function normalizeFaviconHost(hostname: string): string {
+  return hostname.replace(/^www\./i, '')
+}
+
+/** 取站点 favicon 候选地址，按顺序兜底 */
+export function faviconUrls(url: string, size = 64): string[] {
   try {
     const { hostname } = new URL(url)
-    return `https://www.google.com/s2/favicons?domain=${hostname}&sz=${size}`
+    const hosts = uniq([normalizeFaviconHost(hostname), hostname])
+    return uniq([
+      ...hosts.map(
+        (host) =>
+          `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=${size}`,
+      ),
+      ...hosts.map((host) => `https://icons.duckduckgo.com/ip3/${host}.ico`),
+      ...hosts.map((host) => `https://icon.horse/icon/${host}`),
+    ])
   } catch {
-    return ''
+    return []
   }
+}
+
+/** 取首个 favicon 地址，兼容只需要单图地址的场景 */
+export function faviconUrl(url: string, size = 64): string {
+  return faviconUrls(url, size)[0] ?? ''
 }

@@ -21,7 +21,7 @@ interface ConfigFile extends NewTabConfig {
   exportedAt: string
 }
 
-const THEME_MODES: ThemeMode[] = ['system', 'light', 'dark']
+const THEME_MODES: ThemeMode[] = ['auto', 'light', 'dark']
 
 function isValidUrl(url: string): boolean {
   try {
@@ -48,6 +48,12 @@ function sanitizeItems(input: unknown): QuickNavItem[] {
       }
     })
     .filter((item): item is QuickNavItem => item !== null)
+}
+
+function sanitizeThemeMode(input: unknown): ThemeMode | undefined {
+  if (input === 'system') return 'auto'
+  if (THEME_MODES.includes(input as ThemeMode)) return input as ThemeMode
+  return undefined
 }
 
 /** 序列化为可下载的 JSON 字符串 */
@@ -90,9 +96,7 @@ export function parseConfig(text: string): NewTabConfig {
   const items = sanitizeItems(obj.quickNavItems)
   if (items.length === 0) throw new Error('文件中没有可导入的导航项')
 
-  const themeMode = THEME_MODES.includes(obj.themeMode as ThemeMode)
-    ? (obj.themeMode as ThemeMode)
-    : undefined
+  const themeMode = sanitizeThemeMode(obj.themeMode)
   const searchEngine = typeof obj.searchEngine === 'string' ? obj.searchEngine : undefined
 
   return { quickNavItems: items, themeMode, searchEngine }

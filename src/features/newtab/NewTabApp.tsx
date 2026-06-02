@@ -2,21 +2,186 @@
  * 新标签页主体：主题应用 + 搜索框 + 快捷导航。
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { SHIP_NAME, SITE_URL } from '@/utils/constants'
 import { quickNavItems, searchEngine, themeMode, type QuickNavItem, type ThemeMode } from '@/utils/settings' // prettier-ignore
-import { applyTheme, nextThemeMode, watchSystemTheme } from '@/utils/theme'
+import { applyTheme, normalizeThemeMode, watchAutoTheme } from '@/utils/theme'
 import { downloadConfig, mergeItems, parseConfig } from './config'
 import { DEFAULT_QUICK_NAV } from './engines'
 import QuickNav from './QuickNav'
 import SearchBar from './SearchBar'
 
-const THEME_ICON: Record<ThemeMode, string> = { system: '🖥️', light: '☀️', dark: '🌙' }
-const THEME_LABEL: Record<ThemeMode, string> = { system: '跟随系统', light: '浅色', dark: '深色' }
+const THEME_LABEL: Record<ThemeMode, string> = { auto: '自动', light: '浅色', dark: '深色' }
+const THEME_OPTIONS: ThemeMode[] = ['dark', 'auto', 'light']
+const THEME_THUMB_OFFSET: Record<ThemeMode, string> = {
+  dark: 'translate-x-0',
+  auto: 'translate-x-[41px]',
+  light: 'translate-x-[82px]',
+}
+const LEGACY_DEFAULT_QUICK_NAV_IDS = [
+  'github',
+  'mdn',
+  'stackoverflow',
+  'npm',
+  'juejin',
+  'caniuse',
+  'devdocs',
+  'vercel',
+]
+
+function isLegacyDefaultQuickNav(items: QuickNavItem[]): boolean {
+  return (
+    items.length === LEGACY_DEFAULT_QUICK_NAV_IDS.length &&
+    items.every((item, index) => item.id === LEGACY_DEFAULT_QUICK_NAV_IDS[index])
+  )
+}
+
+function mergeMissingDefaultQuickNav(items: QuickNavItem[]): QuickNavItem[] {
+  const ids = new Set(items.map((item) => item.id))
+  const urls = new Set(items.map((item) => item.url))
+  return [...items, ...DEFAULT_QUICK_NAV.filter((item) => !ids.has(item.id) && !urls.has(item.url))]
+}
+
+function MoonIcon() {
+  return (
+    <svg viewBox='0 0 24 24' aria-hidden='true' className='h-4 w-4 fill-none stroke-current'>
+      <path
+        d='M20.3 14.6A7.7 7.7 0 0 1 9.4 3.7 8.4 8.4 0 1 0 20.3 14.6Z'
+        strokeLinecap='round'
+        strokeLinejoin='round'
+        strokeWidth='2'
+      />
+    </svg>
+  )
+}
+
+function AutoIcon() {
+  return (
+    <svg viewBox='0 0 24 24' aria-hidden='true' className='h-4 w-4 fill-none stroke-current'>
+      <path
+        d='M20.5 12a8.5 8.5 0 1 1-2.1-5.6'
+        strokeLinecap='round'
+        strokeLinejoin='round'
+        strokeWidth='1.9'
+      />
+      <path d='M18.7 3.8v3.4h-3.4M12 7.2V12l3 1.8' strokeLinecap='round' strokeWidth='1.9' />
+    </svg>
+  )
+}
+
+function SunIcon() {
+  return (
+    <svg viewBox='0 0 24 24' aria-hidden='true' className='h-4 w-4 fill-none stroke-current'>
+      <path d='M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6Z' strokeWidth='1.9' />
+      <path
+        d='M12 2.8v2.1M12 19.1v2.1M4.1 4.1l1.5 1.5M18.4 18.4l1.5 1.5M2.8 12h2.1M19.1 12h2.1M4.1 19.9l1.5-1.5M18.4 5.6l1.5-1.5'
+        strokeLinecap='round'
+        strokeWidth='1.9'
+      />
+    </svg>
+  )
+}
+
+function ThemeIcon({ mode }: { mode: ThemeMode }) {
+  if (mode === 'dark') return <MoonIcon />
+  if (mode === 'light') return <SunIcon />
+  return <AutoIcon />
+}
+
+function getThemeSwitchBg(mode: ThemeMode, effectiveDark: boolean): string {
+  if (mode === 'dark') {
+    return 'border-slate-700 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 shadow-slate-950/20'
+  }
+  if (mode === 'light') {
+    return 'border-amber-200 bg-gradient-to-r from-sky-100 via-blue-50 to-amber-100 shadow-amber-200/50'
+  }
+  return effectiveDark
+    ? 'border-slate-700 bg-gradient-to-r from-slate-950 via-slate-800 to-sky-950 shadow-slate-950/20'
+    : 'border-sky-200 bg-gradient-to-r from-sky-100 via-white to-amber-100 shadow-sky-200/50'
+}
+
+function getThemeThumbBg(mode: ThemeMode): string {
+  if (mode === 'dark') return 'bg-slate-950 shadow-slate-950/40'
+  if (mode === 'light') return 'bg-amber-300 shadow-amber-300/50'
+  return 'bg-white shadow-slate-300/60 dark:bg-slate-700 dark:shadow-slate-950/30'
+}
+
+function getThemeIconColor(option: ThemeMode, selected: boolean): string {
+  if (!selected) {
+    return 'text-slate-500/70 hover:text-slate-700 dark:text-slate-400/80 dark:hover:text-slate-100'
+  }
+  if (option === 'dark') return 'text-slate-100'
+  if (option === 'light') return 'text-amber-950'
+  return 'text-sky-700 dark:text-sky-100'
+}
+
+function getThemeIconTransform(option: ThemeMode, selected: boolean): string {
+  if (!selected) return 'scale-100'
+  if (option === 'light') return 'rotate-90 scale-110'
+  return 'scale-110'
+}
+
+function ThemeSwitch({
+  mode,
+  effectiveDark,
+  onChange,
+}: {
+  mode: ThemeMode
+  effectiveDark: boolean
+  onChange: (mode: ThemeMode) => void
+}) {
+  return (
+    <div
+      role='radiogroup'
+      aria-label='颜色主题'
+      title={`当前：${THEME_LABEL[mode]}${
+        mode === 'auto' ? `（当前${effectiveDark ? '深色' : '浅色'}）` : ''
+      }`}
+      className={`relative grid h-10 w-[132px] grid-cols-3 items-center overflow-hidden rounded-full border p-1 shadow-sm transition-all duration-500 ${getThemeSwitchBg(
+        mode,
+        effectiveDark,
+      )}`}
+    >
+      <span
+        aria-hidden='true'
+        className={`pointer-events-none absolute left-1 top-1 h-8 w-10 rounded-full ring-1 ring-white/60 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+          THEME_THUMB_OFFSET[mode]
+        } ${getThemeThumbBg(mode)}`}
+      />
+      {THEME_OPTIONS.map((option) => {
+        const selected = option === mode
+        return (
+          <button
+            key={option}
+            type='button'
+            role='radio'
+            aria-checked={selected}
+            aria-label={THEME_LABEL[option]}
+            title={THEME_LABEL[option]}
+            onClick={() => onChange(option)}
+            className={`relative z-10 flex h-8 w-10 items-center justify-center rounded-full outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400/70 ${
+              selected ? 'scale-110' : 'scale-95'
+            } ${getThemeIconColor(option, selected)}`}
+          >
+            <span
+              className={`transition-transform duration-500 ${getThemeIconTransform(
+                option,
+                selected,
+              )}`}
+            >
+              <ThemeIcon mode={option} />
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 export default function NewTabApp() {
-  const [mode, setMode] = useState<ThemeMode>('system')
+  const [mode, setMode] = useState<ThemeMode>('auto')
+  const [effectiveDark, setEffectiveDark] = useState(false)
   const [items, setItems] = useState<QuickNavItem[]>([])
   const [ready, setReady] = useState(false)
   const [toast, setToast] = useState('')
@@ -24,25 +189,31 @@ export default function NewTabApp() {
 
   // 初始化主题
   useEffect(() => {
-    themeMode.getValue().then((m) => {
+    themeMode.getValue().then((stored) => {
+      const m = normalizeThemeMode(stored)
       setMode(m)
-      applyTheme(m)
+      setEffectiveDark(applyTheme(m))
+      if (stored !== m) themeMode.setValue(m)
     })
   }, [])
 
-  // system 模式下跟随系统配色变化
-  useEffect(() => {
-    applyTheme(mode)
-    if (mode !== 'system') return undefined
-    return watchSystemTheme(() => applyTheme('system'))
+  // auto 模式下按时间分界点自动切换。
+  useLayoutEffect(() => {
+    setEffectiveDark(applyTheme(mode))
+    if (mode !== 'auto') return undefined
+    return watchAutoTheme(() => setEffectiveDark(applyTheme('auto')))
   }, [mode])
 
-  // 初始化导航（首次为空则落库默认值）
+  // 初始化导航（首次为空则落库默认值；旧默认未改动过时自动补齐新版默认项）
   useEffect(() => {
     quickNavItems.getValue().then((stored) => {
       if (stored.length === 0) {
         setItems(DEFAULT_QUICK_NAV)
         quickNavItems.setValue(DEFAULT_QUICK_NAV)
+      } else if (isLegacyDefaultQuickNav(stored)) {
+        const next = mergeMissingDefaultQuickNav(stored)
+        setItems(next)
+        quickNavItems.setValue(next)
       } else {
         setItems(stored)
       }
@@ -55,9 +226,9 @@ export default function NewTabApp() {
     quickNavItems.setValue(next)
   }
 
-  const toggleTheme = () => {
-    const next = nextThemeMode(mode)
+  const changeTheme = (next: ThemeMode) => {
     setMode(next)
+    setEffectiveDark(applyTheme(next))
     themeMode.setValue(next)
   }
 
@@ -84,6 +255,7 @@ export default function NewTabApp() {
       updateItems(merged)
       if (config.themeMode) {
         setMode(config.themeMode)
+        setEffectiveDark(applyTheme(config.themeMode))
         themeMode.setValue(config.themeMode)
       }
       if (config.searchEngine) searchEngine.setValue(config.searchEngine)
@@ -101,15 +273,9 @@ export default function NewTabApp() {
           <img src='/icons/48.png' alt='' className='h-6 w-6' />
           <span className='text-sm font-semibold tracking-tight'>{SHIP_NAME}</span>
         </div>
-        <button
-          type='button'
-          onClick={toggleTheme}
-          title={`主题：${THEME_LABEL[mode]}（点击切换）`}
-          className='flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 transition-colors hover:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
-        >
-          <span className='text-sm leading-none'>{THEME_ICON[mode]}</span>
-          {THEME_LABEL[mode]}
-        </button>
+        <div className='flex items-center gap-2'>
+          <ThemeSwitch mode={mode} effectiveDark={effectiveDark} onChange={changeTheme} />
+        </div>
       </header>
 
       {/* 主体 */}

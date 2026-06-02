@@ -6,14 +6,8 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { QuickNavItem } from '@/utils/settings'
 import { searchEngine } from '@/utils/settings'
-import {
-  buildSearchUrl,
-  ENGINES,
-  faviconUrl,
-  getEngine,
-  parseBang,
-  type SearchEngine,
-} from './engines'
+import { buildSearchUrl, ENGINES, getEngine, parseBang, type SearchEngine } from './engines'
+import SiteIcon from './SiteIcon'
 import { useSuggestions } from './useSuggestions'
 
 interface SearchBarProps {
@@ -176,7 +170,12 @@ export default function SearchBar({ navItems }: SearchBarProps) {
                 i === active ? 'bg-slate-100 dark:bg-slate-700' : ''
               }`}
             >
-              <img src={faviconUrl(s.url, 32)} alt='' className='h-4 w-4 shrink-0 rounded-sm' />
+              <SiteIcon
+                url={s.url}
+                title={s.title}
+                size={32}
+                className='h-4 w-4 shrink-0 rounded-sm'
+              />
               <span className='flex-1 truncate text-sm text-slate-700 dark:text-slate-200'>
                 {s.title}
               </span>

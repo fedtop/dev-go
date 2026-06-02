@@ -2,10 +2,10 @@
  * 快捷导航卡片栅格：展示 + 增 / 删 / 改，数据持久化到 storage。
  */
 
-import { useEffect, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 
 import type { QuickNavItem } from '@/utils/settings'
-import { faviconUrl } from './engines'
+import SiteIcon from './SiteIcon'
 
 interface QuickNavProps {
   items: QuickNavItem[]
@@ -20,6 +20,9 @@ interface EditState {
 
 const EMPTY: EditState = { id: null, title: '', url: '' }
 
+type DropPosition = 'before' | 'after'
+const REORDER_ANIMATION_MS = 180
+
 /** 规范化 url：缺协议时补 https:// */
 function normalizeUrl(url: string): string {
   const u = url.trim()
@@ -29,11 +32,120 @@ function normalizeUrl(url: string): string {
 
 export default function QuickNav({ items, onChange }: QuickNavProps) {
   const [edit, setEdit] = useState<EditState | null>(null)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [dragItems, setDragItems] = useState<QuickNavItem[] | null>(null)
+  const itemRefs = useRef(new Map<string, HTMLDivElement>())
+  const pendingRects = useRef<Map<string, DOMRect> | null>(null)
+  const animationFrame = useRef<number | null>(null)
+  const displayItems = dragItems ?? items
 
   const openAdd = () => setEdit({ ...EMPTY })
   const openEdit = (item: QuickNavItem) => setEdit({ ...item })
 
   const remove = (id: string) => onChange(items.filter((i) => i.id !== id))
+
+  const readItemRects = () => {
+    const rects = new Map<string, DOMRect>()
+    itemRefs.current.forEach((node, id) => {
+      rects.set(id, node.getBoundingClientRect())
+    })
+    return rects
+  }
+
+  useLayoutEffect(() => {
+    const fromRects = pendingRects.current
+    pendingRects.current = null
+
+    if (!fromRects) return undefined
+    if (animationFrame.current != null) cancelAnimationFrame(animationFrame.current)
+
+    itemRefs.current.forEach((node) => {
+      const element = node
+      element.style.transition = 'none'
+      element.style.transform = ''
+    })
+
+    const nextRects = readItemRects()
+
+    const animations: Array<{ node: HTMLDivElement; dx: number; dy: number }> = []
+    nextRects.forEach((rect, id) => {
+      const previous = fromRects.get(id)
+      const node = itemRefs.current.get(id)
+      if (!previous || !node) return
+
+      const dx = previous.left - rect.left
+      const dy = previous.top - rect.top
+      if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+        animations.push({ node, dx, dy })
+      }
+    })
+
+    animations.forEach((animation) => {
+      const element = animation.node
+      element.style.transition = 'none'
+      element.style.transform = `translate(${animation.dx}px, ${animation.dy}px)`
+    })
+
+    if (animations.length > 0) {
+      // Force layout so the browser starts from the inverted transform.
+      animations.forEach((animation) => animation.node.getBoundingClientRect())
+      animationFrame.current = requestAnimationFrame(() => {
+        animations.forEach((animation) => {
+          const element = animation.node
+          element.style.transition = `transform ${REORDER_ANIMATION_MS}ms cubic-bezier(0.2, 0.8, 0.2, 1)`
+          element.style.transform = ''
+        })
+        animationFrame.current = null
+      })
+    }
+
+    return undefined
+  }, [displayItems])
+
+  const getDropPosition = (e: React.DragEvent<HTMLElement>): DropPosition => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    return e.clientX < rect.left + rect.width / 2 ? 'before' : 'after'
+  }
+
+  const isSameOrder = (a: QuickNavItem[], b: QuickNavItem[]) =>
+    a.length === b.length && a.every((item, index) => item.id === b[index]?.id)
+
+  const reorderItems = (
+    sourceItems: QuickNavItem[],
+    sourceId: string,
+    targetId: string,
+    position: DropPosition,
+  ): QuickNavItem[] => {
+    if (sourceId === targetId) return sourceItems
+    const sourceIndex = sourceItems.findIndex((item) => item.id === sourceId)
+    const targetIndex = sourceItems.findIndex((item) => item.id === targetId)
+    if (sourceIndex < 0 || targetIndex < 0) return sourceItems
+
+    const next = [...sourceItems]
+    const [source] = next.splice(sourceIndex, 1)
+    const baseIndex = position === 'after' ? targetIndex + 1 : targetIndex
+    const insertIndex = sourceIndex < baseIndex ? baseIndex - 1 : baseIndex
+    next.splice(Math.max(0, Math.min(insertIndex, next.length)), 0, source)
+    return next
+  }
+
+  const resetDrag = () => {
+    setDraggingId(null)
+    setDragItems(null)
+  }
+
+  const previewReorder = (targetId: string, position: DropPosition) => {
+    if (!draggingId || draggingId === targetId) return
+    const next = reorderItems(displayItems, draggingId, targetId, position)
+    if (isSameOrder(displayItems, next)) return
+    pendingRects.current = readItemRects()
+    setDragItems(next)
+  }
+
+  const commitDrag = () => {
+    if (dragItems && !isSameOrder(items, dragItems)) onChange(dragItems)
+    resetDrag()
+  }
 
   const save = () => {
     if (!edit) return
@@ -50,46 +162,78 @@ export default function QuickNav({ items, onChange }: QuickNavProps) {
 
   return (
     <div className='w-full'>
-      <div className='grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8'>
-        {items.map((item) => (
-          <div key={item.id} className='group relative'>
-            <a
-              href={item.url}
-              className='flex flex-col items-center gap-2 rounded-2xl border border-transparent bg-white/70 px-2 py-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-200 hover:shadow-md dark:bg-slate-800/60 dark:hover:border-slate-700'
+      <div
+        className='grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8'
+        onDragOver={(e) => {
+          if (draggingId) e.preventDefault()
+        }}
+        onDrop={(e) => {
+          if (!draggingId) return
+          e.preventDefault()
+          commitDrag()
+        }}
+      >
+        {displayItems.map((item) => {
+          const isDragging = draggingId === item.id
+
+          return (
+            <div
+              key={item.id}
+              ref={(node) => {
+                if (node) itemRefs.current.set(item.id, node)
+                else itemRefs.current.delete(item.id)
+              }}
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.effectAllowed = 'move'
+                e.dataTransfer.setData('text/plain', item.id)
+                setDraggingId(item.id)
+                setDragItems(items)
+              }}
+              onDragOver={(e) => {
+                e.preventDefault()
+                if (!draggingId || draggingId === item.id) return
+                e.dataTransfer.dropEffect = 'move'
+                previewReorder(item.id, getDropPosition(e))
+              }}
+              onDragEnd={resetDrag}
+              className='group relative cursor-grab will-change-transform active:cursor-grabbing'
             >
-              <img
-                src={faviconUrl(item.url)}
-                alt=''
-                className='h-8 w-8 rounded-lg'
-                onError={(e) => {
-                  ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
-                }}
-              />
-              <span className='line-clamp-1 w-full text-xs text-slate-600 dark:text-slate-300'>
-                {item.title}
-              </span>
-            </a>
-            {/* 悬停操作 */}
-            <div className='absolute right-1 top-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100'>
-              <button
-                type='button'
-                title='编辑'
-                onClick={() => openEdit(item)}
-                className='flex h-5 w-5 items-center justify-center rounded-full bg-slate-200/90 text-[10px] text-slate-600 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-200'
+              <a
+                href={item.url}
+                target='_blank'
+                rel='noreferrer'
+                className={`flex flex-col items-center gap-2 rounded-2xl border bg-white/70 px-2 py-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-200 hover:shadow-md dark:bg-slate-800/60 dark:hover:border-slate-700 ${
+                  isDragging ? 'scale-95 opacity-40' : ''
+                } border-transparent`}
               >
-                ✎
-              </button>
-              <button
-                type='button'
-                title='删除'
-                onClick={() => remove(item.id)}
-                className='flex h-5 w-5 items-center justify-center rounded-full bg-slate-200/90 text-[10px] text-slate-600 hover:bg-red-500 hover:text-white dark:bg-slate-700 dark:text-slate-200'
-              >
-                ✕
-              </button>
+                <SiteIcon url={item.url} title={item.title} className='h-8 w-8 rounded-lg' />
+                <span className='line-clamp-1 w-full text-xs text-slate-600 dark:text-slate-300'>
+                  {item.title}
+                </span>
+              </a>
+              {/* 悬停操作 */}
+              <div className='absolute right-1 top-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100'>
+                <button
+                  type='button'
+                  title='编辑'
+                  onClick={() => openEdit(item)}
+                  className='flex h-5 w-5 items-center justify-center rounded-full bg-slate-200/90 text-[10px] text-slate-600 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-200'
+                >
+                  ✎
+                </button>
+                <button
+                  type='button'
+                  title='删除'
+                  onClick={() => remove(item.id)}
+                  className='flex h-5 w-5 items-center justify-center rounded-full bg-slate-200/90 text-[10px] text-slate-600 hover:bg-red-500 hover:text-white dark:bg-slate-700 dark:text-slate-200'
+                >
+                  ✕
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
 
         {/* 新增卡片 */}
         <button

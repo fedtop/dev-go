@@ -7,6 +7,7 @@
  */
 
 import type { DictResult } from '@/types/dict'
+import type { NetworkMode } from '@/utils/settings'
 
 export interface CorsProxyRequest {
   url: string
@@ -27,6 +28,23 @@ export interface CorsProxyResponse {
   error?: string
 }
 
+export interface NetworkProxyStatus {
+  ok: boolean
+  mode: NetworkMode
+  managed: boolean
+  levelOfControl?: chrome.types.ChromeSettingGetResultDetails['levelOfControl']
+  error?: string
+}
+
+export interface NetworkRuleListDownloadStatus {
+  ok: boolean
+  url: string
+  lastUpdate?: string
+  proxyRuleCount?: number
+  directRuleCount?: number
+  error?: string
+}
+
 /** Background 负责响应的请求消息（runtime 通道） */
 export type RuntimeMessage =
   | { type: 'translate'; text: string; html?: boolean }
@@ -34,6 +52,10 @@ export type RuntimeMessage =
   | { type: 'test' }
   | { type: 'sync-cors-bypass' }
   | { type: 'cors-proxy-fetch'; request: CorsProxyRequest }
+  | { type: 'apply-network-mode'; mode: NetworkMode }
+  | { type: 'sync-network-proxy' }
+  | { type: 'get-network-status' }
+  | { type: 'download-network-rule-list'; url: string }
 
 /** Background 对 RuntimeMessage 的响应 */
 export interface RuntimeResponseMap {
@@ -42,6 +64,10 @@ export interface RuntimeResponseMap {
   test: boolean
   'sync-cors-bypass': boolean
   'cors-proxy-fetch': CorsProxyResponse
+  'apply-network-mode': NetworkProxyStatus
+  'sync-network-proxy': NetworkProxyStatus
+  'get-network-status': NetworkProxyStatus
+  'download-network-rule-list': NetworkRuleListDownloadStatus
 }
 
 /** 发给内容脚本的指令消息（tab 通道） */

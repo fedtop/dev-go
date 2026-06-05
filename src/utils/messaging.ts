@@ -45,9 +45,61 @@ export interface NetworkRuleListDownloadStatus {
   error?: string
 }
 
+/* ------------------------------- 媒体资源嗅探 ------------------------------- */
+
+export type MediaResourceKind = 'image' | 'video'
+
+export type MediaResourceSource = 'network' | 'dom' | 'network+dom'
+
+export interface MediaResourceCandidate {
+  url: string
+  kind: MediaResourceKind
+  source: 'network' | 'dom'
+  pageUrl?: string
+  mime?: string
+  extension?: string
+  fileName?: string
+  thumbnailUrl?: string
+  size?: number
+  width?: number
+  height?: number
+  firstSeen?: number
+  lastSeen?: number
+}
+
+export interface MediaResource extends Required<Pick<MediaResourceCandidate, 'url' | 'kind'>> {
+  id: string
+  tabId: number
+  source: MediaResourceSource
+  pageUrl?: string
+  mime?: string
+  extension?: string
+  fileName: string
+  thumbnailUrl?: string
+  size?: number
+  width?: number
+  height?: number
+  firstSeen: number
+  lastSeen: number
+}
+
+export interface MediaResourceListResult {
+  tabId?: number
+  pageUrl?: string
+  resources: MediaResource[]
+  error?: string
+}
+
+export interface MediaDownloadResult {
+  ok: boolean
+  downloadId?: number
+  error?: string
+}
+
 /** Background 负责响应的请求消息（runtime 通道） */
 export type RuntimeMessage =
   | { type: 'translate'; text: string; html?: boolean }
+  | { type: 'translate-batch'; texts: string[]; html?: boolean }
   | { type: 'lookup'; word: string }
   | { type: 'test' }
   | { type: 'sync-cors-bypass' }
@@ -56,10 +108,14 @@ export type RuntimeMessage =
   | { type: 'sync-network-proxy' }
   | { type: 'get-network-status' }
   | { type: 'download-network-rule-list'; url: string }
+  | { type: 'get-media-resources'; tabId?: number; includeDom?: boolean }
+  | { type: 'clear-media-resources'; tabId?: number }
+  | { type: 'download-media-resource'; url: string; fileName?: string; saveAs?: boolean }
 
 /** Background 对 RuntimeMessage 的响应 */
 export interface RuntimeResponseMap {
   translate: { text: string }
+  'translate-batch': { texts: string[] }
   lookup: DictResult | null
   test: boolean
   'sync-cors-bypass': boolean
@@ -68,10 +124,16 @@ export interface RuntimeResponseMap {
   'sync-network-proxy': NetworkProxyStatus
   'get-network-status': NetworkProxyStatus
   'download-network-rule-list': NetworkRuleListDownloadStatus
+  'get-media-resources': MediaResourceListResult
+  'clear-media-resources': { ok: boolean; removed: number }
+  'download-media-resource': MediaDownloadResult
 }
 
 /** 发给内容脚本的指令消息（tab 通道） */
-export type TabMessage = { type: 'translate-page' } | { type: 'tip'; msg: string }
+export type TabMessage =
+  | { type: 'translate-page' }
+  | { type: 'tip'; msg: string }
+  | { type: 'collect-media-resources' }
 
 /** 向 Background 发送请求并返回类型化结果 */
 export async function sendRuntimeMessage<T extends RuntimeMessage['type']>(

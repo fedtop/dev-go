@@ -39,6 +39,7 @@ interface GoogleTransRes {
 }
 
 const GOOGLE_ENDPOINT = 'https://translate.google.com/translate_a/single'
+const GOOGLE_BATCH_CONCURRENCY = 3
 
 /** 有道翻译（查词，返回词典释义） */
 export async function youdaoTrans(queryStr: string): Promise<YoudaoTransRes | null> {
@@ -55,19 +56,49 @@ export async function youdaoTrans(queryStr: string): Promise<YoudaoTransRes | nu
 
 /** Google 翻译（整句机器翻译；默认中英互译：含中文译英，否则译中） */
 export async function googleTrans(text: string, to?: string): Promise<string> {
+  if (!text.trim()) return ''
+
   const target = to ?? pickTarget(text, { zh: 'zh-CN', en: 'en' })
-  const url = `${GOOGLE_ENDPOINT}?client=gtx&dt=t&dt=bd&dj=1&source=input&q=${encodeURIComponent(
-    text,
-  )}&sl=auto&tl=${target}`
+  const params = new URLSearchParams({
+    client: 'gtx',
+    dt: 't',
+    dj: '1',
+    source: 'input',
+    q: text,
+    sl: 'auto',
+    tl: target,
+  })
 
   try {
-    const res = await fetch(url)
+    const res = await fetch(`${GOOGLE_ENDPOINT}?${params.toString()}`)
+    if (!res.ok) return ''
     const data: GoogleTransRes = await res.json()
-    return data.sentences.map((it) => it.trans).join('')
+    return data.sentences?.map((it) => it.trans).join('') ?? ''
   } catch (error) {
     console.error('[DevGo] googleTrans failed:', error)
     return ''
   }
+}
+
+/** Google 免费接口没有稳定的 HTML/数组模式；批量时在后台限并发逐条请求。 */
+export async function googleTransList(texts: string[], to?: string): Promise<string[]> {
+  const results = Array(texts.length).fill('')
+  const workerCount = Math.min(GOOGLE_BATCH_CONCURRENCY, texts.length)
+  let cursor = 0
+
+  async function worker(): Promise<void> {
+    const index = cursor
+    cursor += 1
+
+    if (index >= texts.length) return
+
+    results[index] = await googleTrans(texts[index], to)
+    await worker()
+  }
+
+  await Promise.all(Array.from({ length: workerCount }, () => worker()))
+
+  return results
 }
 
 /** 测试 Google 翻译连通性 */

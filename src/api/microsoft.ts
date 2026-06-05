@@ -13,10 +13,10 @@ import type { DictResult } from '@/types/dict'
 import { hasChinese, pickTarget } from '@/utils/lang'
 
 const AUTH_URL = 'https://edge.microsoft.com/translate/auth'
-const TRANS_URL =
-  'https://api-edge.cognitive.microsofttranslator.com/translate?api-version=3.0&from={from}&to={to}'
+const TRANS_URL = 'https://api-edge.cognitive.microsofttranslator.com/translate'
 const LOOKUP_URL =
   'https://api-edge.cognitive.microsofttranslator.com/dictionary/lookup?api-version=3.0&from={from}&to={to}'
+const MICROSOFT_BATCH_SIZE = 25
 
 interface MicrosoftTransItem {
   translations: Array<{ text: string; to: string }>
@@ -25,10 +25,16 @@ interface MicrosoftTransItem {
 // JWT 缓存（含过期时间），避免每次翻译都重新取 token
 let tokenCache: { token: string; expireAt: number } | null = null
 
+function decodeBase64Url(input: string): string {
+  const normalized = input.replace(/-/g, '+').replace(/_/g, '/')
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
+  return atob(padded)
+}
+
 /** 解析 JWT 的 exp（秒），失败则给一个保守的过期时间 */
 function parseJwtExpire(token: string): number {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]))
+    const payload = JSON.parse(decodeBase64Url(token.split('.')[1]))
     if (typeof payload.exp === 'number') {
       // 提前 30s 过期，留出网络余量
       return payload.exp * 1000 - 30_000
@@ -45,11 +51,51 @@ async function getToken(): Promise<string> {
   if (tokenCache && Date.now() < tokenCache.expireAt) {
     return tokenCache.token
   }
-  const res = await fetch(AUTH_URL)
+  const res = await fetch(AUTH_URL, {
+    headers: {
+      accept: '*/*',
+      'cache-control': 'no-cache',
+      pragma: 'no-cache',
+    },
+  })
   if (!res.ok) throw new Error(`auth failed: ${res.status}`)
   const token = await res.text()
   tokenCache = { token, expireAt: parseJwtExpire(token) }
   return token
+}
+
+function buildTranslateUrl(target: string, html?: boolean): string {
+  const params = new URLSearchParams({
+    'api-version': '3.0',
+    to: target,
+  })
+  if (html) params.set('textType', 'html')
+  return `${TRANS_URL}?${params.toString()}`
+}
+
+async function requestMicrosoftTranslate(
+  texts: string[],
+  html: boolean,
+  target: string,
+): Promise<string[]> {
+  const token = await getToken()
+  const res = await fetch(buildTranslateUrl(target, html), {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(texts.map((text) => ({ Text: text }))),
+  })
+
+  if (!res.ok) {
+    if (res.status === 401) tokenCache = null
+    throw new Error(`translate failed: ${res.status}`)
+  }
+
+  const data: MicrosoftTransItem[] = await res.json()
+  return texts.map((_, index) => data[index]?.translations?.[0]?.text ?? '')
 }
 
 /** 微软翻译（整句机器翻译；默认中英互译：含中文译英，否则译中）
@@ -61,31 +107,55 @@ export async function microsoftTrans(text: string, html?: boolean, to?: string):
   const target = to ?? pickTarget(text, { zh: 'zh-Hans', en: 'en' })
 
   try {
-    const token = await getToken()
-    let url = TRANS_URL.replace('{from}', '').replace('{to}', target)
-    if (html) url += '&textType=html'
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify([{ Text: text }]),
-    })
-
-    if (!res.ok) {
-      // token 可能失效，清掉缓存下次重取
-      if (res.status === 401) tokenCache = null
-      return ''
-    }
-
-    const data: MicrosoftTransItem[] = await res.json()
-    return data[0]?.translations?.[0]?.text ?? ''
+    const [result] = await microsoftTransList([text], html, target)
+    return result ?? ''
   } catch (error) {
     console.error('[DevGo] microsoftTrans failed:', error)
     return ''
   }
+}
+
+/** 微软批量翻译：同一目标语言、同一 textType 下合并请求，减少整页翻译的请求数。 */
+export async function microsoftTransList(
+  texts: string[],
+  html?: boolean,
+  to?: string,
+): Promise<string[]> {
+  const results = Array(texts.length).fill('')
+  const target = to ?? pickTarget(texts.join('\n'), { zh: 'zh-Hans', en: 'en' })
+  const chunkCount = Math.ceil(texts.length / MICROSOFT_BATCH_SIZE)
+
+  await Promise.all(
+    Array.from({ length: chunkCount }, async (_, chunkIndex) => {
+      const start = chunkIndex * MICROSOFT_BATCH_SIZE
+      const chunk = texts.slice(start, start + MICROSOFT_BATCH_SIZE)
+      const indexed = chunk
+        .map((text, offset) => ({ text, offset }))
+        .filter(({ text }) => text.trim())
+
+      if (indexed.length === 0) return
+
+      try {
+        const sourceTexts = indexed.map(({ text }) => text)
+        let translated: string[]
+        try {
+          translated = await requestMicrosoftTranslate(sourceTexts, Boolean(html), target)
+        } catch (error) {
+          // Edge token 偶尔会提前失效；401 后清缓存并重试一次。
+          if (tokenCache !== null) throw error
+          translated = await requestMicrosoftTranslate(sourceTexts, Boolean(html), target)
+        }
+
+        indexed.forEach(({ offset }, index) => {
+          results[start + offset] = translated[index] ?? ''
+        })
+      } catch (error) {
+        console.error('[DevGo] microsoftTransList failed:', error)
+      }
+    }),
+  )
+
+  return results
 }
 
 /** 测试微软翻译连通性 */

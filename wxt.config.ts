@@ -30,7 +30,16 @@ export default defineConfig({
     ...(mode === 'development' ? { key: DEV_EXTENSION_KEY } : {}),
     name: 'DevGo',
     homepage_url: 'https://github.com/wangrongding',
-    permissions: ['contextMenus', 'tabs', 'storage', 'bookmarks', 'declarativeNetRequest', 'proxy'],
+    permissions: [
+      'contextMenus',
+      'tabs',
+      'storage',
+      'bookmarks',
+      'declarativeNetRequest',
+      'proxy',
+      'webRequest',
+      'downloads',
+    ],
     // 内容脚本、CORS 动态规则和后台代理都需要全站访问能力。
     host_permissions: ['<all_urls>'],
     web_accessible_resources: [

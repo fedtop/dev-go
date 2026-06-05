@@ -14,7 +14,7 @@ const pages = [
   { value: 'translate', label: '翻译' },
   { value: 'todo', label: '待办' },
   { value: 'network', label: '网络' },
-  { value: 'tools', label: '工具' },
+  { value: 'tools', label: '资源' },
   { value: 'function', label: '功能' },
 ]
 

@@ -117,17 +117,17 @@ export interface QuickNavItem {
 }
 
 /** 新标签页当前搜索引擎 id（见 features/newtab/engines.ts，默认 google） */
-export const searchEngine = storage.defineItem<string>('local:searchEngine', {
+export const searchEngine = storage.defineItem<string>('sync:searchEngine', {
   fallback: 'google',
 })
 
 /** 快捷导航卡片列表（为空时由 newtab 落库默认开发者站点） */
-export const quickNavItems = storage.defineItem<QuickNavItem[]>('local:quickNavItems', {
+export const quickNavItems = storage.defineItem<QuickNavItem[]>('sync:quickNavItems', {
   fallback: [],
 })
 
 /** 主题模式：默认自动（18:00-06:00 深色，其余浅色） */
-export const themeMode = storage.defineItem<StoredThemeMode>('local:themeMode', {
+export const themeMode = storage.defineItem<StoredThemeMode>('sync:themeMode', {
   fallback: 'auto',
 })
 
@@ -142,8 +142,8 @@ export interface TodoItem {
   createdAt: number
 }
 
-/** 新标签页 TODO 任务列表（持久化、跨页面共享） */
-export const todoItems = storage.defineItem<TodoItem[]>('local:todoItems', {
+/** 新标签页 TODO 任务列表（持久化、跨设备同步，抗扩展卸载/重装） */
+export const todoItems = storage.defineItem<TodoItem[]>('sync:todoItems', {
   fallback: [],
 })
 
@@ -154,3 +154,51 @@ export const todoItems = storage.defineItem<TodoItem[]>('local:todoItems', {
 export const popupInitialTab = storage.defineItem<string>('local:popupInitialTab', {
   fallback: '',
 })
+
+/* ------------------------------ local → sync 迁移 ------------------------------ */
+
+/** 迁移完成标记，确保只搬一次（即便用户清空了 sync 数据也不会反复覆盖） */
+const syncMigrated = storage.defineItem<boolean>('sync:migratedFromLocal', { fallback: false })
+
+/**
+ * 把早期存于 local 的新标签页 / 待办数据搬到 sync，使其可跨设备同步、抗卸载。
+ * - 仅当从未迁移过时执行（一次性）。
+ * - 逐项仅在「sync 还是默认值 且 local 有有效数据」时搬运，避免覆盖更新的 sync 数据。
+ * - 旧 local 数据保留不删，作为本机兜底。
+ * 应在各页面渲染前 await（见各 entrypoint 的 main.tsx）。
+ */
+export async function migrateLocalToSync(): Promise<void> {
+  if (await syncMigrated.getValue()) return
+
+  // 这些 key 已从 local: 改为 sync:；直接读旧的 local 原始值。
+  const [localTodos, localNav, localTheme, localEngine] = await Promise.all([
+    storage.getItem<TodoItem[]>('local:todoItems'),
+    storage.getItem<QuickNavItem[]>('local:quickNavItems'),
+    storage.getItem<StoredThemeMode>('local:themeMode'),
+    storage.getItem<string>('local:searchEngine'),
+  ])
+
+  const [syncTodos, syncNav, syncTheme, syncEngine] = await Promise.all([
+    todoItems.getValue(),
+    quickNavItems.getValue(),
+    themeMode.getValue(),
+    searchEngine.getValue(),
+  ])
+
+  const tasks: Promise<unknown>[] = []
+  if (Array.isArray(localTodos) && localTodos.length > 0 && syncTodos.length === 0) {
+    tasks.push(todoItems.setValue(localTodos))
+  }
+  if (Array.isArray(localNav) && localNav.length > 0 && syncNav.length === 0) {
+    tasks.push(quickNavItems.setValue(localNav))
+  }
+  if (localTheme && syncTheme === 'auto') {
+    tasks.push(themeMode.setValue(localTheme))
+  }
+  if (localEngine && syncEngine === 'google') {
+    tasks.push(searchEngine.setValue(localEngine))
+  }
+
+  await Promise.all(tasks)
+  await syncMigrated.setValue(true)
+}

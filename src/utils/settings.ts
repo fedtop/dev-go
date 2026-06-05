@@ -33,6 +33,76 @@ export const enableCorsBypass = storage.defineItem<boolean>('local:enableCorsByp
   fallback: false,
 })
 
+/* -------------------------------- 网络面板 -------------------------------- */
+
+/** 网络模式：直连 / 系统代理 / 情境模式 */
+export type NetworkMode = 'direct' | 'system' | 'scenario'
+
+/** 情境模式代理协议 */
+export type NetworkProxyScheme = 'http' | 'https' | 'socks4' | 'socks5'
+
+/** 情境模式代理配置 */
+export interface NetworkProxyProfile {
+  scheme: NetworkProxyScheme
+  host: string
+  port: number
+  bypassList: string[]
+}
+
+/** 情境模式规则列表格式 */
+export type NetworkRuleListFormat = 'AutoProxy'
+
+/** 情境模式规则列表配置 */
+export interface NetworkRuleListConfig {
+  enabled: boolean
+  format: NetworkRuleListFormat
+  url: string
+  text: string
+  lastUpdate: string
+  proxyRuleCount: number
+  directRuleCount: number
+}
+
+export const DEFAULT_NETWORK_PROXY_PROFILE: NetworkProxyProfile = {
+  scheme: 'http',
+  host: '127.0.0.1',
+  port: 7890,
+  bypassList: ['<local>'],
+}
+
+export const DEFAULT_NETWORK_RULE_LIST: NetworkRuleListConfig = {
+  enabled: false,
+  format: 'AutoProxy',
+  url: '',
+  text: '',
+  lastUpdate: '',
+  proxyRuleCount: 0,
+  directRuleCount: 0,
+}
+
+/** 是否由 DevGo 接管浏览器代理配置（用户首次在网络面板应用后开启） */
+export const networkProxyManaged = storage.defineItem<boolean>('local:networkProxyManaged', {
+  fallback: false,
+})
+
+/** 当前网络模式 */
+export const networkMode = storage.defineItem<NetworkMode>('local:networkMode', {
+  fallback: 'system',
+})
+
+/** 情境模式的固定代理配置 */
+export const networkProxyProfile = storage.defineItem<NetworkProxyProfile>(
+  'local:networkProxyProfile',
+  {
+    fallback: DEFAULT_NETWORK_PROXY_PROFILE,
+  },
+)
+
+/** 情境模式规则列表：启用后命中规则走代理，未命中直连 */
+export const networkRuleList = storage.defineItem<NetworkRuleListConfig>('local:networkRuleList', {
+  fallback: DEFAULT_NETWORK_RULE_LIST,
+})
+
 /* ------------------------------- 新标签页 ------------------------------- */
 
 /** 主题模式：自动（按本地时间） / 浅色 / 深色 */

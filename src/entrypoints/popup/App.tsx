@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { SHIP_NAME, SITE_URL } from '@/utils/constants'
 import FunctionPage from '@/features/popup/FunctionPage'
 import TodoPage from '@/features/popup/TodoPage'
+import NetworkPage from '@/features/popup/NetworkPage'
 import ToolsPage from '@/features/popup/ToolsPage'
 import TranslatePage from '@/features/popup/TranslatePage'
 import Tabs from '@/ui/Tabs'
@@ -12,6 +13,7 @@ import { formatShortcut } from '@/utils/shortcut'
 const pages = [
   { value: 'translate', label: '翻译' },
   { value: 'todo', label: '待办' },
+  { value: 'network', label: '网络' },
   { value: 'tools', label: '工具' },
   { value: 'function', label: '功能' },
 ]
@@ -30,7 +32,7 @@ export default function App() {
   }, [])
 
   return (
-    <div className='flex w-[420px] flex-col bg-slate-50 text-slate-800'>
+    <div className='flex w-[500px] flex-col bg-slate-50 text-slate-800'>
       {/* 顶部栏 */}
       <header className='flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3'>
         <div className='flex items-center gap-2'>
@@ -44,6 +46,7 @@ export default function App() {
       <main className='px-4 py-4'>
         {active === 'translate' && <TranslatePage />}
         {active === 'todo' && <TodoPage />}
+        {active === 'network' && <NetworkPage />}
         {active === 'tools' && <ToolsPage />}
         {active === 'function' && <FunctionPage />}
       </main>

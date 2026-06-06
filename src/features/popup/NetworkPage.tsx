@@ -20,7 +20,8 @@ import Switch from '@/ui/Switch'
 const MODE_OPTIONS: Array<{ value: NetworkMode; label: string; description: string }> = [
   { value: 'direct', label: '直连', description: '不使用代理' },
   { value: 'system', label: '系统代理', description: '跟随系统设置' },
-  { value: 'scenario', label: '情境模式', description: '使用下方代理' },
+  { value: 'global', label: '代理模式', description: '全部走代理' },
+  { value: 'scenario', label: '情境模式', description: '按规则分流' },
 ]
 
 const SCHEME_OPTIONS: Array<{ value: NetworkProxyScheme; label: string }> = [
@@ -29,6 +30,11 @@ const SCHEME_OPTIONS: Array<{ value: NetworkProxyScheme; label: string }> = [
   { value: 'socks4', label: 'SOCKS4' },
   { value: 'socks5', label: 'SOCKS5' },
 ]
+
+/** 代理模式与情境模式都依赖下方填写的固定代理（host/port/绕过列表） */
+function usesProxyProfile(mode: NetworkMode): boolean {
+  return mode === 'global' || mode === 'scenario'
+}
 
 const CONTROL_LABELS: Record<string, string> = {
   not_controllable: '浏览器不允许扩展控制代理',
@@ -158,7 +164,7 @@ export default function NetworkPage() {
     setBusy(true)
 
     try {
-      if (nextMode === 'scenario') {
+      if (usesProxyProfile(nextMode)) {
         const saved = await persistScenarioProfile()
         if (!saved) return
       }
@@ -187,17 +193,17 @@ export default function NetworkPage() {
       const saved = await persistScenarioProfile()
       if (!saved) return
 
-      if (appliedMode === 'scenario') {
+      if (usesProxyProfile(appliedMode)) {
         const nextStatus = await sendRuntimeMessage({ type: 'sync-network-proxy' })
         setAppliedMode(nextStatus.mode)
         setStatus(nextStatus)
         return
       }
 
-      if (mode === 'scenario') {
+      if (usesProxyProfile(mode)) {
         const nextStatus = await sendRuntimeMessage({
           type: 'apply-network-mode',
-          mode: 'scenario',
+          mode,
         })
         setMode(nextStatus.mode)
         setAppliedMode(nextStatus.mode)
@@ -232,7 +238,7 @@ export default function NetworkPage() {
       setProfile(nextProfile)
       setBypassText(nextProfile.bypassList.join('\n'))
 
-      if (appliedMode === 'scenario') {
+      if (usesProxyProfile(appliedMode)) {
         const nextStatus = await sendRuntimeMessage({ type: 'sync-network-proxy' })
         setAppliedMode(nextStatus.mode)
         setStatus(nextStatus)
@@ -258,7 +264,7 @@ export default function NetworkPage() {
   }
 
   const syncScenarioIfActive = async () => {
-    if (appliedMode === 'scenario') {
+    if (usesProxyProfile(appliedMode)) {
       const nextStatus = await sendRuntimeMessage({ type: 'sync-network-proxy' })
       setAppliedMode(nextStatus.mode)
       setStatus(nextStatus)
@@ -341,9 +347,10 @@ export default function NetworkPage() {
 
   const statusText = getStatusText(status)
   const ruleListTime = formatRuleListTime(ruleList.lastUpdate)
-  const showScenarioSettings = mode === 'scenario'
+  const showProxySettings = usesProxyProfile(mode)
+  const showRuleListSettings = mode === 'scenario'
   const appliedModeLabel = MODE_OPTIONS.find((item) => item.value === appliedMode)?.label
-  const saveScenarioLabel = appliedMode === 'scenario' ? '保存并应用' : '保存并启用'
+  const saveScenarioLabel = usesProxyProfile(appliedMode) ? '保存并应用' : '保存并启用'
 
   return (
     <div className='flex flex-col gap-3'>
@@ -360,7 +367,7 @@ export default function NetworkPage() {
           </span>
         </div>
 
-        <div className='grid grid-cols-3 gap-2'>
+        <div className='grid grid-cols-2 gap-2'>
           {MODE_OPTIONS.map((item) => (
             <button
               key={item.value}
@@ -392,11 +399,11 @@ export default function NetworkPage() {
         )}
       </section>
 
-      {showScenarioSettings && (
+      {showProxySettings && (
         <>
           <section className='rounded-lg border border-slate-200 bg-white p-3 shadow-sm'>
             <div className='mb-2 flex items-center justify-between'>
-              <h2 className='text-sm font-semibold text-slate-800'>情境模式</h2>
+              <h2 className='text-sm font-semibold text-slate-800'>代理服务器</h2>
               <Button onClick={saveScenarioProfile} loading={busy} className='!px-2 !py-1 text-xs'>
                 {saveScenarioLabel}
               </Button>
@@ -429,66 +436,68 @@ export default function NetworkPage() {
             </div>
           </section>
 
-          <section className='rounded-lg border border-slate-200 bg-white p-3 shadow-sm'>
-            <div className='mb-2 flex items-center justify-between gap-3'>
-              <div className='min-w-0'>
-                <h2 className='text-sm font-semibold text-slate-800'>规则列表</h2>
-                <p className='truncate text-xs text-slate-400'>
-                  {ruleList.lastUpdate
-                    ? `${ruleListTime} · ${ruleList.proxyRuleCount} 条代理规则`
-                    : 'AutoProxy / GFWList'}
-                </p>
+          {showRuleListSettings && (
+            <section className='rounded-lg border border-slate-200 bg-white p-3 shadow-sm'>
+              <div className='mb-2 flex items-center justify-between gap-3'>
+                <div className='min-w-0'>
+                  <h2 className='text-sm font-semibold text-slate-800'>规则列表</h2>
+                  <p className='truncate text-xs text-slate-400'>
+                    {ruleList.lastUpdate
+                      ? `${ruleListTime} · ${ruleList.proxyRuleCount} 条代理规则`
+                      : 'AutoProxy / GFWList'}
+                  </p>
+                </div>
+                <Switch
+                  checked={ruleList.enabled}
+                  onChange={toggleRuleList}
+                  disabled={ruleListBusy}
+                />
               </div>
-              <Switch
-                checked={ruleList.enabled}
-                onChange={toggleRuleList}
-                disabled={ruleListBusy}
-              />
-            </div>
 
-            <div className='flex items-center gap-2'>
-              <input
-                value={ruleListUrl}
-                placeholder='https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt'
-                onChange={(event) => setRuleListUrl(event.target.value)}
-                className='min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500'
-              />
-              <Button onClick={downloadRuleList} loading={ruleListBusy} className='shrink-0'>
-                {ruleList.text ? '更新' : '下载'}
-              </Button>
-            </div>
+              <div className='flex items-center gap-2'>
+                <input
+                  value={ruleListUrl}
+                  placeholder='https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt'
+                  onChange={(event) => setRuleListUrl(event.target.value)}
+                  className='min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500'
+                />
+                <Button onClick={downloadRuleList} loading={ruleListBusy} className='shrink-0'>
+                  {ruleList.text ? '更新' : '下载'}
+                </Button>
+              </div>
 
-            <p className='mt-1.5 text-[10px] leading-4 text-slate-400'>
-              启用后命中规则走情境代理，未命中规则直连；未启用时情境模式保持全局代理。
-            </p>
-            <div className='mt-2 flex flex-wrap gap-1.5'>
-              {RECOMMENDED_RULE_LISTS.map((item) => (
-                <button
-                  key={item.url}
-                  type='button'
-                  title={item.url}
-                  onClick={() => useRecommendedRuleList(item.url)}
-                  className={`rounded border px-2 py-1 text-[10px] leading-4 transition-colors ${
-                    ruleListUrl === item.url
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-blue-300 hover:text-blue-600'
+              <p className='mt-1.5 text-[10px] leading-4 text-slate-400'>
+                启用后命中规则走情境代理，未命中规则直连；未启用时情境模式保持全局代理。
+              </p>
+              <div className='mt-2 flex flex-wrap gap-1.5'>
+                {RECOMMENDED_RULE_LISTS.map((item) => (
+                  <button
+                    key={item.url}
+                    type='button'
+                    title={item.url}
+                    onClick={() => useRecommendedRuleList(item.url)}
+                    className={`rounded border px-2 py-1 text-[10px] leading-4 transition-colors ${
+                      ruleListUrl === item.url
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-blue-300 hover:text-blue-600'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+              {(ruleListStatus || ruleList.directRuleCount > 0) && (
+                <p
+                  className={`mt-1 text-[10px] leading-4 ${
+                    ruleListError ? 'text-rose-500' : 'text-slate-500'
                   }`}
                 >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-            {(ruleListStatus || ruleList.directRuleCount > 0) && (
-              <p
-                className={`mt-1 text-[10px] leading-4 ${
-                  ruleListError ? 'text-rose-500' : 'text-slate-500'
-                }`}
-              >
-                {ruleListStatus ||
-                  `包含 ${ruleList.directRuleCount} 条直连例外，最后更新 ${ruleListTime}`}
-              </p>
-            )}
-          </section>
+                  {ruleListStatus ||
+                    `包含 ${ruleList.directRuleCount} 条直连例外，最后更新 ${ruleListTime}`}
+                </p>
+              )}
+            </section>
+          )}
 
           <section className='rounded-lg border border-slate-200 bg-white p-3 shadow-sm'>
             <div className='mb-2 flex items-center justify-between gap-2'>
@@ -511,7 +520,7 @@ export default function NetworkPage() {
               className='w-full resize-none rounded-lg border border-slate-300 bg-white px-2.5 py-2 font-mono text-xs leading-5 text-slate-700 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500'
             />
             <p className='mt-1.5 text-[10px] leading-4 text-slate-400'>
-              每行一个域名或 Chrome 代理绕过规则；仅在情境模式中生效。
+              每行一个域名或 Chrome 代理绕过规则；在代理模式与情境模式中生效。
             </p>
           </section>
         </>

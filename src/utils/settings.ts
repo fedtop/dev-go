@@ -35,8 +35,8 @@ export const enableCorsBypass = storage.defineItem<boolean>('local:enableCorsByp
 
 /* -------------------------------- 网络面板 -------------------------------- */
 
-/** 网络模式：直连 / 系统代理 / 情境模式 */
-export type NetworkMode = 'direct' | 'system' | 'scenario'
+/** 网络模式：直连 / 系统代理 / 代理模式 / 情境模式 */
+export type NetworkMode = 'direct' | 'system' | 'global' | 'scenario'
 
 /** 情境模式代理协议 */
 export type NetworkProxyScheme = 'http' | 'https' | 'socks4' | 'socks5'

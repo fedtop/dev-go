@@ -608,6 +608,10 @@ function buildNetworkProxyConfig(
     return { mode: 'system' }
   }
 
+  if (mode === 'global') {
+    return buildScenarioProxyConfig(profile)
+  }
+
   if (ruleList.enabled && ruleList.text.trim()) {
     const pacScript = buildNetworkPacScript(profile, ruleList.text)
 

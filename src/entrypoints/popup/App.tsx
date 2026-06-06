@@ -6,28 +6,26 @@ import TodoPage from '@/features/popup/TodoPage'
 import NetworkPage from '@/features/popup/NetworkPage'
 import ToolsPage from '@/features/popup/ToolsPage'
 import TranslatePage from '@/features/popup/TranslatePage'
+import { POPUP_PAGES, POPUP_PAGE_VALUES } from '@/features/popup/pages'
 import Tabs from '@/ui/Tabs'
-import { popupInitialTab } from '@/utils/settings'
+import { defaultPopupTab, popupInitialTab } from '@/utils/settings'
 import { formatShortcut } from '@/utils/shortcut'
-
-const pages = [
-  { value: 'translate', label: '翻译' },
-  { value: 'todo', label: '待办' },
-  { value: 'network', label: '网络' },
-  { value: 'tools', label: '资源' },
-  { value: 'function', label: '功能' },
-]
-
-const PAGE_VALUES = new Set(pages.map((p) => p.value))
 
 export default function App() {
   const [active, setActive] = useState('translate')
 
-  // Alt+3 等入口会写入一次性信号，指定打开时定位的 Tab；读取后立即清空。
+  // 打开面板时定位 Tab：优先一次性信号（Alt+2 等命令写入），否则用「功能」页配置的默认 Tab。
   useEffect(() => {
     popupInitialTab.getValue().then((tab) => {
-      if (tab && PAGE_VALUES.has(tab)) setActive(tab)
+      if (tab && POPUP_PAGE_VALUES.has(tab)) {
+        setActive(tab)
+        popupInitialTab.setValue('')
+        return
+      }
       if (tab) popupInitialTab.setValue('')
+      defaultPopupTab.getValue().then((fallback) => {
+        if (POPUP_PAGE_VALUES.has(fallback)) setActive(fallback)
+      })
     })
   }, [])
 
@@ -39,7 +37,7 @@ export default function App() {
           <img src='/icons/48.png' alt='' className='h-5 w-5' />
           <span className='text-sm font-semibold tracking-tight text-slate-800'>{SHIP_NAME}</span>
         </div>
-        <Tabs value={active} tabs={pages} onChange={setActive} />
+        <Tabs value={active} tabs={POPUP_PAGES} onChange={setActive} />
       </header>
 
       {/* 内容区 */}

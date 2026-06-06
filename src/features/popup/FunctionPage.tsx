@@ -1,16 +1,25 @@
 import { useEffect, useState } from 'react'
 
 import { sendRuntimeMessage } from '@/utils/messaging'
-import { enableCorsBypass, enableGithubEnhance, enableSelectionTranslate } from '@/utils/settings'
+import {
+  defaultPopupTab,
+  enableCorsBypass,
+  enableGithubEnhance,
+  enableSelectionTranslate,
+} from '@/utils/settings'
 import { formatShortcut } from '@/utils/shortcut'
+import { POPUP_PAGES } from '@/features/popup/pages'
 import Button from '@/ui/Button'
+import Select from '@/ui/Select'
 import Switch from '@/ui/Switch'
 
 // 命令 name -> 展示名
 const COMMAND_LABELS: Record<string, string> = {
   _execute_action: '打开面板',
-  'inline-translate': '整页行间翻译',
   'open-todo': '打开待办面板',
+  'open-network': '打开网络面板',
+  'open-tools': '打开资源面板',
+  'inline-translate': '整页行间翻译',
 }
 
 interface ShortcutItem {
@@ -26,10 +35,12 @@ export default function FunctionPage() {
   const [corsBusy, setCorsBusy] = useState(false)
   const [corsStatus, setCorsStatus] = useState('')
   const [shortcuts, setShortcuts] = useState<ShortcutItem[]>([])
+  const [defaultTab, setDefaultTab] = useState('translate')
 
   useEffect(() => {
     enableSelectionTranslate.getValue().then(setSelectionOn)
     enableGithubEnhance.getValue().then(setGithubOn)
+    defaultPopupTab.getValue().then(setDefaultTab)
     enableCorsBypass.getValue().then((enabled) => {
       setCorsOn(enabled)
       if (enabled) {
@@ -39,19 +50,25 @@ export default function FunctionPage() {
       }
     })
 
-    // 读取当前已注册的命令快捷键
+    // 读取当前已注册的命令快捷键（按 COMMAND_LABELS 的声明顺序展示）
     browser.commands?.getAll().then((cmds) => {
+      const byName = new Map(cmds.map((c) => [c.name, c]))
       setShortcuts(
-        cmds
-          .filter((c) => c.name && COMMAND_LABELS[c.name])
-          .map((c) => ({
-            name: c.name!,
-            label: COMMAND_LABELS[c.name!],
-            shortcut: c.shortcut || '',
+        Object.keys(COMMAND_LABELS)
+          .filter((name) => byName.has(name))
+          .map((name) => ({
+            name,
+            label: COMMAND_LABELS[name],
+            shortcut: byName.get(name)!.shortcut || '',
           })),
       )
     })
   }, [])
+
+  const changeDefaultTab = (value: string) => {
+    setDefaultTab(value)
+    defaultPopupTab.setValue(value)
+  }
 
   const toggleSelection = (checked: boolean) => {
     setSelectionOn(checked)
@@ -99,6 +116,19 @@ export default function FunctionPage() {
 
   return (
     <div className='flex flex-col gap-2.5'>
+      <div className='flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
+        <div className='flex flex-col'>
+          <span className='text-sm font-medium text-slate-800'>默认打开 Tab</span>
+          <span className='text-xs text-slate-400'>Alt+1 打开面板时定位的页面</span>
+        </div>
+        <Select
+          value={defaultTab}
+          options={POPUP_PAGES}
+          onChange={changeDefaultTab}
+          className='w-24'
+        />
+      </div>
+
       <div className='flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
         <div className='flex flex-col'>
           <span className='text-sm font-medium text-slate-800'>划词翻译</span>

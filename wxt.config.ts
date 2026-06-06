@@ -49,19 +49,30 @@ export default defineConfig({
       },
     ],
     commands: {
-      // 打开/切换 popup 面板。Alt 在 Win/Linux 为 Alt，在 Mac 自动映射为 Option(⌥)
+      // 打开/切换 popup 面板，定位到「功能」页配置的默认 Tab。
+      // Alt 在 Win/Linux 为 Alt，在 Mac 自动映射为 Option(⌥)
       _execute_action: {
         suggested_key: { default: 'Alt+1' },
       },
-      // 对当前页面进行行间对比翻译
-      'inline-translate': {
-        suggested_key: { default: 'Alt+2' },
-        description: '对当前页面进行行间对比翻译',
-      },
       // 打开 popup 并定位到「待办」Tab
       'open-todo': {
-        suggested_key: { default: 'Alt+3' },
+        suggested_key: { default: 'Alt+2' },
         description: '打开待办面板',
+      },
+      // 打开 popup 并定位到「网络」Tab
+      'open-network': {
+        suggested_key: { default: 'Alt+3' },
+        description: '打开网络面板',
+      },
+      // 打开 popup 并定位到「资源」Tab
+      'open-tools': {
+        suggested_key: { default: 'Alt+4' },
+        description: '打开资源面板',
+      },
+      // 对当前页面进行行间对比翻译（Chrome 最多预设 4 个快捷键，此命令默认不带键，
+      // 仍可通过右键菜单触发或在 chrome://extensions/shortcuts 手动绑定 Alt+X）
+      'inline-translate': {
+        description: '对当前页面进行行间对比翻译',
       },
     },
   }),

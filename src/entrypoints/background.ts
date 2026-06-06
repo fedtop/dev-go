@@ -1054,9 +1054,19 @@ export default defineBackground(() => {
   browser.commands.onCommand.addListener((command) => {
     if (command === 'inline-translate') {
       sendTabMessage({ type: 'translate-page' })
-    } else if (command === 'open-todo') {
-      // 打开 popup 并定位到「待办」Tab：先写一次性信号，再主动弹出 popup。
-      popupInitialTab.setValue('todo').then(() => {
+      return
+    }
+
+    // open-todo / open-network / open-tools：打开 popup 并定位到对应 Tab。
+    // 先写一次性信号，再主动弹出 popup。
+    const COMMAND_TO_TAB: Record<string, string> = {
+      'open-todo': 'todo',
+      'open-network': 'network',
+      'open-tools': 'tools',
+    }
+    const tab = COMMAND_TO_TAB[command]
+    if (tab) {
+      popupInitialTab.setValue(tab).then(() => {
         browser.action.openPopup?.().catch((error) => {
           console.warn('[DevGo] openPopup failed:', error)
         })

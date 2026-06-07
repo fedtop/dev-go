@@ -38,9 +38,11 @@ interface PendingRequest {
 
 export default defineUnlistedScript(() => {
   const nativeFetch = window.fetch.bind(window)
+  const NativeFetch = window.fetch
   const NativeXMLHttpRequest = window.XMLHttpRequest
   const pendingRequests = new Map<string, PendingRequest>()
   let enabled = false
+  let installed = false
   let nextRequestId = 1
 
   function isHttpCrossOrigin(url: string): boolean {
@@ -113,11 +115,32 @@ export default defineUnlistedScript(() => {
     })
   }
 
+  function install() {
+    if (installed) return
+    installed = true
+    window.fetch = proxyFetch
+    window.XMLHttpRequest = DevGoXMLHttpRequest as unknown as typeof XMLHttpRequest
+  }
+
+  function uninstall() {
+    if (!installed) return
+    installed = false
+    window.fetch = NativeFetch
+    window.XMLHttpRequest = NativeXMLHttpRequest
+  }
+
   window.addEventListener('message', (event) => {
     if (event.source !== window || event.data?.source !== CONTENT_SOURCE) return
 
     if (event.data.type === 'state') {
       enabled = Boolean(event.data.enabled)
+      // 仅在开关开启时接管 window.fetch / XMLHttpRequest；关闭时立即恢复原生，
+      // 让页面环境与 DevTools 归因回到未注入前的状态。
+      if (enabled) {
+        install()
+      } else {
+        uninstall()
+      }
       return
     }
 
@@ -130,7 +153,7 @@ export default defineUnlistedScript(() => {
     pending.resolve(event.data.response)
   })
 
-  window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const proxyFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const request = new Request(input, init)
     const method = request.method.toUpperCase()
     const credentials = init?.credentials ?? request.credentials
@@ -437,6 +460,4 @@ export default defineUnlistedScript(() => {
       }
     }
   }
-
-  window.XMLHttpRequest = DevGoXMLHttpRequest as unknown as typeof XMLHttpRequest
 })

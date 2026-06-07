@@ -37,19 +37,10 @@ export default defineContentScript({
   matches: ['<all_urls>'],
   runAt: 'document_start',
   async main(ctx) {
-    await injectScript('/cors-proxy.js' as ScriptPublicPath, {
-      modifyScript(script) {
-        script.async = false
-      },
-    }).catch((error) => {
-      console.warn('[DevGo] inject CORS proxy failed:', error)
-    })
-
-    postEnabled(await enableCorsBypass.getValue())
-
-    const unwatch = enableCorsBypass.watch((enabled) => {
-      postEnabled(Boolean(enabled))
-    })
+    // 惰性注入：只有 CORS 补头功能开启时，才把页面脚本注入页面并接管 fetch/XHR。
+    // 功能默认关闭，绝大多数页面因此保持原生环境——不替换 window.fetch /
+    // window.XMLHttpRequest，DevTools Network 面板也不会被 cors-proxy.js 污染。
+    let injected = false
 
     const onMessage = async (event: MessageEvent) => {
       if (event.source !== window || !isPageProxyRequestMessage(event.data)) return
@@ -90,10 +81,44 @@ export default defineContentScript({
       }
     }
 
-    window.addEventListener('message', onMessage)
-    ctx.onInvalidated(() => {
-      window.removeEventListener('message', onMessage)
-      unwatch()
+    // 幂等地完成「注入页面脚本 + 挂载消息桥」。仅在首次开启时执行一次。
+    async function ensureInjected() {
+      if (injected) return
+      injected = true
+
+      window.addEventListener('message', onMessage)
+      ctx.onInvalidated(() => window.removeEventListener('message', onMessage))
+
+      await injectScript('/cors-proxy.js' as ScriptPublicPath, {
+        modifyScript(script) {
+          script.async = false
+        },
+      }).catch((error) => {
+        injected = false
+        window.removeEventListener('message', onMessage)
+        console.warn('[DevGo] inject CORS proxy failed:', error)
+      })
+    }
+
+    // 文档开始阶段读取一次开关：开启则立即注入，以尽量赶在页面脚本之前接管 fetch/XHR。
+    if (await enableCorsBypass.getValue()) {
+      await ensureInjected()
+      postEnabled(true)
+    }
+
+    const unwatch = enableCorsBypass.watch(async (enabled) => {
+      if (enabled) {
+        // 运行时才开启：注入后接管的是「此刻之后」发起的请求；页面已缓存的
+        // fetch/XHR 引用不受影响，必要时提示用户刷新页面。
+        await ensureInjected()
+        postEnabled(true)
+      } else if (injected) {
+        // 关闭：无法移除已注入的页面脚本，但通过状态消息让其变为原生透传，
+        // 不再代理任何请求。彻底回到原生环境需刷新页面。
+        postEnabled(false)
+      }
     })
+
+    ctx.onInvalidated(() => unwatch())
   },
 })

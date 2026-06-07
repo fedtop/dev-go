@@ -5,6 +5,7 @@ import { sendRuntimeMessage, type NetworkProxyStatus } from '@/utils/messaging'
 import {
   DEFAULT_NETWORK_PROXY_PROFILE,
   DEFAULT_NETWORK_RULE_LIST,
+  enableCorsBypass,
   networkMode,
   networkProxyProfile,
   networkRuleList,
@@ -108,6 +109,9 @@ export default function NetworkPage() {
   const [status, setStatus] = useState<NetworkProxyStatus | null>(null)
   const [busy, setBusy] = useState(false)
   const [ruleListBusy, setRuleListBusy] = useState(false)
+  const [corsOn, setCorsOn] = useState(false)
+  const [corsBusy, setCorsBusy] = useState(false)
+  const [corsStatus, setCorsStatus] = useState('')
 
   const bypassList = useMemo(() => normalizeBypassList(bypassText), [bypassText])
   const currentHostBypassed = Boolean(currentHost && bypassList.includes(currentHost))
@@ -132,6 +136,16 @@ export default function NetworkPage() {
       setRuleListUrl(storedRuleList.url)
       setStatus(networkStatus)
       setCurrentHost(getUrlHostname(tabs[0]?.url))
+    })
+
+    enableCorsBypass.getValue().then((enabled) => {
+      if (!active) return
+      setCorsOn(enabled)
+      if (enabled) {
+        sendRuntimeMessage({ type: 'sync-cors-bypass' }).catch((error) => {
+          console.warn('[DevGo] sync CORS bypass failed:', error)
+        })
+      }
     })
 
     return () => {
@@ -263,6 +277,35 @@ export default function NetworkPage() {
     setStatus(nextStatus)
   }
 
+  const toggleCors = async (checked: boolean) => {
+    if (corsBusy) return
+    setCorsBusy(true)
+    setCorsStatus('')
+
+    try {
+      if (checked) {
+        await enableCorsBypass.setValue(true)
+        const active = await sendRuntimeMessage({ type: 'sync-cors-bypass' })
+        setCorsOn(active)
+        setCorsStatus(active ? '已对网页 XHR/fetch 响应补充 CORS 头' : '规则未生效')
+        return
+      }
+
+      await enableCorsBypass.setValue(false)
+      await sendRuntimeMessage({ type: 'sync-cors-bypass' })
+      setCorsOn(false)
+      setCorsStatus('已关闭')
+    } catch (error) {
+      console.warn('[DevGo] toggle CORS bypass failed:', error)
+      await enableCorsBypass.setValue(false)
+      await sendRuntimeMessage({ type: 'sync-cors-bypass' }).catch(() => false)
+      setCorsOn(false)
+      setCorsStatus('启用失败，请查看扩展权限或重新加载插件')
+    } finally {
+      setCorsBusy(false)
+    }
+  }
+
   const syncScenarioIfActive = async () => {
     if (usesProxyProfile(appliedMode)) {
       const nextStatus = await sendRuntimeMessage({ type: 'sync-network-proxy' })
@@ -353,8 +396,8 @@ export default function NetworkPage() {
   const saveScenarioLabel = usesProxyProfile(appliedMode) ? '保存并应用' : '保存并启用'
 
   return (
-    <div className='flex flex-col gap-3'>
-      <section className='rounded-lg border border-slate-200 bg-white p-3 shadow-sm'>
+    <div className='flex flex-col gap-2.5'>
+      <section className='rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm'>
         <div className='mb-2 flex items-center justify-between gap-3'>
           <div className='min-w-0'>
             <h2 className='text-sm font-semibold text-slate-800'>网络模式</h2>
@@ -367,21 +410,22 @@ export default function NetworkPage() {
           </span>
         </div>
 
-        <div className='grid grid-cols-2 gap-2'>
+        <div className='grid grid-cols-4 gap-1.5'>
           {MODE_OPTIONS.map((item) => (
             <button
               key={item.value}
               type='button'
               disabled={busy}
               onClick={() => applyMode(item.value)}
-              className={`min-h-[58px] rounded-lg border px-2 py-2 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+              title={item.description}
+              className={`min-h-[48px] rounded-lg border px-1 py-1.5 text-center transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                 mode === item.value
                   ? 'border-blue-500 bg-blue-50 text-blue-700'
                   : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300'
               }`}
             >
-              <span className='block text-sm font-medium'>{item.label}</span>
-              <span className='mt-0.5 block text-[10px] leading-4 text-slate-400'>
+              <span className='block text-xs font-medium'>{item.label}</span>
+              <span className='mt-0.5 block text-[9px] leading-3 text-slate-400'>
                 {item.description}
               </span>
             </button>
@@ -401,7 +445,7 @@ export default function NetworkPage() {
 
       {showProxySettings && (
         <>
-          <section className='rounded-lg border border-slate-200 bg-white p-3 shadow-sm'>
+          <section className='rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm'>
             <div className='mb-2 flex items-center justify-between'>
               <h2 className='text-sm font-semibold text-slate-800'>代理服务器</h2>
               <Button onClick={saveScenarioProfile} loading={busy} className='!px-2 !py-1 text-xs'>
@@ -437,7 +481,7 @@ export default function NetworkPage() {
           </section>
 
           {showRuleListSettings && (
-            <section className='rounded-lg border border-slate-200 bg-white p-3 shadow-sm'>
+            <section className='rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm'>
               <div className='mb-2 flex items-center justify-between gap-3'>
                 <div className='min-w-0'>
                   <h2 className='text-sm font-semibold text-slate-800'>规则列表</h2>
@@ -499,32 +543,58 @@ export default function NetworkPage() {
             </section>
           )}
 
-          <section className='rounded-lg border border-slate-200 bg-white p-3 shadow-sm'>
+          <section className='rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm'>
             <div className='mb-2 flex items-center justify-between gap-2'>
               <h2 className='text-sm font-semibold text-slate-800'>绕过列表</h2>
-              <Button
-                disabled={!currentHost}
-                onClick={toggleCurrentHostBypass}
-                loading={busy}
-                className='!px-2 !py-1 text-xs'
-              >
-                {currentHostBypassed ? '取消直连' : '当前站点直连'}
-              </Button>
+              <div className='flex items-center gap-1.5'>
+                <Button
+                  disabled={!currentHost}
+                  onClick={toggleCurrentHostBypass}
+                  loading={busy}
+                  className='!px-2 !py-1 text-xs'
+                >
+                  {currentHostBypassed ? '取消直连' : '当前站点直连'}
+                </Button>
+                <Button
+                  onClick={saveScenarioProfile}
+                  loading={busy}
+                  className='!px-2 !py-1 text-xs'
+                >
+                  保存
+                </Button>
+              </div>
             </div>
             <textarea
               value={bypassText}
-              rows={4}
+              rows={3}
               spellCheck={false}
               onChange={(event) => setBypassText(event.target.value)}
               placeholder={'<local>\nlocalhost\n127.0.0.1'}
               className='w-full resize-none rounded-lg border border-slate-300 bg-white px-2.5 py-2 font-mono text-xs leading-5 text-slate-700 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500'
             />
             <p className='mt-1.5 text-[10px] leading-4 text-slate-400'>
-              每行一个域名或 Chrome 代理绕过规则；在代理模式与情境模式中生效。
+              每行一个域名或 Chrome 代理绕过规则；编辑后点「保存」生效，在代理模式与情境模式中生效。
             </p>
           </section>
         </>
       )}
+
+      <section className='rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm'>
+        <div className='flex items-center justify-between gap-3'>
+          <div className='min-w-0'>
+            <h2 className='text-sm font-semibold text-slate-800'>
+              解除 CORS 限制（关闭浏览器“接口跨域”限制）
+            </h2>
+            <p className='text-xs text-slate-400'>为网页 XHR/fetch 响应补充跨域响应头</p>
+          </div>
+          <Switch checked={corsOn} onChange={toggleCors} disabled={corsBusy} />
+        </div>
+        <p className='mt-2 text-[10px] leading-4 text-slate-400'>
+          仅用于本地开发调试；无法修复服务器拒绝 OPTIONS、带凭证请求、CSP
+          或混合内容限制。开关切换后需刷新页面生效。
+        </p>
+        {corsStatus && <p className='mt-1 text-[10px] leading-4 text-slate-500'>{corsStatus}</p>}
+      </section>
     </div>
   )
 }

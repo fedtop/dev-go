@@ -1,6 +1,5 @@
 import { microsoftLookup, microsoftTransList, testMicrosoftTrans } from '@/api/microsoft'
 import { googleLookup, googleTransList, testGoogleTrans } from '@/api/translator'
-import { HELP_URL } from '@/utils/constants'
 import { pickTarget } from '@/utils/lang'
 import {
   type NetworkRuleListDownloadStatus,
@@ -1085,17 +1084,12 @@ export default defineBackground(() => {
   })
 
   // 安装 / 更新时初始化（右键菜单需在此创建，避免 SW 重启时重复创建报错）
-  browser.runtime.onInstalled.addListener(({ reason }) => {
+  browser.runtime.onInstalled.addListener(() => {
     browser.contextMenus.create({
       id: 'inline-translate',
       title: '对比翻译',
       contexts: ['page', 'selection'],
     })
-
-    // 首次安装时打开使用帮助
-    if (reason === 'install' && import.meta.env.PROD) {
-      browser.tabs.create({ url: HELP_URL })
-    }
 
     syncCorsBypassRulesSafely()
     syncMicrosoftRequestRulesSafely()

@@ -103,6 +103,12 @@ export const networkRuleList = storage.defineItem<NetworkRuleListConfig>('local:
   fallback: DEFAULT_NETWORK_RULE_LIST,
 })
 
+/** 切换网络模式后自动刷新当前页面（默认关闭） */
+export const enableReloadOnProxySwitch = storage.defineItem<boolean>(
+  'local:enableReloadOnProxySwitch',
+  { fallback: false },
+)
+
 /* ------------------------------- 新标签页 ------------------------------- */
 
 /** 主题模式：自动（按本地时间） / 浅色 / 深色 */

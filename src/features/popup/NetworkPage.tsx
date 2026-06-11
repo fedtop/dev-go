@@ -6,6 +6,7 @@ import {
   DEFAULT_NETWORK_PROXY_PROFILE,
   DEFAULT_NETWORK_RULE_LIST,
   enableCorsBypass,
+  enableReloadOnProxySwitch,
   networkMode,
   networkProxyProfile,
   networkRuleList,
@@ -112,6 +113,7 @@ export default function NetworkPage() {
   const [corsOn, setCorsOn] = useState(false)
   const [corsBusy, setCorsBusy] = useState(false)
   const [corsStatus, setCorsStatus] = useState('')
+  const [reloadOnSwitch, setReloadOnSwitch] = useState(false)
 
   const bypassList = useMemo(() => normalizeBypassList(bypassText), [bypassText])
   const currentHostBypassed = Boolean(currentHost && bypassList.includes(currentHost))
@@ -123,9 +125,10 @@ export default function NetworkPage() {
       networkMode.getValue(),
       networkProxyProfile.getValue(),
       networkRuleList.getValue(),
+      enableReloadOnProxySwitch.getValue(),
       sendRuntimeMessage({ type: 'get-network-status' }).catch(() => null),
       browser.tabs.query({ active: true, currentWindow: true }),
-    ]).then(([storedMode, storedProfile, storedRuleList, networkStatus, tabs]) => {
+    ]).then(([storedMode, storedProfile, storedRuleList, storedReload, networkStatus, tabs]) => {
       if (!active) return
 
       setMode(storedMode)
@@ -134,6 +137,7 @@ export default function NetworkPage() {
       setBypassText(storedProfile.bypassList.join('\n'))
       setRuleList(storedRuleList)
       setRuleListUrl(storedRuleList.url)
+      setReloadOnSwitch(storedReload)
       setStatus(networkStatus)
       setCurrentHost(getUrlHostname(tabs[0]?.url))
     })
@@ -172,8 +176,19 @@ export default function NetworkPage() {
     return nextProfile
   }
 
+  /** 刷新当前激活标签页（“切换代理后刷新页面”开关开启时调用） */
+  const reloadActiveTab = async () => {
+    try {
+      const [tab] = await browser.tabs.query({ active: true, currentWindow: true })
+      if (tab?.id != null) await browser.tabs.reload(tab.id)
+    } catch (error) {
+      console.warn('[DevGo] reload active tab failed:', error)
+    }
+  }
+
   const applyMode = async (nextMode: NetworkMode) => {
     if (busy) return
+    const prevAppliedMode = appliedMode
     setMode(nextMode)
     setBusy(true)
 
@@ -187,6 +202,10 @@ export default function NetworkPage() {
       setMode(nextStatus.mode)
       setAppliedMode(nextStatus.mode)
       setStatus(nextStatus)
+
+      if (reloadOnSwitch && nextStatus.ok && nextStatus.mode !== prevAppliedMode) {
+        await reloadActiveTab()
+      }
     } catch (error) {
       setStatus({
         ok: false,
@@ -275,6 +294,15 @@ export default function NetworkPage() {
     const nextStatus = await sendRuntimeMessage({ type: 'get-network-status' })
     setAppliedMode(nextStatus.mode)
     setStatus(nextStatus)
+  }
+
+  const toggleReloadOnSwitch = async (checked: boolean) => {
+    setReloadOnSwitch(checked)
+    try {
+      await enableReloadOnProxySwitch.setValue(checked)
+    } catch (error) {
+      console.warn('[DevGo] save reload-on-proxy-switch failed:', error)
+    }
   }
 
   const toggleCors = async (checked: boolean) => {
@@ -430,6 +458,16 @@ export default function NetworkPage() {
               </span>
             </button>
           ))}
+        </div>
+
+        <div className='mt-2 flex items-center justify-between gap-3 border-t border-slate-100 pt-2'>
+          <div className='min-w-0'>
+            <p className='text-xs font-medium text-slate-700'>切换代理后刷新页面</p>
+            <p className='text-[10px] leading-4 text-slate-400'>
+              开启后每次切换网络模式都会自动刷新当前网页
+            </p>
+          </div>
+          <Switch checked={reloadOnSwitch} onChange={toggleReloadOnSwitch} />
         </div>
 
         {statusText && (

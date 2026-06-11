@@ -1,5 +1,6 @@
 import { microsoftLookup, microsoftTransList, testMicrosoftTrans } from '@/api/microsoft'
 import { googleLookup, googleTransList, testGoogleTrans } from '@/api/translator'
+import { updateNetworkActionIconSafely } from '@/utils/actionIcon'
 import { pickTarget } from '@/utils/lang'
 import {
   type NetworkRuleListDownloadStatus,
@@ -1105,6 +1106,11 @@ export default defineBackground(() => {
   networkMode.watch(syncNetworkProxySafely)
   networkProxyProfile.watch(syncNetworkProxySafely)
   networkRuleList.watch(syncNetworkProxySafely)
+
+  // 工具栏图标随网络模式变色（SW 每次启动都重设，避免动态图标丢失）
+  updateNetworkActionIconSafely()
+  networkMode.watch(updateNetworkActionIconSafely)
+  networkProxyManaged.watch(updateNetworkActionIconSafely)
 
   chrome.proxy?.onProxyError?.addListener((details) => {
     console.warn('[DevGo] proxy error:', details)

@@ -5,12 +5,18 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { SHIP_NAME, SITE_URL } from '@/utils/constants'
-import { newtabActiveCategory, quickNavCategoryLabels, quickNavCategorySeeded, quickNavItems, searchEngine, themeMode, type QuickNavCategoryId, type QuickNavCategoryLabels, type QuickNavItem, type ThemeMode } from '@/utils/settings' // prettier-ignore
+import { newtabActiveCategory, quickNavCategoryLabels, quickNavCategorySeeded, quickNavDefaultPinsSeeded, quickNavItems, searchEngine, themeMode, type QuickNavCategoryId, type QuickNavCategoryLabels, type QuickNavItem, type ThemeMode } from '@/utils/settings' // prettier-ignore
 import { applyTheme, normalizeThemeMode, watchAutoTheme } from '@/utils/theme'
 import { CATEGORY_LABEL_MAX, defaultLabelOf, isQuickNavCategory } from './categories'
 import CategoryTabs, { PencilIcon } from './CategoryTabs'
 import { downloadConfig, mergeItems, parseConfig } from './config'
-import { DEFAULT_QUICK_NAV, isUncustomizedDefault, seedEmptyCategories } from './engines'
+import {
+  DEFAULT_PINNED_NAV_IDS,
+  DEFAULT_QUICK_NAV,
+  isUncustomizedDefault,
+  seedDefaultPinnedItems,
+  seedEmptyCategories,
+} from './engines'
 import PinnedNav, { PIN_LIMIT } from './PinnedNav'
 import QuickNav from './QuickNav'
 import QuietBackground from './QuietBackground'
@@ -24,6 +30,7 @@ const THEME_THUMB_OFFSET: Record<ThemeMode, string> = {
   auto: 'translate-x-[41px]',
   light: 'translate-x-[82px]',
 }
+const DEFAULT_PINNED_ORDER = new Map(DEFAULT_PINNED_NAV_IDS.map((id, index) => [id, index]))
 
 function MoonIcon() {
   return (
@@ -217,9 +224,10 @@ export default function NewTabApp() {
   // （没改过旧默认 → 整体换新版分类默认；自定义过 → 只往空分类补默认站点）。
   useEffect(() => {
     ;(async () => {
-      const [stored, seeded, savedCategory, savedLabels] = await Promise.all([
+      const [stored, seeded, defaultPinsSeeded, savedCategory, savedLabels] = await Promise.all([
         quickNavItems.getValue(),
         quickNavCategorySeeded.getValue(),
+        quickNavDefaultPinsSeeded.getValue(),
         newtabActiveCategory.getValue(),
         quickNavCategoryLabels.getValue(),
       ])
@@ -230,8 +238,10 @@ export default function NewTabApp() {
       } else if (!seeded) {
         next = isUncustomizedDefault(stored) ? DEFAULT_QUICK_NAV : seedEmptyCategories(stored)
       }
+      if (!defaultPinsSeeded) next = seedDefaultPinnedItems(next)
       if (next !== stored) quickNavItems.setValue(next)
       if (!seeded) quickNavCategorySeeded.setValue(true)
+      if (!defaultPinsSeeded) quickNavDefaultPinsSeeded.setValue(true)
 
       if (isQuickNavCategory(savedCategory)) setActiveCategory(savedCategory)
       setCategoryLabels(savedLabels)
@@ -252,7 +262,18 @@ export default function NewTabApp() {
     newtabActiveCategory.setValue(id)
   }
 
-  const pinnedItems = items.filter((item) => item.pinned)
+  const pinnedItems = items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => item.pinned)
+    .sort((a, b) => {
+      const aOrder = DEFAULT_PINNED_ORDER.get(a.item.id)
+      const bOrder = DEFAULT_PINNED_ORDER.get(b.item.id)
+      if (aOrder != null && bOrder != null) return aOrder - bOrder
+      if (aOrder != null) return -1
+      if (bOrder != null) return 1
+      return a.index - b.index
+    })
+    .map(({ item }) => item)
 
   /** 固定 / 取消固定；固定栏满（PIN_LIMIT）时拦截并提示 */
   const togglePin = (id: string) => {

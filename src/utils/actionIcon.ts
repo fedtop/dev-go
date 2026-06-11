@@ -16,13 +16,13 @@ const CIRCLE_R = 83 / 395
 const ICON_SIZES = [16, 32, 48, 128] as const
 
 /**
- * 各模式的圆颜色（灰/黑/蓝/橙）：灰=直连关、黑=系统默认、蓝=规则分流（logo 原色）、橙=全局代理。
+ * 各模式的圆颜色（灰/黑/蓝/橙）：灰=直连、黑=系统默认、蓝=代理模式、橙=情境模式。
  */
 const MODE_COLORS: Record<NetworkMode, string> = {
   direct: '#9CA3AF',
   system: '#1F2937',
-  global: '#F97316',
-  scenario: '#49CBFE',
+  global: '#49CBFE',
+  scenario: '#F97316',
 }
 
 async function drawIcon(size: typeof ICON_SIZES[number], color: string): Promise<ImageData> {

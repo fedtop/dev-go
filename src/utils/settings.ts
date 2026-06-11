@@ -158,6 +158,12 @@ export const quickNavCategorySeeded = storage.defineItem<boolean>('sync:quickNav
   fallback: false,
 })
 
+/** 默认固定栏一次性种子标记：仅在用户还没有固定项时应用默认固定 */
+export const quickNavDefaultPinsSeeded = storage.defineItem<boolean>(
+  'sync:quickNavDefaultPinsSeeded',
+  { fallback: false },
+)
+
 /** 主题模式：默认自动（18:00-06:00 深色，其余浅色） */
 export const themeMode = storage.defineItem<StoredThemeMode>('sync:themeMode', {
   fallback: 'auto',

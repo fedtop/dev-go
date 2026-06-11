@@ -2,7 +2,7 @@
  * 新标签页搜索框：引擎切换 + bang 语法 + 联想下拉（键盘可操作）。
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react'
 
 import type { QuickNavItem } from '@/utils/settings'
 import { searchEngine } from '@/utils/settings'
@@ -27,6 +27,10 @@ export default function SearchBar({ navItems }: SearchBarProps) {
   const { engine: bangEngine, query } = parseBang(input)
   const currentEngine = getEngine(engineId)
   const effectiveEngine = bangEngine ?? currentEngine
+  const hasQuery = query.trim().length > 0
+  const inputActive = focused || input.trim().length > 0
+  const queryMeter = hasQuery ? Math.min(1, Math.max(0.14, query.trim().length / 28)) : 0
+  const inputMeterStyle = { '--query-meter': `${Math.round(queryMeter * 100)}%` } as CSSProperties
 
   const suggestions = useSuggestions(query, navItems)
   const showDropdown = focused && (suggestions.length > 0 || !!bangEngine)
@@ -69,7 +73,7 @@ export default function SearchBar({ navItems }: SearchBarProps) {
     go(buildSearchUrl(effectiveEngine, query))
   }
 
-  const onKeyDown = (e: React.KeyboardEvent) => {
+  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
       setActive((i) => Math.min(i + 1, suggestions.length - 1))
@@ -86,10 +90,19 @@ export default function SearchBar({ navItems }: SearchBarProps) {
   }
 
   return (
-    <div ref={rootRef} className='relative w-full'>
-      <div className='flex items-center gap-1 rounded-2xl border border-slate-200 bg-white px-2 py-1.5 shadow-sm transition-shadow focus-within:shadow-md dark:border-slate-700 dark:bg-slate-800'>
+    <div
+      ref={rootRef}
+      className={`relative w-full ${enginePickerOpen || showDropdown ? 'z-40' : 'z-10'}`}
+    >
+      <div
+        className={`aurora-search-shell relative flex items-center gap-1 rounded-[1.35rem] px-2 py-1.5 transition-all ${
+          inputActive ? 'is-active' : ''
+        }`}
+      >
+        <span aria-hidden='true' className='aurora-search-glow' />
+
         {/* 引擎选择 */}
-        <div className='relative'>
+        <div className='relative z-10'>
           <button
             type='button'
             onClick={() => setEnginePickerOpen((v) => !v)}
@@ -102,21 +115,21 @@ export default function SearchBar({ navItems }: SearchBarProps) {
             </svg>
           </button>
           {enginePickerOpen && (
-            <div className='absolute left-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800'>
+            <div className='aurora-dropdown absolute left-0 top-full z-[70] mt-2 w-52 overflow-hidden rounded-2xl p-1.5'>
               {ENGINES.map((e) => (
                 <button
                   key={e.id}
                   type='button'
                   onClick={() => pickEngine(e)}
-                  className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 ${
-                    e.id === engineId
-                      ? 'font-medium text-blue-600 dark:text-blue-400'
-                      : 'text-slate-700 dark:text-slate-200'
+                  className={`aurora-dropdown-item group/engine flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm ${
+                    e.id === engineId ? 'is-selected' : ''
                   }`}
                 >
-                  <span className='w-5 text-center text-base leading-none'>{e.icon}</span>
-                  <span className='flex-1'>{e.name}</span>
-                  <kbd className='rounded bg-slate-100 px-1 text-[10px] text-slate-400 dark:bg-slate-700'>
+                  <span className='aurora-engine-mark flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-base leading-none'>
+                    {e.icon}
+                  </span>
+                  <span className='min-w-0 flex-1 truncate'>{e.name}</span>
+                  <kbd className='aurora-engine-kbd shrink-0 rounded-md px-1.5 py-0.5 text-[10px]'>
                     !{e.bang}
                   </kbd>
                 </button>
@@ -125,33 +138,53 @@ export default function SearchBar({ navItems }: SearchBarProps) {
           )}
         </div>
 
-        <div className='h-5 w-px bg-slate-200 dark:bg-slate-700' />
+        <div className='relative z-10 h-5 w-px bg-slate-200/80 dark:bg-slate-700/80' />
 
-        <input
-          ref={inputRef}
-          autoFocus
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setTimeout(() => setFocused(false), 150)}
-          placeholder={`用 ${effectiveEngine.name} 搜索，或输入 !${
-            currentEngine.bang === 'g' ? 'gh' : 'g'
-          } 切换引擎…`}
-          className='min-w-0 flex-1 bg-transparent px-2 py-1.5 text-sm text-slate-800 outline-none placeholder:text-slate-400 dark:text-slate-100'
-        />
-
-        {/* bang 命中提示 */}
-        {bangEngine && (
-          <span className='shrink-0 rounded-lg bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 dark:bg-blue-500/15 dark:text-blue-300'>
-            {bangEngine.icon} {bangEngine.name}
+        <div
+          className={`aurora-input-wrap relative z-10 flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-xl px-2.5 py-1 ${
+            inputActive ? 'is-active' : ''
+          } ${hasQuery ? 'has-query' : ''}`}
+          style={inputMeterStyle}
+        >
+          <span
+            aria-hidden='true'
+            className='aurora-input-orb relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-500 dark:text-slate-300'
+          >
+            <svg viewBox='0 0 24 24' className='h-3.5 w-3.5 fill-none stroke-current'>
+              <circle cx='11' cy='11' r='6.5' strokeWidth='2' />
+              <path d='m20 20-4.1-4.1' strokeLinecap='round' strokeWidth='2' />
+            </svg>
           </span>
-        )}
+
+          <input
+            ref={inputRef}
+            autoFocus
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={onKeyDown}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setTimeout(() => setFocused(false), 150)}
+            placeholder={`用 ${effectiveEngine.name} 搜索，或输入 !${
+              currentEngine.bang === 'g' ? 'gh' : 'g'
+            } 切换引擎…`}
+            className='aurora-input-control relative z-10 min-w-0 flex-1 bg-transparent px-0 py-1.5 text-sm text-slate-800 outline-none placeholder:text-slate-400 dark:text-slate-100'
+          />
+
+          {/* bang 命中提示 */}
+          {bangEngine && (
+            <span className='aurora-bang-chip relative z-10 flex max-w-[7rem] shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-300'>
+              <span>{bangEngine.icon}</span>
+              <span className='truncate'>{bangEngine.name}</span>
+            </span>
+          )}
+
+          <span aria-hidden='true' className='aurora-input-meter' />
+        </div>
 
         <button
           type='button'
           onClick={submit}
-          className='aurora-btn aurora-pan group/search relative shrink-0 overflow-hidden rounded-xl px-4 py-1.5 text-sm font-semibold text-white hover:scale-[1.04] active:scale-95'
+          className='aurora-btn aurora-pan group/search relative z-10 shrink-0 overflow-hidden rounded-xl px-4 py-1.5 text-sm font-semibold text-white hover:scale-[1.04] active:scale-95'
         >
           {/* 周期扫过的高光 */}
           <span
@@ -174,32 +207,30 @@ export default function SearchBar({ navItems }: SearchBarProps) {
 
       {/* 联想下拉 */}
       {showDropdown && suggestions.length > 0 && (
-        <div className='absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800'>
+        <div className='aurora-dropdown absolute left-0 right-0 top-full z-[60] mt-2 overflow-hidden rounded-2xl p-1.5'>
           {suggestions.map((s, i) => (
             <button
               key={`${s.source}-${s.url}`}
               type='button'
               onMouseEnter={() => setActive(i)}
               onClick={() => go(s.url)}
-              className={`flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors ${
-                i === active ? 'bg-slate-100 dark:bg-slate-700' : ''
+              className={`aurora-dropdown-item flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left ${
+                i === active ? 'is-active' : ''
               }`}
             >
               <SiteIcon
                 url={s.url}
                 title={s.title}
                 size={32}
-                className='h-4 w-4 shrink-0 rounded-sm'
+                className='h-5 w-5 shrink-0 rounded-md'
               />
-              <span className='flex-1 truncate text-sm text-slate-700 dark:text-slate-200'>
-                {s.title}
+              <span className='min-w-0 flex-1 truncate text-sm font-medium'>{s.title}</span>
+              <span className='aurora-suggestion-url hidden max-w-[42%] shrink-0 truncate text-xs sm:block'>
+                {s.url}
               </span>
-              <span className='shrink-0 truncate text-xs text-slate-400'>{s.url}</span>
               <span
-                className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] ${
-                  s.source === 'nav'
-                    ? 'bg-indigo-50 text-indigo-500 dark:bg-indigo-500/15 dark:text-indigo-300'
-                    : 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300'
+                className={`aurora-source-chip shrink-0 rounded-md px-1.5 py-0.5 text-[10px] ${
+                  s.source === 'nav' ? 'is-nav' : 'is-bookmark'
                 }`}
               >
                 {s.source === 'nav' ? '导航' : '书签'}

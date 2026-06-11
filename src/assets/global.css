@@ -266,6 +266,437 @@ body.quiet-page {
   box-shadow: 0 4px 24px rgba(139, 92, 246, 0.55);
 }
 
+/* 搜索输入舱：让输入框和搜索按钮共享极光语义，但保留输入区域的轻盈感 */
+.aurora-search-shell {
+  isolation: isolate;
+  border: 1px solid rgba(226, 232, 240, 0.84);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.74))
+      padding-box,
+    linear-gradient(
+        115deg,
+        rgba(59, 130, 246, 0.12),
+        rgba(139, 92, 246, 0.12) 35%,
+        rgba(236, 72, 153, 0.1) 65%,
+        rgba(6, 182, 212, 0.12)
+      )
+      border-box;
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px) saturate(1.12);
+}
+.aurora-search-shell::before {
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(
+    110deg,
+    rgba(59, 130, 246, 0.6),
+    rgba(139, 92, 246, 0.54) 30%,
+    rgba(236, 72, 153, 0.46) 58%,
+    rgba(6, 182, 212, 0.5) 86%,
+    rgba(59, 130, 246, 0.6)
+  );
+  background-size: 220% 100%;
+  content: '';
+  opacity: 0;
+  transition: opacity 0.32s ease;
+  animation: aurora-pan 7s ease-in-out infinite;
+}
+.aurora-search-shell::after {
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: calc(1.35rem - 1px);
+  background: radial-gradient(circle at 16% 18%, rgba(59, 130, 246, 0.12), transparent 32%),
+    radial-gradient(circle at 84% 86%, rgba(236, 72, 153, 0.1), transparent 36%);
+  content: '';
+  opacity: 0.72;
+  pointer-events: none;
+}
+.aurora-search-shell.is-active,
+.aurora-search-shell:focus-within {
+  border-color: transparent;
+  box-shadow: 0 18px 44px rgba(79, 70, 229, 0.18), 0 2px 18px rgba(236, 72, 153, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94);
+}
+.aurora-search-shell.is-active::before,
+.aurora-search-shell:focus-within::before {
+  opacity: 1;
+}
+.aurora-search-glow {
+  position: absolute;
+  inset: -18px 48px;
+  z-index: -2;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.24), transparent 45%),
+    radial-gradient(circle at 72% 48%, rgba(236, 72, 153, 0.18), transparent 42%);
+  filter: blur(22px);
+  opacity: 0;
+  transition: opacity 0.32s ease;
+}
+.aurora-search-shell.is-active .aurora-search-glow,
+.aurora-search-shell:focus-within .aurora-search-glow {
+  opacity: 1;
+}
+
+.aurora-input-wrap {
+  --query-meter: 0%;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.84), rgba(255, 255, 255, 0.46)),
+    radial-gradient(circle at var(--query-meter) 100%, rgba(139, 92, 246, 0.2), transparent 28%);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+.aurora-input-wrap::before {
+  position: absolute;
+  inset: 1px;
+  border-radius: calc(0.75rem - 1px);
+  background: radial-gradient(90px 42px at 18% 15%, rgba(59, 130, 246, 0.16), transparent 72%),
+    radial-gradient(120px 52px at 82% 88%, rgba(236, 72, 153, 0.14), transparent 76%),
+    linear-gradient(100deg, rgba(59, 130, 246, 0.07), transparent 42%, rgba(6, 182, 212, 0.06));
+  content: '';
+  opacity: 0;
+  pointer-events: none;
+  transform: scaleX(0.98);
+  transform-origin: center;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.aurora-input-wrap.is-active::before,
+.aurora-input-wrap:focus-within::before {
+  opacity: 0.96;
+  transform: scaleX(1);
+  animation: aurora-input-bloom 5.2s ease-in-out infinite;
+}
+.aurora-input-wrap::after {
+  position: absolute;
+  inset: auto 14px 0;
+  height: 1px;
+  background: rgba(148, 163, 184, 0.18);
+  content: '';
+  pointer-events: none;
+}
+.aurora-input-meter {
+  position: absolute;
+  right: auto;
+  bottom: 0;
+  left: 14px;
+  height: 2px;
+  width: var(--query-meter);
+  max-width: calc(100% - 28px);
+  border-radius: 999px;
+  background-image: linear-gradient(90deg, #3b82f6, #8b5cf6 42%, #ec4899 72%, #06b6d4);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.42), 0 0 18px rgba(6, 182, 212, 0.22);
+  opacity: 0;
+  transition: width 0.18s ease, opacity 0.22s ease;
+}
+.aurora-input-wrap.has-query .aurora-input-meter {
+  opacity: 0.78;
+}
+.aurora-input-wrap.has-query:focus-within .aurora-input-meter {
+  opacity: 1;
+}
+.aurora-input-orb {
+  background: radial-gradient(
+      circle at 35% 25%,
+      rgba(255, 255, 255, 0.95),
+      rgba(255, 255, 255, 0.32) 38%,
+      transparent 40%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(59, 130, 246, 0.12),
+      rgba(139, 92, 246, 0.12) 48%,
+      rgba(236, 72, 153, 0.1)
+    );
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.16), 0 6px 16px rgba(79, 70, 229, 0.1);
+  transition: color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+.aurora-input-wrap.is-active .aurora-input-orb,
+.aurora-input-wrap:focus-within .aurora-input-orb {
+  color: #4f46e5;
+  transform: rotate(-8deg) scale(1.04);
+  box-shadow: inset 0 0 0 1px rgba(129, 140, 248, 0.22), 0 8px 18px rgba(79, 70, 229, 0.18);
+}
+.aurora-input-control {
+  caret-color: #db2777;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.aurora-input-control:focus {
+  animation: aurora-caret-blink 0.95s steps(1, end) infinite;
+  caret-color: #ec4899;
+}
+.aurora-bang-chip {
+  background: linear-gradient(180deg, rgba(239, 246, 255, 0.92), rgba(255, 255, 255, 0.58)),
+    linear-gradient(110deg, rgba(59, 130, 246, 0.14), rgba(139, 92, 246, 0.12));
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.2), 0 4px 14px rgba(59, 130, 246, 0.1);
+}
+
+.aurora-dropdown {
+  border: 1px solid rgba(226, 232, 240, 0.76);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 252, 0.92))
+      padding-box,
+    linear-gradient(
+        135deg,
+        rgba(59, 130, 246, 0.24),
+        rgba(139, 92, 246, 0.2) 38%,
+        rgba(236, 72, 153, 0.16) 68%,
+        rgba(6, 182, 212, 0.2)
+      )
+      border-box;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.16), 0 2px 14px rgba(139, 92, 246, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px) saturate(1.18);
+}
+.aurora-dropdown::before {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 18% 0%, rgba(59, 130, 246, 0.12), transparent 34%),
+    radial-gradient(circle at 86% 100%, rgba(236, 72, 153, 0.1), transparent 36%);
+  content: '';
+  pointer-events: none;
+}
+.aurora-dropdown-item {
+  position: relative;
+  color: #334155;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+.aurora-dropdown-item::before {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    110deg,
+    rgba(59, 130, 246, 0.1),
+    rgba(139, 92, 246, 0.08),
+    rgba(236, 72, 153, 0.08)
+  );
+  content: '';
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+.aurora-dropdown-item:hover,
+.aurora-dropdown-item.is-active,
+.aurora-dropdown-item.is-selected {
+  color: #1e293b;
+  transform: translateY(-1px);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.16), 0 8px 18px rgba(79, 70, 229, 0.08);
+}
+.aurora-dropdown-item:hover::before,
+.aurora-dropdown-item.is-active::before,
+.aurora-dropdown-item.is-selected::before {
+  opacity: 1;
+}
+.aurora-dropdown-item.is-selected {
+  font-weight: 600;
+}
+.aurora-engine-mark {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(236, 72, 153, 0.08));
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.14);
+}
+.aurora-dropdown-item.is-selected .aurora-engine-mark {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.18),
+    rgba(139, 92, 246, 0.16),
+    rgba(6, 182, 212, 0.12)
+  );
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.24), 0 6px 14px rgba(59, 130, 246, 0.12);
+}
+.aurora-engine-kbd {
+  color: #64748b;
+  background: rgba(241, 245, 249, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.18);
+}
+.aurora-dropdown-item.is-selected .aurora-engine-kbd {
+  color: #4f46e5;
+  background: rgba(238, 242, 255, 0.9);
+}
+.aurora-source-chip {
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.14);
+}
+.aurora-suggestion-url {
+  color: #94a3b8;
+}
+.aurora-source-chip.is-nav {
+  color: #4f46e5;
+  background: rgba(238, 242, 255, 0.82);
+}
+.aurora-source-chip.is-bookmark {
+  color: #b45309;
+  background: rgba(255, 251, 235, 0.88);
+}
+
+.dark .aurora-search-shell {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0.66)) padding-box,
+    linear-gradient(
+        115deg,
+        rgba(96, 165, 250, 0.16),
+        rgba(167, 139, 250, 0.16) 35%,
+        rgba(244, 114, 182, 0.14) 65%,
+        rgba(34, 211, 238, 0.14)
+      )
+      border-box;
+  box-shadow: 0 18px 42px rgba(2, 6, 23, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.dark .aurora-search-shell::after {
+  background: radial-gradient(circle at 16% 18%, rgba(96, 165, 250, 0.12), transparent 34%),
+    radial-gradient(circle at 84% 86%, rgba(244, 114, 182, 0.1), transparent 38%);
+  opacity: 0.9;
+}
+.dark .aurora-search-shell.is-active,
+.dark .aurora-search-shell:focus-within {
+  box-shadow: 0 22px 48px rgba(2, 6, 23, 0.44), 0 0 28px rgba(139, 92, 246, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.dark .aurora-input-wrap {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.34)),
+    radial-gradient(circle at var(--query-meter) 100%, rgba(34, 211, 238, 0.16), transparent 30%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.dark .aurora-input-wrap::before {
+  background: radial-gradient(90px 42px at 18% 15%, rgba(96, 165, 250, 0.16), transparent 72%),
+    radial-gradient(120px 52px at 82% 88%, rgba(34, 211, 238, 0.12), transparent 76%),
+    linear-gradient(100deg, rgba(96, 165, 250, 0.08), transparent 42%, rgba(34, 211, 238, 0.06));
+}
+.dark .aurora-input-wrap::after {
+  background: rgba(255, 255, 255, 0.08);
+}
+.dark .aurora-input-orb {
+  background: radial-gradient(
+      circle at 35% 25%,
+      rgba(255, 255, 255, 0.22),
+      rgba(255, 255, 255, 0.04) 38%,
+      transparent 40%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(96, 165, 250, 0.14),
+      rgba(167, 139, 250, 0.14) 48%,
+      rgba(34, 211, 238, 0.1)
+    );
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 8px 18px rgba(2, 6, 23, 0.18);
+}
+.dark .aurora-input-wrap.is-active .aurora-input-orb,
+.dark .aurora-input-wrap:focus-within .aurora-input-orb {
+  color: #67e8f9;
+  box-shadow: inset 0 0 0 1px rgba(103, 232, 249, 0.18), 0 8px 18px rgba(34, 211, 238, 0.16);
+}
+.dark .aurora-input-control {
+  caret-color: #22d3ee;
+  text-shadow: none;
+}
+.dark .aurora-input-control:focus {
+  caret-color: #67e8f9;
+}
+.dark .aurora-bang-chip {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.86), rgba(15, 23, 42, 0.54)),
+    linear-gradient(110deg, rgba(96, 165, 250, 0.16), rgba(34, 211, 238, 0.12));
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.16), 0 4px 14px rgba(2, 6, 23, 0.16);
+}
+.dark .aurora-dropdown {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.9)) padding-box,
+    linear-gradient(
+        135deg,
+        rgba(96, 165, 250, 0.22),
+        rgba(167, 139, 250, 0.18) 38%,
+        rgba(244, 114, 182, 0.14) 68%,
+        rgba(34, 211, 238, 0.18)
+      )
+      border-box;
+  box-shadow: 0 22px 52px rgba(2, 6, 23, 0.42), 0 0 22px rgba(139, 92, 246, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.dark .aurora-dropdown::before {
+  background: radial-gradient(circle at 18% 0%, rgba(96, 165, 250, 0.1), transparent 34%),
+    radial-gradient(circle at 86% 100%, rgba(34, 211, 238, 0.08), transparent 36%);
+}
+.dark .aurora-dropdown-item {
+  color: #cbd5e1;
+}
+.dark .aurora-dropdown-item::before {
+  background: linear-gradient(
+    110deg,
+    rgba(96, 165, 250, 0.12),
+    rgba(167, 139, 250, 0.09),
+    rgba(34, 211, 238, 0.08)
+  );
+}
+.dark .aurora-dropdown-item:hover,
+.dark .aurora-dropdown-item.is-active,
+.dark .aurora-dropdown-item.is-selected {
+  color: #f8fafc;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 20px rgba(2, 6, 23, 0.18);
+}
+.dark .aurora-engine-mark {
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.12), rgba(34, 211, 238, 0.08));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.dark .aurora-dropdown-item.is-selected .aurora-engine-mark {
+  background: linear-gradient(
+    135deg,
+    rgba(96, 165, 250, 0.18),
+    rgba(167, 139, 250, 0.14),
+    rgba(34, 211, 238, 0.12)
+  );
+  box-shadow: inset 0 0 0 1px rgba(103, 232, 249, 0.16), 0 6px 14px rgba(34, 211, 238, 0.1);
+}
+.dark .aurora-engine-kbd {
+  color: #94a3b8;
+  background: rgba(30, 41, 59, 0.78);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.dark .aurora-dropdown-item.is-selected .aurora-engine-kbd {
+  color: #67e8f9;
+  background: rgba(8, 47, 73, 0.42);
+}
+.dark .aurora-suggestion-url {
+  color: #64748b;
+}
+.dark .aurora-source-chip.is-nav {
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.14);
+}
+.dark .aurora-source-chip.is-bookmark {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.14);
+}
+
+@keyframes aurora-input-bloom {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes aurora-caret-blink {
+  0%,
+  48% {
+    caret-color: #ec4899;
+  }
+  49%,
+  100% {
+    caret-color: transparent;
+  }
+}
+.dark .aurora-input-control:focus {
+  animation-name: aurora-caret-blink-dark;
+}
+@keyframes aurora-caret-blink-dark {
+  0%,
+  48% {
+    caret-color: #67e8f9;
+  }
+  49%,
+  100% {
+    caret-color: transparent;
+  }
+}
+
 /* 周期性扫过按钮的高光 */
 .aurora-btn-shine {
   animation: aurora-shine 3.2s ease-in-out infinite;
@@ -284,7 +715,10 @@ body.quiet-page {
 /* 这些类的动画写在非 layer 的 CSS 里，Tailwind 的 motion-reduce 工具类压不过，这里统一关 */
 @media (prefers-reduced-motion: reduce) {
   .aurora-pan,
-  .aurora-btn-shine {
+  .aurora-btn-shine,
+  .aurora-search-shell::before,
+  .aurora-input-wrap::before,
+  .aurora-input-control:focus {
     animation: none;
   }
 }

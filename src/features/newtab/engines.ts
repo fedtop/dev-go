@@ -70,12 +70,21 @@ export function buildSearchUrl(engine: SearchEngine, input: string): string {
   return engine.queryUrl + encodeURIComponent(q)
 }
 
+export const DEFAULT_PINNED_NAV_IDS = [
+  'github',
+  'x',
+  'chatgpt',
+  'ruanyf-blog',
+  'hackernews',
+  'youtube',
+]
+
 /** 首次使用时落库的默认导航（按分类组织，common → dev → ai → community → tools） */
 export const DEFAULT_QUICK_NAV: QuickNavItem[] = [
   // 常用
   { id: 'google', title: 'Google', url: 'https://www.google.com', category: 'common' },
   { id: 'gmail', title: 'Gmail', url: 'https://mail.google.com', category: 'common' },
-  { id: 'youtube', title: 'YouTube', url: 'https://www.youtube.com', category: 'common' },
+  { id: 'youtube', title: 'YouTube', url: 'https://www.youtube.com', category: 'common', pinned: true }, // prettier-ignore
   { id: 'bilibili', title: 'Bilibili', url: 'https://www.bilibili.com', category: 'common' },
   { id: 'zhihu', title: '知乎', url: 'https://www.zhihu.com', category: 'common' },
   { id: 'weibo', title: '微博', url: 'https://weibo.com', category: 'common' },
@@ -85,7 +94,7 @@ export const DEFAULT_QUICK_NAV: QuickNavItem[] = [
   { id: 'jd', title: '京东', url: 'https://www.jd.com', category: 'common' },
   { id: 'netease-music', title: '网易云音乐', url: 'https://music.163.com', category: 'common' },
   // 开发
-  { id: 'github', title: 'GitHub', url: 'https://github.com', category: 'dev' },
+  { id: 'github', title: 'GitHub', url: 'https://github.com', category: 'dev', pinned: true }, // prettier-ignore
   { id: 'mdn', title: 'MDN', url: 'https://developer.mozilla.org', category: 'dev' },
   { id: 'stackoverflow', title: 'Stack Overflow', url: 'https://stackoverflow.com', category: 'dev' }, // prettier-ignore
   { id: 'npm', title: 'npm', url: 'https://www.npmjs.com', category: 'dev' },
@@ -113,7 +122,7 @@ export const DEFAULT_QUICK_NAV: QuickNavItem[] = [
   { id: 'gitlab', title: 'GitLab', url: 'https://gitlab.com', category: 'dev' },
   // AI
   { id: 'huggingface', title: 'HuggingFace', url: 'https://huggingface.co', category: 'ai' },
-  { id: 'chatgpt', title: 'ChatGPT', url: 'https://chatgpt.com', category: 'ai' },
+  { id: 'chatgpt', title: 'ChatGPT', url: 'https://chatgpt.com', category: 'ai', pinned: true }, // prettier-ignore
   { id: 'claude', title: 'Claude', url: 'https://claude.ai', category: 'ai' },
   { id: 'deepseek', title: 'DeepSeek', url: 'https://chat.deepseek.com', category: 'ai' },
   { id: 'gemini', title: 'Gemini', url: 'https://gemini.google.com', category: 'ai' },
@@ -129,10 +138,10 @@ export const DEFAULT_QUICK_NAV: QuickNavItem[] = [
   { id: 'midjourney', title: 'Midjourney', url: 'https://www.midjourney.com', category: 'ai' },
   { id: 'cursor', title: 'Cursor', url: 'https://cursor.com', category: 'ai' },
   // 社区
-  { id: 'x', title: 'X', url: 'https://x.com', category: 'community' },
+  { id: 'x', title: 'X', url: 'https://x.com', category: 'community', pinned: true },
   { id: 'v2ex', title: 'V2EX', url: 'https://www.v2ex.com', category: 'community' },
   { id: 'juejin', title: '掘金', url: 'https://juejin.cn', category: 'community' },
-  { id: 'hackernews', title: 'Hacker News', url: 'https://news.ycombinator.com', category: 'community' }, // prettier-ignore
+  { id: 'hackernews', title: 'Hacker News', url: 'https://news.ycombinator.com', category: 'community', pinned: true }, // prettier-ignore
   { id: 'reddit', title: 'Reddit', url: 'https://www.reddit.com', category: 'community' },
   { id: 'github-trending', title: 'GitHub Trending', url: 'https://github.com/trending', category: 'community' }, // prettier-ignore
   { id: 'sspai', title: '少数派', url: 'https://sspai.com', category: 'community' },
@@ -143,6 +152,7 @@ export const DEFAULT_QUICK_NAV: QuickNavItem[] = [
   { id: 'segmentfault', title: 'SegmentFault', url: 'https://segmentfault.com', category: 'community' }, // prettier-ignore
   { id: 'cnblogs', title: '博客园', url: 'https://www.cnblogs.com', category: 'community' },
   { id: 'oschina', title: '开源中国', url: 'https://www.oschina.net', category: 'community' },
+  { id: 'ruanyf-blog', title: '阮一峰日志', url: 'https://www.ruanyifeng.com/blog/', category: 'community', pinned: true }, // prettier-ignore
   { id: 'ruanyf-weekly', title: '阮一峰周刊', url: 'https://github.com/ruanyf/weekly', category: 'community' }, // prettier-ignore
   { id: 'eleduck', title: '电鸭社区', url: 'https://eleduck.com', category: 'community' },
   // 工具
@@ -203,6 +213,34 @@ export function seedEmptyCategories(stored: QuickNavItem[]): QuickNavItem[] {
     (item) => !nonEmpty.has(categoryOf(item)) && !usedUrls.has(item.url) && !usedIds.has(item.id),
   )
   return additions.length > 0 ? [...stored, ...additions] : stored
+}
+
+/** 一次性默认固定：仅当当前没有任何固定项时，固定指定默认站点；缺失的默认站点会补入。 */
+export function seedDefaultPinnedItems(stored: QuickNavItem[]): QuickNavItem[] {
+  if (stored.some((item) => item.pinned)) return stored
+
+  const pinnedIds = new Set(DEFAULT_PINNED_NAV_IDS)
+  const defaultsById = new Map(DEFAULT_QUICK_NAV.map((item) => [item.id, item]))
+  const usedUrls = new Set(stored.map((item) => item.url))
+  const usedIds = new Set(stored.map((item) => item.id))
+  let changed = false
+
+  const pinnedStored = stored.map((item) => {
+    if (!pinnedIds.has(item.id)) return item
+    changed = true
+    return { ...item, pinned: true }
+  })
+
+  const additions = DEFAULT_PINNED_NAV_IDS.flatMap((id) => {
+    const item = defaultsById.get(id)
+    if (!item || usedIds.has(item.id) || usedUrls.has(item.url)) return []
+    usedIds.add(item.id)
+    usedUrls.add(item.url)
+    changed = true
+    return [{ ...item, pinned: true }]
+  })
+
+  return changed ? [...pinnedStored, ...additions] : stored
 }
 
 function uniq(values: string[]): string[] {

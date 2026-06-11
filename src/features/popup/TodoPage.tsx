@@ -34,6 +34,10 @@ const DOT_STYLE: Record<TodoStatus, string> = {
   done: 'border-emerald-500 bg-emerald-500 text-white',
 }
 
+function isImeComposing(e: React.KeyboardEvent<HTMLInputElement>, composing: boolean): boolean {
+  return composing || e.nativeEvent.isComposing || e.keyCode === 229
+}
+
 function DotIcon({ status }: { status: TodoStatus }) {
   if (status === 'doing') {
     return <span className='h-1.5 w-1.5 rounded-full bg-white' />
@@ -109,6 +113,18 @@ export default function TodoPage() {
   const [dragId, setDragId] = useState<string | null>(null)
   const [dropMarker, setDropMarker] = useState<{ id: string; position: DropPosition } | null>(null)
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null)
+  const inputComposingRef = useRef(false)
+  const editingComposingRef = useRef(false)
+
+  const startEditing = (id: string, text: string) => {
+    editingComposingRef.current = false
+    setEditing({ id, text })
+  }
+
+  const stopEditing = () => {
+    editingComposingRef.current = false
+    setEditing(null)
+  }
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -163,7 +179,15 @@ export default function TodoPage() {
           autoFocus
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && add()}
+          onCompositionStart={() => {
+            inputComposingRef.current = true
+          }}
+          onCompositionEnd={() => {
+            inputComposingRef.current = false
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !isImeComposing(e, inputComposingRef.current)) add()
+          }}
           placeholder='添加任务，回车保存…'
           className='min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400'
         />
@@ -268,12 +292,19 @@ export default function TodoPage() {
                         autoFocus
                         value={editing.text}
                         onChange={(e) => setEditing({ id: item.id, text: e.target.value })}
+                        onCompositionStart={() => {
+                          editingComposingRef.current = true
+                        }}
+                        onCompositionEnd={() => {
+                          editingComposingRef.current = false
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
+                            if (isImeComposing(e, editingComposingRef.current)) return
                             todos.setText(item.id, editing.text)
-                            setEditing(null)
+                            stopEditing()
                           }
-                          if (e.key === 'Escape') setEditing(null)
+                          if (e.key === 'Escape') stopEditing()
                         }}
                         className='min-w-0 flex-1 rounded-md border border-blue-400 bg-white px-2 py-1 text-sm text-slate-800 outline-none'
                       />
@@ -282,7 +313,7 @@ export default function TodoPage() {
                           type='button'
                           onClick={() => {
                             todos.setText(item.id, editing.text)
-                            setEditing(null)
+                            stopEditing()
                           }}
                           disabled={!editing.text.trim()}
                           title='保存'
@@ -292,7 +323,7 @@ export default function TodoPage() {
                         </button>
                         <button
                           type='button'
-                          onClick={() => setEditing(null)}
+                          onClick={stopEditing}
                           title='取消'
                           className='flex h-6 w-6 items-center justify-center rounded-md border border-slate-300 text-slate-500 transition-colors hover:bg-slate-100'
                         >
@@ -313,7 +344,7 @@ export default function TodoPage() {
                     <div className='flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100'>
                       <button
                         type='button'
-                        onClick={() => setEditing({ id: item.id, text: item.text })}
+                        onClick={() => startEditing(item.id, item.text)}
                         title='编辑'
                         className='flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-blue-500 hover:text-white'
                       >

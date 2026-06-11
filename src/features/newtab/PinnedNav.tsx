@@ -24,7 +24,7 @@ export function PinIcon({ className = 'h-3 w-3' }: { className?: string }) {
 }
 
 interface PinnedNavProps {
-  /** 已固定的导航项（按全量列表顺序） */
+  /** 已固定的导航项（父组件负责排序） */
   items: QuickNavItem[]
   onUnpin: (id: string) => void
 }

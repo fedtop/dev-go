@@ -47,12 +47,12 @@ export default function App() {
   const activeShortcut = shortcuts[TAB_COMMANDS[active]] || shortcuts._execute_action || ''
 
   return (
-    <div className='popup-shell relative flex max-h-[620px] w-[500px] flex-col overflow-hidden text-slate-800'>
+    <div className='popup-shell relative flex w-[500px] flex-col overflow-hidden text-slate-800'>
       <span aria-hidden='true' className='popup-ambient popup-ambient-a' />
       <span aria-hidden='true' className='popup-ambient popup-ambient-b' />
 
       {/* 顶部栏 */}
-      <header className='popup-header sticky top-0 z-10 flex items-center justify-between px-4 py-3'>
+      <header className='popup-header z-10 flex shrink-0 items-center justify-between px-4 py-3'>
         <div className='flex items-center gap-2'>
           <span className='popup-brand-mark flex h-7 w-7 items-center justify-center rounded-xl'>
             <img src='/icons/48.png' alt='' className='h-5 w-5' />
@@ -63,7 +63,7 @@ export default function App() {
       </header>
 
       {/* 内容区 */}
-      <main className='popup-main min-h-0 flex-1 overflow-y-auto px-4 py-4'>
+      <main className='popup-main min-h-0 flex-auto overflow-y-auto overscroll-contain px-4 py-4'>
         {active === 'translate' && <TranslatePage />}
         {active === 'todo' && <TodoPage />}
         {active === 'network' && <NetworkPage />}
@@ -72,7 +72,7 @@ export default function App() {
       </main>
 
       {/* 底部栏 */}
-      <footer className='popup-footer flex items-center justify-between px-4 py-2 text-xs text-slate-400'>
+      <footer className='popup-footer flex shrink-0 items-center justify-between px-4 py-2 text-xs text-slate-400'>
         <span>
           快捷键{' '}
           {activeShortcut ? (

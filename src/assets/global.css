@@ -89,6 +89,13 @@ body {
   margin: 0;
 }
 
+html.popup-page,
+html.popup-page body,
+html.popup-page #root {
+  width: 500px;
+  overflow: hidden;
+}
+
 /* 细滚动条 */
 *::-webkit-scrollbar {
   width: 6px;
@@ -209,6 +216,7 @@ body.quiet-page {
 /* ---------- Popup：克制版 newtab 视觉语言 ---------- */
 .popup-shell {
   isolation: isolate;
+  max-height: 600px;
   background: radial-gradient(circle at 12% -8%, rgba(59, 130, 246, 0.16), transparent 34%),
     radial-gradient(circle at 92% 8%, rgba(236, 72, 153, 0.1), transparent 30%),
     linear-gradient(180deg, #f8fbff 0%, #eef3fb 100%);

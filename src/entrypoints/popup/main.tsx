@@ -6,6 +6,8 @@ import ReactDOM from 'react-dom/client'
 import { migrateLocalToSync } from '@/utils/settings'
 import App from './App'
 
+document.documentElement.classList.add('popup-page')
+
 const render = () =>
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>

@@ -115,11 +115,27 @@ export const enableReloadOnProxySwitch = storage.defineItem<boolean>(
 export type ThemeMode = 'auto' | 'light' | 'dark'
 export type StoredThemeMode = ThemeMode | 'system'
 
+/** 快捷导航分类 id（展示常量见 features/newtab/categories.ts） */
+export type QuickNavCategoryId = 'common' | 'dev' | 'ai' | 'community' | 'tools'
+
+/** 分类自定义名称覆盖（仅存与默认名不同的项，缺省用默认名） */
+export type QuickNavCategoryLabels = Partial<Record<QuickNavCategoryId, string>>
+
+/** 分类自定义名称（跨设备同步） */
+export const quickNavCategoryLabels = storage.defineItem<QuickNavCategoryLabels>(
+  'sync:quickNavCategoryLabels',
+  { fallback: {} },
+)
+
 /** 快捷导航卡片 */
 export interface QuickNavItem {
   id: string
   title: string
   url: string
+  /** 所属分类；旧数据无此字段，缺省视为「常用」 */
+  category?: QuickNavCategoryId
+  /** 是否固定到搜索框下方的固定栏 */
+  pinned?: boolean
 }
 
 /** 新标签页当前搜索引擎 id（见 features/newtab/engines.ts，默认 google） */
@@ -130,6 +146,16 @@ export const searchEngine = storage.defineItem<string>('sync:searchEngine', {
 /** 快捷导航卡片列表（为空时由 newtab 落库默认开发者站点） */
 export const quickNavItems = storage.defineItem<QuickNavItem[]>('sync:quickNavItems', {
   fallback: [],
+})
+
+/** newtab 上次选中的导航分类（本机记忆，无需跨设备） */
+export const newtabActiveCategory = storage.defineItem<string>('local:newtabActiveCategory', {
+  fallback: 'common',
+})
+
+/** 分类默认站点一次性种子标记（仿 sync:migratedFromLocal 模式，不参与备份） */
+export const quickNavCategorySeeded = storage.defineItem<boolean>('sync:quickNavCategorySeeded', {
+  fallback: false,
 })
 
 /** 主题模式：默认自动（18:00-06:00 深色，其余浅色） */

@@ -3,6 +3,86 @@
 /* 暗色变体：由 <html class="dark"> 控制（见 src/utils/theme.ts） */
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --animate-aurora-1: aurora-1 13s ease-in-out infinite;
+  --animate-aurora-2: aurora-2 17s ease-in-out infinite;
+  --animate-aurora-3: aurora-3 21s ease-in-out infinite;
+  --animate-aurora-hue: aurora-hue 16s ease-in-out infinite;
+  --animate-star-twinkle: star-twinkle 5.5s ease-in-out infinite;
+  --animate-nav-fade: nav-fade 0.24s ease-out both;
+
+  @keyframes aurora-1 {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+    }
+    25% {
+      transform: translate3d(14vw, 10vh, 0) rotate(20deg) scale(1.22);
+    }
+    50% {
+      transform: translate3d(6vw, 18vh, 0) rotate(8deg) scale(0.92);
+      opacity: 0.85;
+    }
+    75% {
+      transform: translate3d(-10vw, 6vh, 0) rotate(-16deg) scale(1.12);
+    }
+  }
+  @keyframes aurora-2 {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+    }
+    33% {
+      transform: translate3d(-16vw, 12vh, 0) rotate(-22deg) scale(1.25);
+    }
+    66% {
+      transform: translate3d(-6vw, 22vh, 0) rotate(10deg) scale(0.9);
+      opacity: 0.8;
+    }
+  }
+  @keyframes aurora-3 {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    33% {
+      transform: translate3d(12vw, -14vh, 0) scale(1.2);
+    }
+    66% {
+      transform: translate3d(-8vw, -6vh, 0) scale(1.05);
+      opacity: 0.85;
+    }
+  }
+  @keyframes aurora-hue {
+    0%,
+    100% {
+      filter: hue-rotate(0deg);
+    }
+    50% {
+      filter: hue-rotate(36deg);
+    }
+  }
+  @keyframes star-twinkle {
+    0%,
+    100% {
+      opacity: 0.35;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  @keyframes nav-fade {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
 html,
 body {
   height: unset !important;
@@ -17,4 +97,194 @@ body {
 *::-webkit-scrollbar-thumb {
   background: rgba(100, 116, 139, 0.3);
   border-radius: 3px;
+}
+
+/* ---------- 极光背景（newtab，utility 难以表达的部分） ---------- */
+
+/* 基底渐变：替代纯色，避免页面发灰 */
+.aurora-base {
+  background: linear-gradient(180deg, #f7f9fe 0%, #eef2fa 55%, #e9eef8 100%);
+}
+.dark .aurora-base {
+  background: radial-gradient(140% 100% at 50% 0%, #141b36 0%, #0b1022 50%, #070a17 100%);
+}
+
+/* 三团极光光斑：径向渐变自带柔和边缘（无需 blur filter），动画只动 transform */
+.aurora-blob {
+  position: absolute;
+  will-change: transform;
+}
+.aurora-1 {
+  top: -30vmax;
+  left: -18vmax;
+  width: 74vmax;
+  height: 74vmax;
+  background: radial-gradient(
+    closest-side,
+    rgba(59, 130, 246, 0.42),
+    rgba(59, 130, 246, 0.16) 45%,
+    transparent 70%
+  );
+}
+.dark .aurora-1 {
+  background: radial-gradient(
+    closest-side,
+    rgba(91, 110, 255, 0.45),
+    rgba(91, 110, 255, 0.16) 45%,
+    transparent 70%
+  );
+}
+.aurora-2 {
+  top: -16vmax;
+  right: -24vmax;
+  width: 62vmax;
+  height: 62vmax;
+  background: radial-gradient(
+    closest-side,
+    rgba(168, 85, 247, 0.32),
+    rgba(168, 85, 247, 0.12) 45%,
+    transparent 70%
+  );
+}
+.dark .aurora-2 {
+  background: radial-gradient(
+    closest-side,
+    rgba(192, 80, 255, 0.32),
+    rgba(192, 80, 255, 0.1) 45%,
+    transparent 70%
+  );
+}
+.aurora-3 {
+  bottom: -34vmax;
+  left: 14vw;
+  width: 68vmax;
+  height: 68vmax;
+  background: radial-gradient(
+    closest-side,
+    rgba(236, 110, 173, 0.26),
+    rgba(236, 110, 173, 0.1) 45%,
+    transparent 70%
+  );
+}
+.dark .aurora-3 {
+  background: radial-gradient(
+    closest-side,
+    rgba(45, 212, 191, 0.28),
+    rgba(45, 212, 191, 0.1) 45%,
+    transparent 70%
+  );
+}
+
+/* 星空（仅深色模式由组件外层控制显隐）：平铺的随机白点，两层错位叠加 */
+.quiet-stars {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><g fill='white'><circle cx='20' cy='35' r='1.1' fill-opacity='.9'/><circle cx='95' cy='120' r='.7' fill-opacity='.6'/><circle cx='160' cy='40' r='1.2' fill-opacity='.8'/><circle cx='220' cy='150' r='.6' fill-opacity='.5'/><circle cx='300' cy='80' r='1' fill-opacity='.9'/><circle cx='370' cy='28' r='.7' fill-opacity='.6'/><circle cx='430' cy='170' r='1.4' fill-opacity='.85'/><circle cx='520' cy='60' r='.8' fill-opacity='.7'/><circle cx='560' cy='140' r='.6' fill-opacity='.5'/><circle cx='40' cy='230' r='.9' fill-opacity='.75'/><circle cx='130' cy='300' r='1.2' fill-opacity='.9'/><circle cx='260' cy='260' r='.7' fill-opacity='.55'/><circle cx='330' cy='330' r='1' fill-opacity='.8'/><circle cx='470' cy='280' r='.6' fill-opacity='.5'/><circle cx='550' cy='330' r='1.1' fill-opacity='.85'/><circle cx='80' cy='420' r='.7' fill-opacity='.6'/><circle cx='180' cy='470' r='1' fill-opacity='.8'/><circle cx='290' cy='420' r='.6' fill-opacity='.5'/><circle cx='390' cy='480' r='1.3' fill-opacity='.9'/><circle cx='500' cy='440' r='.8' fill-opacity='.65'/><circle cx='570' cy='520' r='.6' fill-opacity='.5'/><circle cx='50' cy='560' r='1' fill-opacity='.8'/><circle cx='150' cy='580' r='.7' fill-opacity='.55'/><circle cx='240' cy='520' r='1.1' fill-opacity='.85'/><circle cx='340' cy='560' r='.9' fill-opacity='.7'/><circle cx='450' cy='570' r='.6' fill-opacity='.5'/></g></svg>");
+  background-size: 600px 600px;
+}
+.quiet-stars-2 {
+  background-position: 280px 160px;
+}
+
+/* 胶片噪点：feTurbulence 灰度噪声平铺，透明度由组件的 opacity 类控制 */
+.quiet-noise {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+  background-size: 160px 160px;
+}
+
+/* 晕影：中心通透，四周轻微压暗 */
+.quiet-vignette {
+  background: radial-gradient(120% 90% at 50% 42%, transparent 55%, rgba(30, 41, 59, 0.1) 100%);
+}
+.dark .quiet-vignette {
+  background: radial-gradient(120% 90% at 50% 42%, transparent 50%, rgba(2, 4, 12, 0.6) 100%);
+}
+
+/* newtab 撑底色（body 上挂 quiet-page，避免 overscroll 露白；不影响 popup 等其他入口） */
+body.quiet-page {
+  background-color: #edf1f9;
+}
+.dark body.quiet-page {
+  background-color: #070a17;
+}
+
+/* ---------- 极光流动渐变（主标题 / 搜索按钮共用） ---------- */
+
+/* 渐变横向往复平移；配合各自的 background-image 使用 */
+.aurora-pan {
+  background-size: 200% 100%;
+  animation: aurora-pan 7s ease-in-out infinite;
+}
+@keyframes aurora-pan {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* 主标题：渐变填充文字，深色模式带光晕 */
+.aurora-title {
+  background-image: linear-gradient(
+    110deg,
+    #2563eb,
+    #7c3aed 30%,
+    #db2777 55%,
+    #0891b2 85%,
+    #2563eb
+  ); /* prettier-ignore */
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.dark .aurora-title {
+  background-image: linear-gradient(
+    110deg,
+    #60a5fa,
+    #a78bfa 30%,
+    #f472b6 55%,
+    #22d3ee 85%,
+    #60a5fa
+  ); /* prettier-ignore */
+  filter: drop-shadow(0 0 16px rgba(139, 92, 246, 0.35));
+}
+
+/* 搜索按钮：流动渐变底 + 彩色光晕；transform/scale 过渡也在这统一管 */
+.aurora-btn {
+  background-image: linear-gradient(
+    110deg,
+    #3b82f6,
+    #8b5cf6 30%,
+    #ec4899 60%,
+    #6366f1 85%,
+    #06b6d4
+  ); /* prettier-ignore */
+  box-shadow: 0 2px 14px rgba(139, 92, 246, 0.35);
+  transition: scale 0.2s ease, box-shadow 0.3s ease;
+}
+.aurora-btn:hover {
+  box-shadow: 0 4px 24px rgba(139, 92, 246, 0.55);
+}
+
+/* 周期性扫过按钮的高光 */
+.aurora-btn-shine {
+  animation: aurora-shine 3.2s ease-in-out infinite;
+}
+@keyframes aurora-shine {
+  0%,
+  12% {
+    transform: translateX(-160%) skewX(-14deg);
+  }
+  55%,
+  100% {
+    transform: translateX(420%) skewX(-14deg);
+  }
+}
+
+/* 这些类的动画写在非 layer 的 CSS 里，Tailwind 的 motion-reduce 工具类压不过，这里统一关 */
+@media (prefers-reduced-motion: reduce) {
+  .aurora-pan,
+  .aurora-btn-shine {
+    animation: none;
+  }
 }

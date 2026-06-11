@@ -5,11 +5,15 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { SHIP_NAME, SITE_URL } from '@/utils/constants'
-import { quickNavItems, searchEngine, themeMode, type QuickNavItem, type ThemeMode } from '@/utils/settings' // prettier-ignore
+import { newtabActiveCategory, quickNavCategoryLabels, quickNavCategorySeeded, quickNavItems, searchEngine, themeMode, type QuickNavCategoryId, type QuickNavCategoryLabels, type QuickNavItem, type ThemeMode } from '@/utils/settings' // prettier-ignore
 import { applyTheme, normalizeThemeMode, watchAutoTheme } from '@/utils/theme'
+import { CATEGORY_LABEL_MAX, defaultLabelOf, isQuickNavCategory } from './categories'
+import CategoryTabs, { PencilIcon } from './CategoryTabs'
 import { downloadConfig, mergeItems, parseConfig } from './config'
-import { DEFAULT_QUICK_NAV } from './engines'
+import { DEFAULT_QUICK_NAV, isUncustomizedDefault, seedEmptyCategories } from './engines'
+import PinnedNav, { PIN_LIMIT } from './PinnedNav'
 import QuickNav from './QuickNav'
+import QuietBackground from './QuietBackground'
 import SearchBar from './SearchBar'
 import TodoBoard from './TodoBoard'
 
@@ -19,29 +23,6 @@ const THEME_THUMB_OFFSET: Record<ThemeMode, string> = {
   dark: 'translate-x-0',
   auto: 'translate-x-[41px]',
   light: 'translate-x-[82px]',
-}
-const LEGACY_DEFAULT_QUICK_NAV_IDS = [
-  'github',
-  'mdn',
-  'stackoverflow',
-  'npm',
-  'juejin',
-  'caniuse',
-  'devdocs',
-  'vercel',
-]
-
-function isLegacyDefaultQuickNav(items: QuickNavItem[]): boolean {
-  return (
-    items.length === LEGACY_DEFAULT_QUICK_NAV_IDS.length &&
-    items.every((item, index) => item.id === LEGACY_DEFAULT_QUICK_NAV_IDS[index])
-  )
-}
-
-function mergeMissingDefaultQuickNav(items: QuickNavItem[]): QuickNavItem[] {
-  const ids = new Set(items.map((item) => item.id))
-  const urls = new Set(items.map((item) => item.url))
-  return [...items, ...DEFAULT_QUICK_NAV.filter((item) => !ids.has(item.id) && !urls.has(item.url))]
 }
 
 function MoonIcon() {
@@ -198,6 +179,9 @@ export default function NewTabApp() {
   const [mode, setMode] = useState<ThemeMode>('auto')
   const [effectiveDark, setEffectiveDark] = useState(false)
   const [items, setItems] = useState<QuickNavItem[]>([])
+  const [activeCategory, setActiveCategory] = useState<QuickNavCategoryId>('common')
+  const [categoryLabels, setCategoryLabels] = useState<QuickNavCategoryLabels>({})
+  const [renamingCategory, setRenamingCategory] = useState<QuickNavCategoryId | null>(null)
   const [ready, setReady] = useState(false)
   const [toast, setToast] = useState('')
   const [todoOpen, setTodoOpen] = useState(() => window.location.hash === '#todo')
@@ -229,26 +213,70 @@ export default function NewTabApp() {
     return watchAutoTheme(() => setEffectiveDark(applyTheme('auto')))
   }, [mode])
 
-  // 初始化导航（首次为空则落库默认值；旧默认未改动过时自动补齐新版默认项）
+  // 初始化导航：首次为空落库分类默认；老用户做一次性种子
+  // （没改过旧默认 → 整体换新版分类默认；自定义过 → 只往空分类补默认站点）。
   useEffect(() => {
-    quickNavItems.getValue().then((stored) => {
+    ;(async () => {
+      const [stored, seeded, savedCategory, savedLabels] = await Promise.all([
+        quickNavItems.getValue(),
+        quickNavCategorySeeded.getValue(),
+        newtabActiveCategory.getValue(),
+        quickNavCategoryLabels.getValue(),
+      ])
+
+      let next = stored
       if (stored.length === 0) {
-        setItems(DEFAULT_QUICK_NAV)
-        quickNavItems.setValue(DEFAULT_QUICK_NAV)
-      } else if (isLegacyDefaultQuickNav(stored)) {
-        const next = mergeMissingDefaultQuickNav(stored)
-        setItems(next)
-        quickNavItems.setValue(next)
-      } else {
-        setItems(stored)
+        next = DEFAULT_QUICK_NAV
+      } else if (!seeded) {
+        next = isUncustomizedDefault(stored) ? DEFAULT_QUICK_NAV : seedEmptyCategories(stored)
       }
+      if (next !== stored) quickNavItems.setValue(next)
+      if (!seeded) quickNavCategorySeeded.setValue(true)
+
+      if (isQuickNavCategory(savedCategory)) setActiveCategory(savedCategory)
+      setCategoryLabels(savedLabels)
+      setItems(next)
       setReady(true)
-    })
+    })()
   }, [])
 
   const updateItems = (next: QuickNavItem[]) => {
     setItems(next)
-    quickNavItems.setValue(next)
+    quickNavItems.setValue(next).catch(() => {
+      showToast('保存失败：同步空间已满，请删减部分导航')
+    })
+  }
+
+  const changeCategory = (id: QuickNavCategoryId) => {
+    setActiveCategory(id)
+    newtabActiveCategory.setValue(id)
+  }
+
+  const pinnedItems = items.filter((item) => item.pinned)
+
+  /** 固定 / 取消固定；固定栏满（PIN_LIMIT）时拦截并提示 */
+  const togglePin = (id: string) => {
+    const target = items.find((item) => item.id === id)
+    if (!target) return
+    if (!target.pinned && pinnedItems.length >= PIN_LIMIT) {
+      showToast(`固定栏已满（最多 ${PIN_LIMIT} 个），请先移出一些`)
+      return
+    }
+    updateItems(
+      items.map((item) =>
+        item.id === id ? { ...item, pinned: item.pinned ? undefined : true } : item,
+      ),
+    )
+  }
+
+  /** 重命名分类：空或与默认名相同 → 删除覆盖、恢复默认 */
+  const renameCategory = (id: QuickNavCategoryId, raw: string) => {
+    const label = raw.trim().slice(0, CATEGORY_LABEL_MAX)
+    const next = { ...categoryLabels }
+    if (!label || label === defaultLabelOf(id)) delete next[id]
+    else next[id] = label
+    setCategoryLabels(next)
+    quickNavCategoryLabels.setValue(next)
   }
 
   const changeTheme = (next: ThemeMode) => {
@@ -265,7 +293,7 @@ export default function NewTabApp() {
   const handleExport = async () => {
     const engine = await searchEngine.getValue()
     downloadConfig(
-      { quickNavItems: items, themeMode: mode, searchEngine: engine },
+      { quickNavItems: items, themeMode: mode, searchEngine: engine, categoryLabels },
       new Date().toISOString(),
     )
   }
@@ -284,6 +312,11 @@ export default function NewTabApp() {
         themeMode.setValue(config.themeMode)
       }
       if (config.searchEngine) searchEngine.setValue(config.searchEngine)
+      if (config.categoryLabels) {
+        const nextLabels = { ...categoryLabels, ...config.categoryLabels }
+        setCategoryLabels(nextLabels)
+        quickNavCategoryLabels.setValue(nextLabels)
+      }
       showToast(added > 0 ? `已导入 ${added} 个导航` : '没有新导航（已存在的已跳过）')
     } catch (err) {
       showToast(err instanceof Error ? err.message : '导入失败')
@@ -291,7 +324,10 @@ export default function NewTabApp() {
   }
 
   return (
-    <div className='min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 text-slate-800 dark:from-slate-900 dark:to-slate-950 dark:text-slate-100'>
+    // 底色在 body.quiet-page 上（见 global.css）；根容器必须保持透明，
+    // 否则会盖住 -z-10 的 QuietBackground 特效层
+    <div className='relative flex min-h-screen flex-col text-slate-800 dark:text-slate-100'>
+      <QuietBackground />
       {/* 顶栏 */}
       <header className='flex items-center justify-between px-6 py-4'>
         <div className='flex items-center gap-2'>
@@ -303,7 +339,7 @@ export default function NewTabApp() {
             type='button'
             onClick={() => setTodoOpen(true)}
             title='打开 TODO 面板'
-            className='flex h-10 items-center gap-1.5 rounded-full border border-slate-200 bg-white/70 px-3.5 text-sm font-medium text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-600 hover:shadow-md dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:text-blue-400'
+            className='flex h-10 items-center gap-1.5 rounded-full border border-slate-200 bg-white/70 px-3.5 text-sm font-medium text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-600 hover:shadow-md dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-300 dark:hover:border-blue-500 dark:hover:text-blue-400'
           >
             <TodoIcon />
             <span>TODO</span>
@@ -313,23 +349,53 @@ export default function NewTabApp() {
       </header>
 
       {/* 主体 */}
-      <main className='mx-auto flex w-full max-w-4xl flex-col items-center px-6'>
-        <div className='mt-[12vh] mb-8 text-center'>
-          <h1 className='bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-4xl font-bold text-transparent'>
+      <main className='mx-auto flex w-full max-w-4xl flex-1 flex-col items-center px-6'>
+        {/* 弹性留白：空间充裕时撑到 12vh（与原 mt-[12vh] 视觉一致），
+            内容变多（如固定栏两行）空间不足时自动压缩，最低保留 32px 才开始滚动 */}
+        <div aria-hidden='true' className='max-h-[12vh] min-h-8 w-full flex-1' />
+        <div className='mb-8 text-center'>
+          <h1 className='aurora-title aurora-pan text-5xl font-extrabold tracking-tight'>
             {SHIP_NAME}
           </h1>
-          <p className='mt-2 text-sm text-slate-400'>为开发者打造的新标签页</p>
+          <p className='mt-3 flex items-center justify-center gap-3 text-sm tracking-[0.3em] text-slate-400 dark:text-slate-500'>
+            <span
+              aria-hidden='true'
+              className='h-px w-10 bg-gradient-to-r from-transparent to-slate-300 dark:to-slate-600'
+            />
+            为开发者打造的新标签页
+            <span
+              aria-hidden='true'
+              className='h-px w-10 bg-gradient-to-l from-transparent to-slate-300 dark:to-slate-600'
+            />
+          </p>
         </div>
 
         <SearchBar navItems={items} />
 
+        {/* 固定栏：搜索框与分类列表之间 */}
+        {ready && <PinnedNav items={pinnedItems} onUnpin={togglePin} />}
+
         {ready && (
           <section className='mt-10 w-full'>
-            <div className='mb-3 flex items-center justify-between px-1'>
-              <h2 className='text-xs font-medium uppercase tracking-wider text-slate-400'>
-                快捷导航
-              </h2>
+            <div className='mb-3 flex items-center justify-between gap-3 px-1'>
+              <CategoryTabs
+                active={activeCategory}
+                labels={categoryLabels}
+                editing={renamingCategory}
+                onChange={changeCategory}
+                onRename={renameCategory}
+                onEditingChange={setRenamingCategory}
+              />
               <div className='flex items-center gap-1.5'>
+                <button
+                  type='button'
+                  title='重命名当前分类'
+                  aria-label='重命名当前分类'
+                  onClick={() => setRenamingCategory(activeCategory)}
+                  className='rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-200/60 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700/60 dark:hover:text-slate-200'
+                >
+                  <PencilIcon className='h-3.5 w-3.5' />
+                </button>
                 <button
                   type='button'
                   onClick={handleExport}
@@ -353,7 +419,15 @@ export default function NewTabApp() {
                 />
               </div>
             </div>
-            <QuickNav items={items} onChange={updateItems} />
+            <div key={activeCategory} className='animate-nav-fade motion-reduce:animate-none'>
+              <QuickNav
+                items={items}
+                activeCategory={activeCategory}
+                categoryLabels={categoryLabels}
+                onChange={updateItems}
+                onTogglePin={togglePin}
+              />
+            </div>
           </section>
         )}
       </main>

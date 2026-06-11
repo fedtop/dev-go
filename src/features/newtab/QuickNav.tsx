@@ -4,21 +4,29 @@
 
 import { useLayoutEffect, useRef, useState } from 'react'
 
-import type { QuickNavItem } from '@/utils/settings'
+import type { QuickNavCategoryId, QuickNavCategoryLabels, QuickNavItem } from '@/utils/settings'
+import { categoryOf, labelOf, QUICK_NAV_CATEGORIES } from './categories'
+import { PinIcon } from './PinnedNav'
 import SiteIcon from './SiteIcon'
 
 interface QuickNavProps {
+  /** 全量导航列表（含所有分类），onChange 也回传全量 */
   items: QuickNavItem[]
+  activeCategory: QuickNavCategoryId
+  categoryLabels: QuickNavCategoryLabels
   onChange: (items: QuickNavItem[]) => void
+  /** 固定 / 取消固定（上限校验在 NewTabApp） */
+  onTogglePin: (id: string) => void
 }
 
 interface EditState {
   id: string | null // null 表示新增
   title: string
   url: string
+  category: QuickNavCategoryId
 }
 
-const EMPTY: EditState = { id: null, title: '', url: '' }
+const EMPTY: EditState = { id: null, title: '', url: '', category: 'common' }
 
 type DropPosition = 'before' | 'after'
 const REORDER_ANIMATION_MS = 180
@@ -30,17 +38,25 @@ function normalizeUrl(url: string): string {
   return /^https?:\/\//i.test(u) ? u : `https://${u}`
 }
 
-export default function QuickNav({ items, onChange }: QuickNavProps) {
+export default function QuickNav({
+  items,
+  activeCategory,
+  categoryLabels,
+  onChange,
+  onTogglePin,
+}: QuickNavProps) {
   const [edit, setEdit] = useState<EditState | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dragItems, setDragItems] = useState<QuickNavItem[] | null>(null)
   const itemRefs = useRef(new Map<string, HTMLDivElement>())
   const pendingRects = useRef<Map<string, DOMRect> | null>(null)
   const animationFrame = useRef<number | null>(null)
-  const displayItems = dragItems ?? items
+  const visibleItems = items.filter((item) => categoryOf(item) === activeCategory)
+  const displayItems = dragItems ?? visibleItems
 
-  const openAdd = () => setEdit({ ...EMPTY })
-  const openEdit = (item: QuickNavItem) => setEdit({ ...item })
+  const openAdd = () => setEdit({ ...EMPTY, category: activeCategory })
+  const openEdit = (item: QuickNavItem) =>
+    setEdit({ id: item.id, title: item.title, url: item.url, category: categoryOf(item) })
 
   const remove = (id: string) => onChange(items.filter((i) => i.id !== id))
 
@@ -142,8 +158,14 @@ export default function QuickNav({ items, onChange }: QuickNavProps) {
     setDragItems(next)
   }
 
+  /** 把分类内的新顺序回填到全量列表：当前分类的槽位依次填入新顺序，其他分类位置不动 */
+  const mergeBack = (all: QuickNavItem[], ordered: QuickNavItem[]): QuickNavItem[] => {
+    const queue = [...ordered]
+    return all.map((item) => (categoryOf(item) === activeCategory ? queue.shift()! : item))
+  }
+
   const commitDrag = () => {
-    if (dragItems && !isSameOrder(items, dragItems)) onChange(dragItems)
+    if (dragItems && !isSameOrder(visibleItems, dragItems)) onChange(mergeBack(items, dragItems))
     resetDrag()
   }
 
@@ -153,9 +175,11 @@ export default function QuickNav({ items, onChange }: QuickNavProps) {
     const url = normalizeUrl(edit.url)
     if (!title || !url) return
     if (edit.id) {
-      onChange(items.map((i) => (i.id === edit.id ? { ...i, title, url } : i)))
+      onChange(
+        items.map((i) => (i.id === edit.id ? { ...i, title, url, category: edit.category } : i)),
+      )
     } else {
-      onChange([...items, { id: crypto.randomUUID(), title, url }])
+      onChange([...items, { id: crypto.randomUUID(), title, url, category: edit.category }])
     }
     setEdit(null)
   }
@@ -188,7 +212,7 @@ export default function QuickNav({ items, onChange }: QuickNavProps) {
                 e.dataTransfer.effectAllowed = 'move'
                 e.dataTransfer.setData('text/plain', item.id)
                 setDraggingId(item.id)
-                setDragItems(items)
+                setDragItems(visibleItems)
               }}
               onDragOver={(e) => {
                 e.preventDefault()
@@ -203,7 +227,7 @@ export default function QuickNav({ items, onChange }: QuickNavProps) {
                 href={item.url}
                 target='_blank'
                 rel='noreferrer'
-                className={`flex flex-col items-center gap-2 rounded-2xl border bg-white/70 px-2 py-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-200 hover:shadow-md dark:bg-slate-800/60 dark:hover:border-slate-700 ${
+                className={`flex flex-col items-center gap-2 rounded-2xl border bg-white/70 px-2 py-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-200 hover:shadow-md dark:bg-white/[0.06] dark:hover:border-white/10 ${
                   isDragging ? 'scale-95 opacity-40' : ''
                 } border-transparent`}
               >
@@ -212,6 +236,19 @@ export default function QuickNav({ items, onChange }: QuickNavProps) {
                   {item.title}
                 </span>
               </a>
+              {/* 固定开关：已固定常显蓝色，未固定悬停浮现 */}
+              <button
+                type='button'
+                title={item.pinned ? '取消固定' : '固定到搜索框下方'}
+                onClick={() => onTogglePin(item.id)}
+                className={`absolute left-1 top-1 flex h-5 w-5 items-center justify-center rounded-full transition-all ${
+                  item.pinned
+                    ? 'bg-blue-500/90 text-white hover:bg-blue-400'
+                    : 'bg-slate-200/90 text-slate-600 opacity-0 hover:bg-blue-500 hover:text-white group-hover:opacity-100 dark:bg-slate-700 dark:text-slate-200'
+                }`}
+              >
+                <PinIcon className='h-3 w-3' />
+              </button>
               {/* 悬停操作 */}
               <div className='absolute right-1 top-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100'>
                 <button
@@ -280,6 +317,25 @@ export default function QuickNav({ items, onChange }: QuickNavProps) {
                   className='rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100'
                 />
               </label>
+              <div className='flex flex-col gap-1'>
+                <span className='text-xs text-slate-500 dark:text-slate-400'>分类</span>
+                <div className='flex flex-wrap gap-1.5'>
+                  {QUICK_NAV_CATEGORIES.map((category) => (
+                    <button
+                      key={category.id}
+                      type='button'
+                      onClick={() => setEdit({ ...edit, category: category.id })}
+                      className={`rounded-full px-3 py-1 text-xs transition-colors ${
+                        edit.category === category.id
+                          ? 'bg-slate-900/90 font-medium text-white dark:bg-white/90 dark:text-slate-900'
+                          : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 dark:bg-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                      }`}
+                    >
+                      {labelOf(category.id, categoryLabels)}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className='mt-5 flex justify-end gap-2'>
               <button

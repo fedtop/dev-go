@@ -26,7 +26,7 @@ export default defineConfig({
     baseIconPath: 'assets/icon.png',
   },
 
-  manifest: ({ mode }) => ({
+  manifest: ({ browser, mode }) => ({
     ...(mode === 'development' ? { key: DEV_EXTENSION_KEY } : {}),
     name: 'DevGo',
     homepage_url: 'https://github.com/wangrongding',
@@ -39,6 +39,8 @@ export default defineConfig({
       'proxy',
       'webRequest',
       'downloads',
+      // Chrome 本地 favicon 数据库（newtab 图标零网络加载）；Firefox 无此 API
+      ...(browser === 'firefox' ? [] : ['favicon']),
     ],
     // 内容脚本、CORS 动态规则和后台代理都需要全站访问能力。
     host_permissions: ['<all_urls>'],

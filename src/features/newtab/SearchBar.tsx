@@ -151,9 +151,24 @@ export default function SearchBar({ navItems }: SearchBarProps) {
         <button
           type='button'
           onClick={submit}
-          className='shrink-0 rounded-xl bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-500'
+          className='aurora-btn aurora-pan group/search relative shrink-0 overflow-hidden rounded-xl px-4 py-1.5 text-sm font-semibold text-white hover:scale-[1.04] active:scale-95'
         >
-          搜索
+          {/* 周期扫过的高光 */}
+          <span
+            aria-hidden='true'
+            className='aurora-btn-shine pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-white/35 blur-md'
+          />
+          <span className='relative flex items-center gap-1.5'>
+            <svg
+              viewBox='0 0 24 24'
+              aria-hidden='true'
+              className='h-3.5 w-3.5 fill-none stroke-current transition-transform duration-300 group-hover/search:rotate-12 group-hover/search:scale-110'
+            >
+              <circle cx='11' cy='11' r='7' strokeWidth='2.2' />
+              <path d='m20.5 20.5-4.2-4.2' strokeLinecap='round' strokeWidth='2.2' />
+            </svg>
+            搜索
+          </span>
         </button>
       </div>
 

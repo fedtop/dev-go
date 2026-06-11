@@ -12,6 +12,8 @@ import {
   networkMode,
   networkProxyProfile,
   networkRuleList,
+  quickNavCategoryLabels,
+  quickNavCategorySeeded,
   quickNavItems,
   searchEngine,
   themeMode,
@@ -50,6 +52,7 @@ const BACKUP_ITEMS: Record<string, BackupItem> = {
   enableReloadOnProxySwitch,
   searchEngine,
   quickNavItems,
+  quickNavCategoryLabels,
   themeMode,
   todoItems,
   defaultPopupTab,
@@ -112,5 +115,8 @@ export async function restoreBackup(
     tasks.push(item.setValue(value as never))
   })
   await Promise.all(tasks)
+  // 旧版备份的导航项可能没有 category（恢复后全部落在「常用」），
+  // 重置种子标记让 newtab 下次打开时给空分类补默认站点。
+  if ('quickNavItems' in data) await quickNavCategorySeeded.setValue(false)
   return { imported: tasks.length, skipped }
 }

@@ -1,23 +1,24 @@
 /**
  * 新标签页配置的导入 / 导出：用于在不同设备 / 浏览器间共享与迁移。
  *
- * 导出为带版本号的 JSON；导入时做容错校验，仅接收合法字段。
+ * 导出为 JSON；导入时做容错校验，仅接收合法字段，旧文件缺字段也能导入。
  */
 
-import type { QuickNavItem, ThemeMode } from '@/utils/settings'
+import type { QuickNavCategoryLabels, QuickNavItem, ThemeMode } from '@/utils/settings'
+import { isQuickNavCategory, sanitizeCategoryLabels } from './categories'
 
 const FORMAT = 'devgo-newtab'
-const VERSION = 1
 
 export interface NewTabConfig {
   searchEngine?: string
   themeMode?: ThemeMode
+  /** 分类自定义名称（旧文件无此字段） */
+  categoryLabels?: QuickNavCategoryLabels
   quickNavItems: QuickNavItem[]
 }
 
 interface ConfigFile extends NewTabConfig {
   format: typeof FORMAT
-  version: number
   exportedAt: string
 }
 
@@ -38,13 +39,15 @@ function sanitizeItems(input: unknown): QuickNavItem[] {
   return input
     .filter((raw): raw is Record<string, unknown> => !!raw && typeof raw === 'object')
     .map((raw) => {
-      const { id, title, url } = raw
+      const { id, title, url, category, pinned } = raw
       if (typeof title !== 'string' || typeof url !== 'string') return null
       if (!title.trim() || !isValidUrl(url)) return null
       return {
         id: typeof id === 'string' && id ? id : crypto.randomUUID(),
         title: title.trim(),
         url,
+        ...(isQuickNavCategory(category) ? { category } : {}),
+        ...(pinned === true ? { pinned: true } : {}),
       }
     })
     .filter((item): item is QuickNavItem => item !== null)
@@ -60,10 +63,10 @@ function sanitizeThemeMode(input: unknown): ThemeMode | undefined {
 export function serializeConfig(config: NewTabConfig, now: string): string {
   const file: ConfigFile = {
     format: FORMAT,
-    version: VERSION,
     exportedAt: now,
     searchEngine: config.searchEngine,
     themeMode: config.themeMode,
+    categoryLabels: config.categoryLabels,
     quickNavItems: config.quickNavItems,
   }
   return JSON.stringify(file, null, 2)
@@ -98,8 +101,14 @@ export function parseConfig(text: string): NewTabConfig {
 
   const themeMode = sanitizeThemeMode(obj.themeMode)
   const searchEngine = typeof obj.searchEngine === 'string' ? obj.searchEngine : undefined
+  const categoryLabels = sanitizeCategoryLabels(obj.categoryLabels)
 
-  return { quickNavItems: items, themeMode, searchEngine }
+  return {
+    quickNavItems: items,
+    themeMode,
+    searchEngine,
+    ...(Object.keys(categoryLabels).length > 0 ? { categoryLabels } : {}),
+  }
 }
 
 /**

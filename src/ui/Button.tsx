@@ -17,11 +17,11 @@ export default function Button({
   ...rest
 }: ButtonProps) {
   const base =
-    'inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+    'inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50'
   const styles =
     variant === 'primary'
-      ? 'bg-blue-600 text-white hover:bg-blue-500'
-      : 'border border-slate-300 bg-white text-slate-700 hover:border-blue-400 hover:text-blue-600'
+      ? 'popup-btn-primary text-white'
+      : 'popup-btn-default border text-slate-700 hover:text-indigo-600'
 
   return (
     <button

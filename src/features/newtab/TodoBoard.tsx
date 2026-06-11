@@ -17,10 +17,14 @@ import {
 import { useTodos } from '@/features/todo/useTodos'
 
 const COLUMNS: { status: TodoStatus; accent: string; dot: string }[] = [
-  { status: 'todo', accent: 'text-slate-500', dot: 'bg-slate-400' },
-  { status: 'doing', accent: 'text-blue-600 dark:text-blue-400', dot: 'bg-blue-500' },
+  { status: 'todo', accent: 'text-slate-500 dark:text-slate-400', dot: 'bg-slate-400' },
+  { status: 'doing', accent: 'text-sky-600 dark:text-sky-400', dot: 'bg-sky-500' },
   { status: 'done', accent: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
 ]
+
+function isImeComposing(e: React.KeyboardEvent<HTMLInputElement>, composing: boolean): boolean {
+  return composing || e.nativeEvent.isComposing || e.keyCode === 229
+}
 
 function PlusIcon() {
   return (
@@ -103,6 +107,22 @@ export default function TodoBoard({ onClose, onToast }: TodoBoardProps) {
   const [dropMarker, setDropMarker] = useState<{ id: string; position: DropPosition } | null>(null)
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const draftComposingRef = useRef<Record<TodoStatus, boolean>>({
+    todo: false,
+    doing: false,
+    done: false,
+  })
+  const editingComposingRef = useRef(false)
+
+  const startEditing = (id: string, text: string) => {
+    editingComposingRef.current = false
+    setEditing({ id, text })
+  }
+
+  const stopEditing = () => {
+    editingComposingRef.current = false
+    setEditing(null)
+  }
 
   // Esc 关闭
   useEffect(() => {
@@ -169,33 +189,35 @@ export default function TodoBoard({ onClose, onToast }: TodoBoardProps) {
 
   return (
     <div
-      className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm'
+      className='fixed inset-0 z-50 flex items-center justify-center bg-slate-950/25 p-4 backdrop-blur-md dark:bg-black/40'
       onClick={onClose}
     >
       <div
-        className='flex max-h-[86vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/95 shadow-2xl shadow-slate-900/20 dark:border-slate-700/60 dark:bg-slate-900/95'
+        className='flex max-h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/70 bg-white/75 shadow-[0_24px_70px_rgba(15,23,42,0.18)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/75 dark:shadow-black/30'
         onClick={(e) => e.stopPropagation()}
       >
         {/* 头部 */}
-        <div className='relative flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-500 px-6 py-5 text-white'>
-          <div>
-            <h2 className='text-lg font-semibold tracking-tight'>任务看板</h2>
-            <p className='mt-0.5 text-xs text-white/80'>
-              {remaining > 0 ? `还有 ${remaining} 项未完成` : '全部完成，太棒了 🎉'}
+        <div className='flex items-center justify-between gap-4 border-b border-white/60 bg-white/45 px-5 py-4 dark:border-white/10 dark:bg-white/[0.03]'>
+          <div className='min-w-0'>
+            <h2 className='text-sm font-semibold tracking-tight text-slate-800 dark:text-slate-100'>
+              TODO
+            </h2>
+            <p className='mt-1 text-xs text-slate-500 dark:text-slate-400'>
+              {todos.items.length} 项 · {remaining} 未完成
             </p>
           </div>
-          <div className='flex items-center gap-1.5'>
+          <div className='flex shrink-0 items-center gap-1.5'>
             <button
               type='button'
               onClick={handleExport}
-              className='rounded-lg px-2.5 py-1 text-xs text-white/90 transition-colors hover:bg-white/20'
+              className='rounded-lg px-2.5 py-1.5 text-xs text-slate-500 transition-colors hover:bg-white/70 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-100'
             >
               导出
             </button>
             <button
               type='button'
               onClick={() => fileRef.current?.click()}
-              className='rounded-lg px-2.5 py-1 text-xs text-white/90 transition-colors hover:bg-white/20'
+              className='rounded-lg px-2.5 py-1.5 text-xs text-slate-500 transition-colors hover:bg-white/70 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-100'
             >
               导入
             </button>
@@ -210,7 +232,7 @@ export default function TodoBoard({ onClose, onToast }: TodoBoardProps) {
               type='button'
               onClick={onClose}
               title='关闭'
-              className='ml-1 flex h-8 w-8 items-center justify-center rounded-full text-white/90 transition-colors hover:bg-white/20'
+              className='ml-1 flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-white/80 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-100'
             >
               <CloseIcon />
             </button>
@@ -218,7 +240,7 @@ export default function TodoBoard({ onClose, onToast }: TodoBoardProps) {
         </div>
 
         {/* 三列看板 */}
-        <div className='grid flex-1 grid-cols-1 gap-4 overflow-y-auto bg-slate-50/60 p-5 sm:grid-cols-3 dark:bg-slate-950/40'>
+        <div className='grid flex-1 grid-cols-1 gap-3 overflow-y-auto p-4 md:grid-cols-3'>
           {COLUMNS.map((col) => {
             const colItems = todos.items.filter((i) => i.status === col.status)
             const isOver = overCol === col.status
@@ -245,19 +267,19 @@ export default function TodoBoard({ onClose, onToast }: TodoBoardProps) {
                   e.preventDefault()
                   dropToColumn(col.status)
                 }}
-                className={`flex flex-col rounded-2xl border p-3 transition-colors ${
+                className={`flex min-h-[360px] flex-col rounded-2xl border p-3 transition-colors ${
                   isOver
-                    ? 'border-blue-400 bg-blue-50/80 dark:border-blue-500 dark:bg-blue-950/30'
-                    : 'border-slate-200 bg-white/70 dark:border-slate-800 dark:bg-slate-900/60'
+                    ? 'border-sky-300/80 bg-sky-50/60 dark:border-sky-500/50 dark:bg-sky-950/20'
+                    : 'border-white/70 bg-slate-50/50 dark:border-white/10 dark:bg-white/[0.035]'
                 }`}
               >
                 {/* 列头 */}
                 <div className='mb-3 flex items-center gap-2 px-1'>
                   <span className={`h-2 w-2 rounded-full ${col.dot}`} />
-                  <h3 className={`text-xs font-semibold uppercase tracking-wider ${col.accent}`}>
+                  <h3 className={`text-xs font-semibold ${col.accent}`}>
                     {TODO_STATUS_LABEL[col.status]}
                   </h3>
-                  <span className='ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400'>
+                  <span className='ml-auto rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-white/10 dark:text-slate-400'>
                     {colItems.length}
                   </span>
                 </div>
@@ -289,15 +311,15 @@ export default function TodoBoard({ onClose, onToast }: TodoBoardProps) {
                           dropToCard(item.id, col.status)
                         }}
                         onDragEnd={resetDrag}
-                        className={`group relative cursor-grab rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-all hover:border-slate-300 hover:shadow-md active:cursor-grabbing dark:border-slate-700 dark:bg-slate-800 ${
+                        className={`group relative cursor-grab rounded-xl border border-white/80 bg-white/75 p-3 shadow-[0_1px_0_rgba(255,255,255,0.9)] transition-colors hover:bg-white/90 active:cursor-grabbing dark:border-white/10 dark:bg-white/[0.06] dark:hover:bg-white/[0.09] ${
                           dragId === item.id ? 'opacity-40' : ''
                         } ${
                           marker === 'before'
-                            ? 'before:absolute before:-top-1 before:left-0 before:right-0 before:h-0.5 before:rounded-full before:bg-blue-500'
+                            ? 'before:absolute before:-top-1 before:left-0 before:right-0 before:h-0.5 before:rounded-full before:bg-sky-500'
                             : ''
                         } ${
                           marker === 'after'
-                            ? 'after:absolute after:-bottom-1 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-blue-500'
+                            ? 'after:absolute after:-bottom-1 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-sky-500'
                             : ''
                         }`}
                       >
@@ -307,32 +329,39 @@ export default function TodoBoard({ onClose, onToast }: TodoBoardProps) {
                               autoFocus
                               value={editing.text}
                               onChange={(e) => setEditing({ id: item.id, text: e.target.value })}
+                              onCompositionStart={() => {
+                                editingComposingRef.current = true
+                              }}
+                              onCompositionEnd={() => {
+                                editingComposingRef.current = false
+                              }}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
+                                  if (isImeComposing(e, editingComposingRef.current)) return
                                   todos.setText(item.id, editing.text)
-                                  setEditing(null)
+                                  stopEditing()
                                 }
-                                if (e.key === 'Escape') setEditing(null)
+                                if (e.key === 'Escape') stopEditing()
                               }}
-                              className='min-w-0 flex-1 rounded-md border border-blue-400 bg-white px-2 py-1 text-sm text-slate-800 outline-none dark:bg-slate-900 dark:text-slate-100'
+                              className='min-w-0 flex-1 rounded-lg border border-slate-200 bg-white/80 px-2 py-1 text-sm text-slate-800 outline-none transition-colors focus:border-sky-400 dark:border-white/10 dark:bg-slate-950/50 dark:text-slate-100'
                             />
                             <button
                               type='button'
                               onClick={() => {
                                 todos.setText(item.id, editing.text)
-                                setEditing(null)
+                                stopEditing()
                               }}
                               disabled={!editing.text.trim()}
                               title='保存'
-                              className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-600 text-white transition-colors hover:bg-blue-500 disabled:opacity-40'
+                              className='flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-slate-900/85 text-white transition-colors hover:bg-slate-800 disabled:opacity-40 dark:bg-white/90 dark:text-slate-950 dark:hover:bg-white'
                             >
                               <CheckIcon />
                             </button>
                             <button
                               type='button'
-                              onClick={() => setEditing(null)}
+                              onClick={stopEditing}
                               title='取消'
-                              className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-slate-300 text-slate-500 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700'
+                              className='flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-white/80 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10'
                             >
                               <CancelIcon />
                             </button>
@@ -352,9 +381,9 @@ export default function TodoBoard({ onClose, onToast }: TodoBoardProps) {
                           <div className='absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100'>
                             <button
                               type='button'
-                              onClick={() => setEditing({ id: item.id, text: item.text })}
+                              onClick={() => startEditing(item.id, item.text)}
                               title='编辑'
-                              className='flex h-5 w-5 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-blue-500 hover:text-white'
+                              className='flex h-5 w-5 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-900/80 hover:text-white dark:hover:bg-white/15'
                             >
                               <EditIcon />
                             </button>
@@ -362,7 +391,7 @@ export default function TodoBoard({ onClose, onToast }: TodoBoardProps) {
                               type='button'
                               onClick={() => todos.remove(item.id)}
                               title='删除'
-                              className='flex h-5 w-5 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-red-500 hover:text-white'
+                              className='flex h-5 w-5 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-rose-500 hover:text-white'
                             >
                               <TrashIcon />
                             </button>
@@ -374,20 +403,33 @@ export default function TodoBoard({ onClose, onToast }: TodoBoardProps) {
                 </div>
 
                 {/* 列内快速添加 */}
-                <div className='mt-2 flex items-center gap-1.5'>
+                <div className='mt-2 flex items-center gap-1.5 rounded-xl border border-white/70 bg-white/50 px-2 py-1.5 dark:border-white/10 dark:bg-white/[0.04]'>
                   <input
                     value={drafts[col.status]}
                     onChange={(e) => setDrafts((d) => ({ ...d, [col.status]: e.target.value }))}
-                    onKeyDown={(e) => e.key === 'Enter' && addTo(col.status)}
+                    onCompositionStart={() => {
+                      draftComposingRef.current[col.status] = true
+                    }}
+                    onCompositionEnd={() => {
+                      draftComposingRef.current[col.status] = false
+                    }}
+                    onKeyDown={(e) => {
+                      if (
+                        e.key === 'Enter' &&
+                        !isImeComposing(e, draftComposingRef.current[col.status])
+                      ) {
+                        addTo(col.status)
+                      }
+                    }}
                     placeholder='添加任务…'
-                    className='min-w-0 flex-1 rounded-lg border border-transparent bg-slate-100 px-2.5 py-1.5 text-xs text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-400 focus:bg-white dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-800'
+                    className='min-w-0 flex-1 bg-transparent px-1 text-xs text-slate-700 outline-none placeholder:text-slate-400 dark:text-slate-200'
                   />
                   <button
                     type='button'
                     onClick={() => addTo(col.status)}
                     disabled={!drafts[col.status].trim()}
                     title='添加'
-                    className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white transition-colors hover:bg-blue-500 disabled:opacity-40'
+                    className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-white/80 hover:text-slate-900 disabled:opacity-40 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white'
                   >
                     <PlusIcon />
                   </button>
@@ -395,11 +437,6 @@ export default function TodoBoard({ onClose, onToast }: TodoBoardProps) {
               </div>
             )
           })}
-        </div>
-
-        {/* 底部提示 */}
-        <div className='border-t border-slate-100 px-6 py-2.5 text-center text-[11px] text-slate-400 dark:border-slate-800'>
-          拖拽卡片可在列间移动 / 排序 · 悬停卡片可编辑或删除 · Esc 关闭
         </div>
       </div>
     </div>

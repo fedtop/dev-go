@@ -39,7 +39,7 @@ export default function Select({ value, options, onChange, className = '' }: Sel
       <button
         type='button'
         onClick={() => setOpen((v) => !v)}
-        className='flex w-full items-center justify-between gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700 transition-colors hover:border-blue-400'
+        className='popup-field flex w-full items-center justify-between gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm text-slate-700 transition-colors'
       >
         <span className='truncate'>{current?.label ?? ''}</span>
         <svg
@@ -53,14 +53,14 @@ export default function Select({ value, options, onChange, className = '' }: Sel
       </button>
 
       {open && (
-        <div className='absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg shadow-slate-200/60'>
+        <div className='popup-select-menu absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl p-1'>
           {options.map((o) => (
             <button
               key={o.value}
               type='button'
               onClick={() => select(o.value)}
-              className={`flex w-full items-center justify-between px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-blue-50 ${
-                o.value === value ? 'font-medium text-blue-600' : 'text-slate-700'
+              className={`popup-select-item flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors ${
+                o.value === value ? 'is-selected font-medium' : ''
               }`}
             >
               <span className='truncate'>{o.label}</span>

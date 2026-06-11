@@ -47,18 +47,23 @@ export default function App() {
   const activeShortcut = shortcuts[TAB_COMMANDS[active]] || shortcuts._execute_action || ''
 
   return (
-    <div className='flex w-[500px] flex-col bg-slate-50 text-slate-800'>
+    <div className='popup-shell relative flex max-h-[620px] w-[500px] flex-col overflow-hidden text-slate-800'>
+      <span aria-hidden='true' className='popup-ambient popup-ambient-a' />
+      <span aria-hidden='true' className='popup-ambient popup-ambient-b' />
+
       {/* 顶部栏 */}
-      <header className='sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3'>
+      <header className='popup-header sticky top-0 z-10 flex items-center justify-between px-4 py-3'>
         <div className='flex items-center gap-2'>
-          <img src='/icons/48.png' alt='' className='h-5 w-5' />
+          <span className='popup-brand-mark flex h-7 w-7 items-center justify-center rounded-xl'>
+            <img src='/icons/48.png' alt='' className='h-5 w-5' />
+          </span>
           <span className='text-sm font-semibold tracking-tight text-slate-800'>{SHIP_NAME}</span>
         </div>
         <Tabs value={active} tabs={POPUP_PAGES} onChange={setActive} />
       </header>
 
       {/* 内容区 */}
-      <main className='px-4 py-4'>
+      <main className='popup-main min-h-0 flex-1 overflow-y-auto px-4 py-4'>
         {active === 'translate' && <TranslatePage />}
         {active === 'todo' && <TodoPage />}
         {active === 'network' && <NetworkPage />}
@@ -67,11 +72,11 @@ export default function App() {
       </main>
 
       {/* 底部栏 */}
-      <footer className='flex items-center justify-between border-t border-slate-200 bg-white px-4 py-2 text-xs text-slate-400'>
+      <footer className='popup-footer flex items-center justify-between px-4 py-2 text-xs text-slate-400'>
         <span>
           快捷键{' '}
           {activeShortcut ? (
-            <kbd className='rounded bg-slate-100 px-1 py-0.5 text-[10px] text-slate-500'>
+            <kbd className='popup-kbd rounded px-1.5 py-0.5 text-[10px] text-slate-500'>
               {formatShortcut(activeShortcut)}
             </kbd>
           ) : (
@@ -82,7 +87,7 @@ export default function App() {
           href={SITE_URL}
           target='_blank'
           rel='noreferrer'
-          className='transition-colors hover:text-blue-600'
+          className='transition-colors hover:text-indigo-600'
         >
           GitHub ↗
         </a>

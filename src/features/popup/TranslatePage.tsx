@@ -62,7 +62,7 @@ export default function TranslatePage() {
   }
 
   return (
-    <div className='flex flex-col gap-4'>
+    <div className='flex flex-col gap-4 pb-[10px]'>
       {/* ── 查词：下拉 + 输入 + 按钮 一行 ── */}
       <section className='flex flex-col gap-2'>
         <div className='flex items-center gap-2'>
@@ -144,6 +144,8 @@ export default function TranslatePage() {
 
       {/* ── 整页翻译：下拉 + 按钮 一行 ── */}
       <section className='flex flex-col gap-1.5'>
+        <p className='text-xs text-slate-400 text-left'>原文下方插入译文 · 再次点击可移除</p>
+
         <div className='flex items-center gap-2'>
           <Select
             value={provider}
@@ -162,7 +164,6 @@ export default function TranslatePage() {
             翻译当前页面
           </Button>
         </div>
-        <p className='text-center text-xs text-slate-400'>原文下方插入译文 · 再次点击可移除</p>
       </section>
     </div>
   )

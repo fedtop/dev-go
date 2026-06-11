@@ -13,8 +13,8 @@ export default function Switch({ checked, onChange, disabled }: SwitchProps) {
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onChange?.(!checked)}
-      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-        checked ? 'bg-blue-600' : 'bg-slate-300'
+      className={`popup-switch relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+        checked ? 'is-checked' : ''
       }`}
     >
       <span

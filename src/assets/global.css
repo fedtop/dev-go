@@ -206,6 +206,143 @@ body.quiet-page {
   background-color: #070a17;
 }
 
+/* ---------- Popup：克制版 newtab 视觉语言 ---------- */
+.popup-shell {
+  isolation: isolate;
+  background: radial-gradient(circle at 12% -8%, rgba(59, 130, 246, 0.16), transparent 34%),
+    radial-gradient(circle at 92% 8%, rgba(236, 72, 153, 0.1), transparent 30%),
+    linear-gradient(180deg, #f8fbff 0%, #eef3fb 100%);
+}
+.popup-ambient {
+  position: absolute;
+  z-index: -1;
+  border-radius: 999px;
+  filter: blur(18px);
+  pointer-events: none;
+}
+.popup-ambient-a {
+  top: -48px;
+  left: -54px;
+  width: 150px;
+  height: 150px;
+  background: rgba(59, 130, 246, 0.14);
+}
+.popup-ambient-b {
+  right: -62px;
+  bottom: 38px;
+  width: 170px;
+  height: 170px;
+  background: rgba(236, 72, 153, 0.09);
+}
+.popup-header,
+.popup-footer {
+  border-color: rgba(203, 213, 225, 0.72);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: inset 0 -1px 0 rgba(226, 232, 240, 0.72);
+  backdrop-filter: blur(18px) saturate(1.08);
+}
+.popup-footer {
+  box-shadow: inset 0 1px 0 rgba(226, 232, 240, 0.78);
+}
+.popup-brand-mark,
+.popup-tabs,
+.popup-kbd {
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.16), 0 6px 16px rgba(15, 23, 42, 0.05);
+}
+.popup-tabs .is-active {
+  color: #4f46e5;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.82)),
+    linear-gradient(110deg, rgba(59, 130, 246, 0.1), rgba(236, 72, 153, 0.08));
+}
+.popup-main :is(section, div).rounded-lg.border.border-slate-200.bg-white {
+  border-color: rgba(203, 213, 225, 0.72);
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+.popup-main :is(input, textarea).rounded-lg,
+.popup-field {
+  border-color: rgba(203, 213, 225, 0.86);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.84);
+}
+.popup-main :is(input, textarea).rounded-lg:focus,
+.popup-field:hover,
+.popup-field:focus-within {
+  border-color: rgba(99, 102, 241, 0.54);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+.popup-btn-primary {
+  background-image: linear-gradient(110deg, #3b82f6, #6366f1 56%, #0891b2);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.2);
+}
+.popup-btn-primary:hover {
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.26);
+  filter: brightness(1.03);
+}
+.popup-btn-default {
+  border-color: rgba(203, 213, 225, 0.9);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
+}
+.popup-btn-default:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(255, 255, 255, 0.92);
+}
+.popup-switch {
+  background: rgba(148, 163, 184, 0.46);
+  box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.16);
+}
+.popup-switch.is-checked {
+  background-image: linear-gradient(110deg, #3b82f6, #6366f1 60%, #0891b2);
+}
+.popup-select-menu {
+  border: 1px solid rgba(203, 213, 225, 0.78);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px) saturate(1.1);
+}
+.popup-select-item {
+  color: #334155;
+}
+.popup-select-item:hover,
+.popup-select-item.is-selected {
+  color: #4f46e5;
+  background: linear-gradient(110deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.08));
+}
+.popup-main .bg-blue-600 {
+  background-color: #4f46e5;
+}
+.popup-main .hover\:bg-blue-500:hover {
+  background-color: #6366f1;
+}
+.popup-main .text-blue-600,
+.popup-main .hover\:text-blue-600:hover {
+  color: #4f46e5;
+}
+.popup-main .border-blue-500,
+.popup-main .focus\:border-blue-500:focus,
+.popup-main .focus\:border-blue-400:focus,
+.popup-main .focus-within\:border-blue-400:focus-within {
+  border-color: rgba(99, 102, 241, 0.68);
+}
+.popup-main .bg-blue-50 {
+  background-color: rgba(238, 242, 255, 0.88);
+}
+.popup-main .text-blue-700 {
+  color: #4338ca;
+}
+.popup-main .border-blue-300 {
+  border-color: rgba(129, 140, 248, 0.56);
+}
+.popup-main .text-slate-400 {
+  color: #94a3b8;
+}
+.popup-main .border-slate-100 {
+  border-color: rgba(226, 232, 240, 0.72);
+}
+
 /* ---------- 极光流动渐变（主标题 / 搜索按钮共用） ---------- */
 
 /* 渐变横向往复平移；配合各自的 background-image 使用 */

@@ -375,10 +375,9 @@ export default function NewTabApp() {
       </header>
 
       {/* 主体 */}
-      <main className='mx-auto flex w-full max-w-4xl flex-1 flex-col items-center px-6'>
+      <main className='mx-auto flex w-full max-w-4xl flex-1 flex-col items-center px-6 justify-center'>
         {/* 弹性留白：空间充裕时撑到 12vh（与原 mt-[12vh] 视觉一致），
             内容变多（如固定栏两行）空间不足时自动压缩，最低保留 32px 才开始滚动 */}
-        <div aria-hidden='true' className='max-h-[12vh] min-h-8 w-full flex-1' />
         <div className='mb-8 text-center'>
           <h1 className='aurora-title aurora-pan text-5xl font-extrabold tracking-tight'>
             {SHIP_NAME}

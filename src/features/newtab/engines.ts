@@ -4,6 +4,7 @@
 
 import type { QuickNavItem } from '@/utils/settings'
 import { categoryOf } from './categories'
+import { isFaviconSupportedUrl } from './navUrl'
 
 export interface SearchEngine {
   id: string
@@ -79,20 +80,35 @@ export const DEFAULT_PINNED_NAV_IDS = [
   'youtube',
 ]
 
+const BUILTIN_BROWSER_PAGE_IDS = [
+  'browser-history',
+  'browser-downloads',
+  'browser-extensions',
+] as const
+
 /** 首次使用时落库的默认导航（按分类组织，common → dev → ai → community → tools） */
 export const DEFAULT_QUICK_NAV: QuickNavItem[] = [
   // 常用
-  { id: 'google', title: 'Google', url: 'https://www.google.com', category: 'common' },
+  { id: 'browser-history', title: '历史记录', url: 'chrome://history/', category: 'common' },
+  { id: 'browser-downloads', title: '下载管理', url: 'chrome://downloads/', category: 'common' },
+  { id: 'browser-extensions', title: '扩展管理', url: 'chrome://extensions/', category: 'common' },
+  { id: 'zwork', title: 'Zwork', url: 'https://zwork.zhipuai.cn/web/', category: 'common' },
+  { id: 'aihot', title: 'AIHot', url: 'https://aihot.virxact.com', category: 'common' },
+  { id: 'yixi', title: '一席', url: 'https://yixi.tv', category: 'common' },
+  { id: 'notion', title: 'Notion', url: 'https://www.notion.so', category: 'common' },
+  { id: 'weread', title: '微信读书', url: 'https://weread.qq.com', category: 'common' },
   { id: 'gmail', title: 'Gmail', url: 'https://mail.google.com', category: 'common' },
+  { id: '163-mail', title: '网易邮箱', url: 'https://mail.163.com', category: 'common' },
+  { id: 'qq-mail', title: 'QQ邮箱', url: 'https://mail.qq.com', category: 'common' },
+  { id: 'reddit', title: 'Reddit', url: 'https://www.reddit.com', category: 'common' },
   { id: 'youtube', title: 'YouTube', url: 'https://www.youtube.com', category: 'common', pinned: true }, // prettier-ignore
   { id: 'bilibili', title: 'Bilibili', url: 'https://www.bilibili.com', category: 'common' },
   { id: 'zhihu', title: '知乎', url: 'https://www.zhihu.com', category: 'common' },
-  { id: 'weibo', title: '微博', url: 'https://weibo.com', category: 'common' },
   { id: 'xiaohongshu', title: '小红书', url: 'https://www.xiaohongshu.com', category: 'common' },
   { id: 'douban', title: '豆瓣', url: 'https://www.douban.com', category: 'common' },
-  { id: 'taobao', title: '淘宝', url: 'https://www.taobao.com', category: 'common' },
-  { id: 'jd', title: '京东', url: 'https://www.jd.com', category: 'common' },
   { id: 'netease-music', title: '网易云音乐', url: 'https://music.163.com', category: 'common' },
+  { id: 'chuangkit', title: '创客贴', url: 'https://www.chuangkit.com', category: 'common' },
+  { id: 'gaoding', title: '稿定设计', url: 'https://www.gaoding.com', category: 'common' },
   // 开发
   { id: 'github', title: 'GitHub', url: 'https://github.com', category: 'dev', pinned: true }, // prettier-ignore
   { id: 'mdn', title: 'MDN', url: 'https://developer.mozilla.org', category: 'dev' },
@@ -103,12 +119,6 @@ export const DEFAULT_QUICK_NAV: QuickNavItem[] = [
   { id: 'vercel', title: 'Vercel', url: 'https://vercel.com/dashboard', category: 'dev' },
   { id: 'docker-hub', title: 'Docker Hub', url: 'https://hub.docker.com', category: 'dev' },
   { id: 'web-dev', title: 'web.dev', url: 'https://web.dev', category: 'dev' },
-  {
-    id: 'chrome-extensions',
-    title: 'Chrome Extensions',
-    url: 'https://developer.chrome.com/docs/extensions',
-    category: 'dev',
-  },
   { id: 'bundlephobia', title: 'Bundlephobia', url: 'https://bundlephobia.com', category: 'dev' },
   { id: 'typescript', title: 'TypeScript', url: 'https://www.typescriptlang.org', category: 'dev' },
   { id: 'leetcode', title: 'LeetCode', url: 'https://leetcode.cn', category: 'dev' },
@@ -157,6 +167,7 @@ export const DEFAULT_QUICK_NAV: QuickNavItem[] = [
   { id: 'eleduck', title: '电鸭社区', url: 'https://eleduck.com', category: 'community' },
   // 工具
   { id: 'figma', title: 'Figma', url: 'https://www.figma.com', category: 'tools' },
+  { id: '24mail', title: '临时邮箱', url: 'https://24mail.chacuo.net', category: 'tools' },
   { id: 'excalidraw', title: 'Excalidraw', url: 'https://excalidraw.com', category: 'tools' },
   { id: 'codepen', title: 'CodePen', url: 'https://codepen.io', category: 'tools' },
   { id: 'tinypng', title: 'TinyPNG', url: 'https://tinypng.com', category: 'tools' },
@@ -215,6 +226,22 @@ export function seedEmptyCategories(stored: QuickNavItem[]): QuickNavItem[] {
   return additions.length > 0 ? [...stored, ...additions] : stored
 }
 
+/** 一次性补齐浏览器内建页入口，方便已有用户直接访问历史 / 下载 / 扩展。 */
+export function seedBuiltinBrowserPages(stored: QuickNavItem[]): QuickNavItem[] {
+  const defaultsById = new Map(DEFAULT_QUICK_NAV.map((item) => [item.id, item]))
+  const usedUrls = new Set(stored.map((item) => item.url))
+  const usedIds = new Set(stored.map((item) => item.id))
+  const additions = BUILTIN_BROWSER_PAGE_IDS.flatMap((id) => {
+    const item = defaultsById.get(id)
+    if (!item || usedIds.has(item.id) || usedUrls.has(item.url)) return []
+    usedIds.add(item.id)
+    usedUrls.add(item.url)
+    return [item]
+  })
+
+  return additions.length > 0 ? [...stored, ...additions] : stored
+}
+
 /** 一次性默认固定：仅当当前没有任何固定项时，固定指定默认站点；缺失的默认站点会补入。 */
 export function seedDefaultPinnedItems(stored: QuickNavItem[]): QuickNavItem[] {
   if (stored.some((item) => item.pinned)) return stored
@@ -253,6 +280,8 @@ function normalizeFaviconHost(hostname: string): string {
 
 /** 取站点 favicon 候选地址，供并发竞速（见 faviconCache.ts）；站点直连源对国内站点最快 */
 export function faviconUrls(url: string, size = 64): string[] {
+  if (!isFaviconSupportedUrl(url)) return []
+
   try {
     const { hostname } = new URL(url)
     const hosts = uniq([normalizeFaviconHost(hostname), hostname])

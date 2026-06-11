@@ -4,6 +4,7 @@
  */
 
 import type { QuickNavItem } from '@/utils/settings'
+import { openBrowserInternalUrl } from './navUrl'
 import SiteIcon from './SiteIcon'
 
 /** 固定栏容量上限：md 及以上为 8 列，正好两行 */
@@ -32,6 +33,11 @@ interface PinnedNavProps {
 export default function PinnedNav({ items, onUnpin }: PinnedNavProps) {
   if (items.length === 0) return null
 
+  const openItem = (event: React.MouseEvent<HTMLAnchorElement>, url: string) => {
+    if (!openBrowserInternalUrl(url)) return
+    event.preventDefault()
+  }
+
   return (
     <section className='mt-8 w-full'>
       <div className='mb-2 flex items-center gap-1.5 px-1 text-xs text-slate-400 dark:text-slate-500'>
@@ -48,6 +54,7 @@ export default function PinnedNav({ items, onUnpin }: PinnedNavProps) {
               href={item.url}
               target='_blank'
               rel='noreferrer'
+              onClick={(event) => openItem(event, item.url)}
               className='flex flex-col items-center gap-1.5 rounded-xl border border-transparent bg-white/70 px-1.5 py-2.5 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-200 hover:shadow-md dark:bg-white/[0.06] dark:hover:border-white/10'
             >
               <SiteIcon url={item.url} title={item.title} className='h-7 w-7 rounded-lg' />

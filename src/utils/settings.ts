@@ -164,6 +164,12 @@ export const quickNavDefaultPinsSeeded = storage.defineItem<boolean>(
   { fallback: false },
 )
 
+/** 浏览器内建页入口一次性种子标记：补齐历史 / 下载 / 扩展管理 */
+export const quickNavBuiltinPagesSeeded = storage.defineItem<boolean>(
+  'sync:quickNavBuiltinPagesSeeded',
+  { fallback: false },
+)
+
 /** 主题模式：默认自动（18:00-06:00 深色，其余浅色） */
 export const themeMode = storage.defineItem<StoredThemeMode>('sync:themeMode', {
   fallback: 'auto',

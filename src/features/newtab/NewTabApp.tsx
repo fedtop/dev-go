@@ -5,7 +5,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { SHIP_NAME, SITE_URL } from '@/utils/constants'
-import { newtabActiveCategory, quickNavCategoryLabels, quickNavCategorySeeded, quickNavDefaultPinsSeeded, quickNavItems, searchEngine, themeMode, type QuickNavCategoryId, type QuickNavCategoryLabels, type QuickNavItem, type ThemeMode } from '@/utils/settings' // prettier-ignore
+import { newtabActiveCategory, quickNavBuiltinPagesSeeded, quickNavCategoryLabels, quickNavCategorySeeded, quickNavDefaultPinsSeeded, quickNavItems, searchEngine, themeMode, type QuickNavCategoryId, type QuickNavCategoryLabels, type QuickNavItem, type ThemeMode } from '@/utils/settings' // prettier-ignore
 import { applyTheme, normalizeThemeMode, watchAutoTheme } from '@/utils/theme'
 import { CATEGORY_LABEL_MAX, defaultLabelOf, isQuickNavCategory } from './categories'
 import CategoryTabs, { PencilIcon } from './CategoryTabs'
@@ -14,6 +14,7 @@ import {
   DEFAULT_PINNED_NAV_IDS,
   DEFAULT_QUICK_NAV,
   isUncustomizedDefault,
+  seedBuiltinBrowserPages,
   seedDefaultPinnedItems,
   seedEmptyCategories,
 } from './engines'
@@ -224,13 +225,15 @@ export default function NewTabApp() {
   // （没改过旧默认 → 整体换新版分类默认；自定义过 → 只往空分类补默认站点）。
   useEffect(() => {
     ;(async () => {
-      const [stored, seeded, defaultPinsSeeded, savedCategory, savedLabels] = await Promise.all([
-        quickNavItems.getValue(),
-        quickNavCategorySeeded.getValue(),
-        quickNavDefaultPinsSeeded.getValue(),
-        newtabActiveCategory.getValue(),
-        quickNavCategoryLabels.getValue(),
-      ])
+      const [stored, seeded, defaultPinsSeeded, builtinPagesSeeded, savedCategory, savedLabels] =
+        await Promise.all([
+          quickNavItems.getValue(),
+          quickNavCategorySeeded.getValue(),
+          quickNavDefaultPinsSeeded.getValue(),
+          quickNavBuiltinPagesSeeded.getValue(),
+          newtabActiveCategory.getValue(),
+          quickNavCategoryLabels.getValue(),
+        ])
 
       let next = stored
       if (stored.length === 0) {
@@ -239,9 +242,11 @@ export default function NewTabApp() {
         next = isUncustomizedDefault(stored) ? DEFAULT_QUICK_NAV : seedEmptyCategories(stored)
       }
       if (!defaultPinsSeeded) next = seedDefaultPinnedItems(next)
+      if (!builtinPagesSeeded) next = seedBuiltinBrowserPages(next)
       if (next !== stored) quickNavItems.setValue(next)
       if (!seeded) quickNavCategorySeeded.setValue(true)
       if (!defaultPinsSeeded) quickNavDefaultPinsSeeded.setValue(true)
+      if (!builtinPagesSeeded) quickNavBuiltinPagesSeeded.setValue(true)
 
       if (isQuickNavCategory(savedCategory)) setActiveCategory(savedCategory)
       setCategoryLabels(savedLabels)

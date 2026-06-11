@@ -6,6 +6,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 
 import type { QuickNavCategoryId, QuickNavCategoryLabels, QuickNavItem } from '@/utils/settings'
 import { categoryOf, labelOf, QUICK_NAV_CATEGORIES } from './categories'
+import { normalizeNavUrl, openBrowserInternalUrl } from './navUrl'
 import { PinIcon } from './PinnedNav'
 import SiteIcon from './SiteIcon'
 
@@ -30,13 +31,6 @@ const EMPTY: EditState = { id: null, title: '', url: '', category: 'common' }
 
 type DropPosition = 'before' | 'after'
 const REORDER_ANIMATION_MS = 180
-
-/** 规范化 url：缺协议时补 https:// */
-function normalizeUrl(url: string): string {
-  const u = url.trim()
-  if (!u) return ''
-  return /^https?:\/\//i.test(u) ? u : `https://${u}`
-}
 
 export default function QuickNav({
   items,
@@ -169,10 +163,15 @@ export default function QuickNav({
     resetDrag()
   }
 
+  const openItem = (event: React.MouseEvent<HTMLAnchorElement>, url: string) => {
+    if (!openBrowserInternalUrl(url)) return
+    event.preventDefault()
+  }
+
   const save = () => {
     if (!edit) return
     const title = edit.title.trim()
-    const url = normalizeUrl(edit.url)
+    const url = normalizeNavUrl(edit.url)
     if (!title || !url) return
     if (edit.id) {
       onChange(
@@ -227,6 +226,7 @@ export default function QuickNav({
                 href={item.url}
                 target='_blank'
                 rel='noreferrer'
+                onClick={(event) => openItem(event, item.url)}
                 className={`flex flex-col items-center gap-2 rounded-2xl border bg-white/70 px-2 py-4 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-200 hover:shadow-md dark:bg-white/[0.06] dark:hover:border-white/10 ${
                   isDragging ? 'scale-95 opacity-40' : ''
                 } border-transparent`}

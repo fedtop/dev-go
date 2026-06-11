@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
+import { buildBackup, restoreBackup } from '@/utils/backup'
 import { defaultPopupTab, enableGithubEnhance, enableSelectionTranslate } from '@/utils/settings'
 import { formatShortcut } from '@/utils/shortcut'
 import { POPUP_PAGES } from '@/features/popup/pages'
@@ -27,11 +28,17 @@ export default function FunctionPage() {
   const [githubOn, setGithubOn] = useState(true)
   const [shortcuts, setShortcuts] = useState<ShortcutItem[]>([])
   const [defaultTab, setDefaultTab] = useState('translate')
+  const [backupMsg, setBackupMsg] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
+  const loadSettings = () => {
     enableSelectionTranslate.getValue().then(setSelectionOn)
     enableGithubEnhance.getValue().then(setGithubOn)
     defaultPopupTab.getValue().then(setDefaultTab)
+  }
+
+  useEffect(() => {
+    loadSettings()
 
     // 读取当前已注册的命令快捷键（按 COMMAND_LABELS 的声明顺序展示）
     browser.commands?.getAll().then((cmds) => {
@@ -66,6 +73,37 @@ export default function FunctionPage() {
   // Chrome 命令快捷键无法用代码修改，只能跳转到系统设置页让用户自定义
   const openShortcutsPage = () => {
     browser.tabs.create({ url: 'chrome://extensions/shortcuts' })
+  }
+
+  // 导出全部配置（含待办、快捷导航、网络配置等）为 JSON 文件
+  const exportBackup = async () => {
+    try {
+      const backup = await buildBackup()
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `devgo-backup-${backup.exportedAt.slice(0, 10)}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      setBackupMsg('已导出')
+    } catch {
+      setBackupMsg('导出失败')
+    }
+  }
+
+  const importBackup = async (file: File) => {
+    try {
+      const { imported, skipped } = await restoreBackup(await file.text())
+      loadSettings()
+      setBackupMsg(
+        skipped.length > 0
+          ? `已导入 ${imported} 项（跳过 ${skipped.length} 项无效数据）`
+          : `已导入 ${imported} 项，立即生效`,
+      )
+    } catch (err) {
+      setBackupMsg(`导入失败：${err instanceof Error ? err.message : '未知错误'}`)
+    }
   }
 
   return (
@@ -121,6 +159,37 @@ export default function FunctionPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* 数据备份：导出 / 导入全部配置与待办 */}
+      <div className='rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
+        <div className='flex items-center justify-between gap-3'>
+          <div className='flex flex-col'>
+            <span className='text-sm font-medium text-slate-800'>数据备份</span>
+            <span className='text-xs text-slate-400'>导出 / 导入全部配置与待办</span>
+          </div>
+          <div className='flex items-center gap-1.5'>
+            <Button onClick={exportBackup} className='!px-2 !py-1 text-xs'>
+              导出
+            </Button>
+            <Button onClick={() => fileInputRef.current?.click()} className='!px-2 !py-1 text-xs'>
+              导入
+            </Button>
+          </div>
+        </div>
+        {backupMsg && <div className='mt-1.5 text-xs text-slate-500'>{backupMsg}</div>}
+        <input
+          ref={fileInputRef}
+          type='file'
+          accept='.json,application/json'
+          className='hidden'
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) importBackup(file)
+            // 清空选择，同一文件可重复导入
+            e.target.value = ''
+          }}
+        />
       </div>
     </div>
   )

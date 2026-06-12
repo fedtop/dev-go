@@ -7,6 +7,7 @@
 import { useMemo, useRef, useState } from 'react'
 
 import { SITE_URL } from '@/utils/constants'
+import { isImeComposing } from '@/utils/ime'
 import type { TodoStatus } from '@/utils/settings'
 import {
   downloadTodos,
@@ -32,10 +33,6 @@ const DOT_STYLE: Record<TodoStatus, string> = {
   todo: 'border-slate-300 text-transparent hover:border-blue-400',
   doing: 'border-blue-500 bg-blue-500 text-white',
   done: 'border-emerald-500 bg-emerald-500 text-white',
-}
-
-function isImeComposing(e: React.KeyboardEvent<HTMLInputElement>, composing: boolean): boolean {
-  return composing || e.nativeEvent.isComposing || e.keyCode === 229
 }
 
 function DotIcon({ status }: { status: TodoStatus }) {

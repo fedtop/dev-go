@@ -4,6 +4,7 @@
 
 import { useLayoutEffect, useRef, useState } from 'react'
 
+import { isImeComposing } from '@/utils/ime'
 import type { QuickNavCategoryId, QuickNavCategoryLabels, QuickNavItem } from '@/utils/settings'
 import { categoryOf, labelOf, QUICK_NAV_CATEGORIES } from './categories'
 import { normalizeNavUrl, openBrowserInternalUrl } from './navUrl'
@@ -45,6 +46,7 @@ export default function QuickNav({
   const itemRefs = useRef(new Map<string, HTMLDivElement>())
   const pendingRects = useRef<Map<string, DOMRect> | null>(null)
   const animationFrame = useRef<number | null>(null)
+  const urlComposingRef = useRef(false)
   const visibleItems = items.filter((item) => categoryOf(item) === activeCategory)
   const displayItems = dragItems ?? visibleItems
 
@@ -312,7 +314,15 @@ export default function QuickNav({
                 <input
                   value={edit.url}
                   onChange={(e) => setEdit({ ...edit, url: e.target.value })}
-                  onKeyDown={(e) => e.key === 'Enter' && save()}
+                  onCompositionStart={() => {
+                    urlComposingRef.current = true
+                  }}
+                  onCompositionEnd={() => {
+                    urlComposingRef.current = false
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !isImeComposing(e, urlComposingRef.current)) save()
+                  }}
                   placeholder='https://github.com'
                   className='rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100'
                 />

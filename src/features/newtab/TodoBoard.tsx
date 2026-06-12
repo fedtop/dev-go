@@ -6,6 +6,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 
+import { isImeComposing } from '@/utils/ime'
 import type { TodoStatus } from '@/utils/settings'
 import {
   downloadTodos,
@@ -21,10 +22,6 @@ const COLUMNS: { status: TodoStatus; accent: string; dot: string }[] = [
   { status: 'doing', accent: 'text-sky-600 dark:text-sky-400', dot: 'bg-sky-500' },
   { status: 'done', accent: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
 ]
-
-function isImeComposing(e: React.KeyboardEvent<HTMLInputElement>, composing: boolean): boolean {
-  return composing || e.nativeEvent.isComposing || e.keyCode === 229
-}
 
 function PlusIcon() {
   return (

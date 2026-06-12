@@ -4,6 +4,9 @@
  * 清空提交 = 恢复默认名。
  */
 
+import { useRef } from 'react'
+
+import { isImeComposing } from '@/utils/ime'
 import type { QuickNavCategoryId, QuickNavCategoryLabels } from '@/utils/settings'
 import { CATEGORY_LABEL_MAX, labelOf, QUICK_NAV_CATEGORIES } from './categories'
 
@@ -38,6 +41,8 @@ export default function CategoryTabs({
   onRename,
   onEditingChange,
 }: CategoryTabsProps) {
+  const composingRef = useRef(false)
+
   const commitEdit = (id: QuickNavCategoryId, value: string) => {
     onRename(id, value)
     onEditingChange(null)
@@ -56,8 +61,16 @@ export default function CategoryTabs({
               defaultValue={labelOf(category.id, labels)}
               maxLength={CATEGORY_LABEL_MAX}
               onBlur={(e) => commitEdit(category.id, e.target.value)}
+              onCompositionStart={() => {
+                composingRef.current = true
+              }}
+              onCompositionEnd={() => {
+                composingRef.current = false
+              }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') commitEdit(category.id, e.currentTarget.value)
+                if (e.key === 'Enter' && !isImeComposing(e, composingRef.current)) {
+                  commitEdit(category.id, e.currentTarget.value)
+                }
                 if (e.key === 'Escape') onEditingChange(null)
               }}
               onFocus={(e) => e.target.select()}

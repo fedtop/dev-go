@@ -4,6 +4,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react'
 
+import { isImeComposing } from '@/utils/ime'
 import type { QuickNavItem } from '@/utils/settings'
 import { searchEngine } from '@/utils/settings'
 import { buildSearchUrl, ENGINES, getEngine, parseBang, type SearchEngine } from './engines'
@@ -23,6 +24,7 @@ export default function SearchBar({ navItems }: SearchBarProps) {
 
   const rootRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const composingRef = useRef(false)
 
   const { engine: bangEngine, query } = parseBang(input)
   const currentEngine = getEngine(engineId)
@@ -74,6 +76,8 @@ export default function SearchBar({ navItems }: SearchBarProps) {
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    // 输入法组词中：回车 / 方向键交给 IME 处理候选词，避免误触提交或移动高亮
+    if (isImeComposing(e, composingRef.current)) return
     if (e.key === 'ArrowDown') {
       e.preventDefault()
       setActive((i) => Math.min(i + 1, suggestions.length - 1))
@@ -161,6 +165,12 @@ export default function SearchBar({ navItems }: SearchBarProps) {
             autoFocus
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onCompositionStart={() => {
+              composingRef.current = true
+            }}
+            onCompositionEnd={() => {
+              composingRef.current = false
+            }}
             onKeyDown={onKeyDown}
             onFocus={() => setFocused(true)}
             onBlur={() => setTimeout(() => setFocused(false), 150)}

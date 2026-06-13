@@ -42,6 +42,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@ai-ins/vite": "^0.4.8",
     "@commitlint/cli": "^17.8.1",
     "@commitlint/config-conventional": "^17.8.1",
     "@commitlint/cz-commitlint": "^17.8.1",

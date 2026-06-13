@@ -1,3 +1,4 @@
+import aiIns from '@ai-ins/vite'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'wxt'
 
@@ -18,8 +19,12 @@ export default defineConfig({
   },
 
   // Vite 配置：注入 Tailwind v4 插件（无需 postcss / tailwind.config）
-  vite: () => ({
-    plugins: [tailwindcss()],
+  // aiIns() 为 AI Ins 点选改源插件，自带 enforce:'pre' + apply:'serve'，仅 dev 生效、不进生产构建。
+  vite: ({ mode }) => ({
+    define: {
+      __DEVGO_BACKUP_JSON__: JSON.stringify(loadDevBackupJson(mode)),
+    },
+    plugins: [aiIns(), tailwindcss()],
   }),
 
   autoIcons: {

@@ -237,7 +237,7 @@ export default function TodoBoard({ onClose, onToast }: TodoBoardProps) {
         </div>
 
         {/* 三列看板 */}
-        <div className='grid flex-1 grid-cols-1 gap-3 overflow-y-auto p-4 md:grid-cols-3'>
+        <div className='grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto p-4 md:grid-cols-3 md:overflow-hidden'>
           {COLUMNS.map((col) => {
             const colItems = todos.items.filter((i) => i.status === col.status)
             const isOver = overCol === col.status
@@ -264,7 +264,7 @@ export default function TodoBoard({ onClose, onToast }: TodoBoardProps) {
                   e.preventDefault()
                   dropToColumn(col.status)
                 }}
-                className={`flex min-h-[360px] flex-col rounded-2xl border p-3 transition-colors ${
+                className={`flex min-h-[360px] flex-col rounded-2xl border p-3 transition-colors md:min-h-0 ${
                   isOver
                     ? 'border-sky-300/80 bg-sky-50/60 dark:border-sky-500/50 dark:bg-sky-950/20'
                     : 'border-white/70 bg-slate-50/50 dark:border-white/10 dark:bg-white/[0.035]'
@@ -282,7 +282,7 @@ export default function TodoBoard({ onClose, onToast }: TodoBoardProps) {
                 </div>
 
                 {/* 卡片列表 */}
-                <div className='flex min-h-[60px] flex-1 flex-col gap-2'>
+                <div className='flex min-h-[60px] flex-1 flex-col gap-2 overflow-y-auto pr-1 md:min-h-0'>
                   {colItems.map((item) => {
                     const isEditing = editing?.id === item.id
                     const marker = dropMarker?.id === item.id ? dropMarker.position : null

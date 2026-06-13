@@ -110,7 +110,7 @@ export default function SearchBar({ navItems }: SearchBarProps) {
           <button
             type='button'
             onClick={() => setEnginePickerOpen((v) => !v)}
-            className='flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
+            className='cursor-pointer flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
           >
             <span className='text-base leading-none'>{currentEngine.icon}</span>
             <span className='hidden sm:inline'>{currentEngine.name}</span>
@@ -125,7 +125,7 @@ export default function SearchBar({ navItems }: SearchBarProps) {
                   key={e.id}
                   type='button'
                   onClick={() => pickEngine(e)}
-                  className={`aurora-dropdown-item group/engine flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm ${
+                  className={`cursor-pointer aurora-dropdown-item group/engine flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm ${
                     e.id === engineId ? 'is-selected' : ''
                   }`}
                 >
@@ -194,7 +194,7 @@ export default function SearchBar({ navItems }: SearchBarProps) {
         <button
           type='button'
           onClick={submit}
-          className='aurora-btn aurora-pan group/search relative z-10 shrink-0 overflow-hidden rounded-xl px-4 py-1.5 text-sm font-semibold text-white hover:scale-[1.04] active:scale-95'
+          className='cursor-pointer aurora-btn aurora-pan group/search relative z-10 shrink-0 overflow-hidden rounded-xl px-4 py-1.5 text-sm font-semibold text-white hover:scale-[1.04] active:scale-95'
         >
           {/* 周期扫过的高光 */}
           <span

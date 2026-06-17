@@ -14,7 +14,7 @@ export default defineConfig({
     },
   },
   webExt: {
-    disabled: true,
+    // disabled: true,
   },
 
   // Vite 配置：注入 Tailwind v4 插件（无需 postcss / tailwind.config）

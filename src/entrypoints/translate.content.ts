@@ -1,4 +1,8 @@
-import { setNotranslateNode } from '@/utils/no-translate'
+import {
+  commonPassTransSelectors,
+  passTransClass as githubPassTransSelectors,
+  setNotranslateNode,
+} from '@/utils/no-translate'
 import {
   sendRuntimeMessage,
   type MediaResourceCandidate,
@@ -23,7 +27,7 @@ const MAX_TEXT_LENGTH = 1800
 const MAX_DOM_MEDIA_RESOURCES = 500
 const MAX_BACKGROUND_SCAN_ELEMENTS = 1500
 
-const CANDIDATE_SELECTOR = [
+const DEFAULT_CANDIDATE_SELECTORS = [
   'h1',
   'h2',
   'h3',
@@ -47,7 +51,101 @@ const CANDIDATE_SELECTOR = [
   '.markdown-body div',
   '[class*="content"] div',
   '[class*="article"] div',
-].join(',')
+]
+
+// GitHub 的 DOM 里大量 div/span 只是布局、按钮、计数、文件树或代码容器。
+// 这里改成白名单式候选，避免把译文插入布局流。
+const GITHUB_CANDIDATE_SELECTORS = [
+  'h1',
+  '[aria-label=Issues] .markdown-title',
+  '[aria-labelledby=discussions-list] .markdown-title',
+  'h3 .markdown-title',
+  '.markdown-body',
+  '.Layout-sidebar p',
+  'div > span.search-match',
+  'li.repo-list-item p',
+  '#responsive-meta-container p',
+  'article p',
+  'feed-container article ul li a span',
+  'feed-container article .FormControl-caption',
+  'div.repo-description p',
+  '[itemprop=description]',
+  '.integrations-auth-wrapper',
+  '.new-feed-onboarding-notice',
+  "article section[aria-label='card content'] > div > div > div > div:nth-child(2)",
+  '.js-notice h2',
+  '.js-notice p',
+  '.TimelineItem-body a span',
+  '.TimelineItem-body a div',
+  '.TimelineItem-body form span',
+  '.TimelineItem-body form div',
+  '[role="navigation"] p',
+  '[data-testid="commit-row-item"] h4',
+  '.font-mktg',
+  '.search-title',
+  '.search-match',
+  '.pinned-item-desc',
+  '#repo-content-turbo-frame .markdown-title',
+  "[app-name='blackbird-search'] [data-hpc='true']",
+  '.topic-box > a > p:nth-of-type(2)',
+  '[data-testid="listitem-title-link"]',
+  '#repo-content-turbo-frame p',
+  '#repo-content-turbo-frame h4',
+  '[aria-label="card content"] .flex-column > div:nth-child(2)',
+  '[class*=TitleHeader]',
+  '.bpDald',
+  '.discussion-title',
+  '.copilotPreview__footer',
+  '.heading-element',
+  '.js-feed-item-component h3 a[data-hovercard-type=pull_request]',
+  '[aria-labelledby=outline-id] nav',
+  "[data-testid='issue-pr-title-link']",
+  'div.user-profile-bio',
+  'div.news > div.js-notice',
+  '#memex-project-view-root a [class^="prc-Text-Text"]',
+  '[class^=OverviewContent] [class*=DirectoryRichtextContent]',
+  '.markdown-body td',
+  '.markdown-body th',
+  '[class*=DirectoryRichtextContent] p',
+  '[class*=DirectoryRichtextContent] li',
+  '[class*=DirectoryRichtextContent] blockquote',
+  '[class*=DirectoryRichtextContent] figcaption',
+  '[class*=DirectoryRichtextContent] td',
+  '[class*=DirectoryRichtextContent] th',
+  '[class*=DirectoryRichtextContent] h2',
+  '[class*=DirectoryRichtextContent] h3',
+  '[class*=DirectoryRichtextContent] h4',
+  '[class*=DirectoryRichtextContent] h5',
+  '[class*=DirectoryRichtextContent] h6',
+  '[id^=pullrequestreview]',
+  "[class^='ChatMessage']",
+  "a[data-hovercard-type='issue']",
+  '[class*=prc-FormControl] > [class*=prc-Text]',
+  '[class*=prc-FormControl] [class*=prc-FormControl-LabelContainer] [class*=prc-Text]',
+  "[data-testid='beginners-playlist-section']",
+  "[data-testid='getting-started-checklist-section']",
+  "[data-testid='docs-section']",
+  "[data-testid='recommendations-section']",
+  '.Layout-main react-partial pre',
+  ".feed-item-content section[data-view-component] [class='flex-1 d-flex flex-column'] div:nth-child(2)",
+  '#org-new-form',
+  '.trial-info-large',
+  '.dfd-trial__container-form',
+  'dialog-helper',
+  '.blankslate-heading',
+  '.activity-overview-box',
+  '#spaces-list',
+  "[class*='ContentView-module__serviceDescription']",
+  '.BannerDescription',
+  'copilot-user-settings',
+  'h2:has(~ copilot-user-settings)',
+  'div:has(~ copilot-user-settings)',
+  "[class='f4 color-fg-muted col-md-6 mx-auto']",
+  "[class='col-lg-9 position-relative pr-lg-5 mb-6 mr-lg-5']",
+  "[class*='IssueIndexPage-module__middlePaneGrid'] div[class='p-4 text-center rounded-2 border color-border-muted']",
+  "[class*='ModelsPlaygroundRoute-module__playgroundContainer']",
+  "article [class='f6 color-fg-muted mt-1']",
+]
 
 const STRUCTURAL_CHILD_SELECTOR = [
   'article',
@@ -74,34 +172,85 @@ const STRUCTURAL_CHILD_SELECTOR = [
   'h6',
 ].join(',')
 
-const SKIP_SELECTOR = [
+const BASE_SKIP_SELECTORS = [
   `.${TRANS_NODE_CLASS}`,
-  '.notranslate',
-  '[translate="no"]',
-  '[aria-hidden="true"]',
-  'script',
-  'style',
-  'noscript',
-  'template',
-  'svg',
-  'canvas',
-  'math',
-  'pre',
-  'code',
-  'kbd',
-  'samp',
-  'textarea',
-  'input',
-  'select',
-  'option',
-  'button',
+  ...commonPassTransSelectors,
   'menu',
   'nav',
   'form',
-  '[contenteditable="true"]',
-  '[contenteditable=""]',
-  '[role="button"]',
   '[role="navigation"]',
+]
+
+const GITHUB_LAYOUT_SENSITIVE_SELECTOR = [
+  'table',
+  'thead',
+  'tbody',
+  'tfoot',
+  'tr',
+  'td',
+  'th',
+  'button',
+  '.btn',
+  '[role="button"]',
+  '[role="menu"]',
+  '[role="tab"]',
+  'nav',
+  'header',
+  'footer',
+  'menu',
+  'form',
+  '.UnderlineNav',
+  '.js-header-wrapper',
+  '.file-navigation',
+  '.SelectMenu-list',
+  '.Box-header',
+  '.BorderGrid-row',
+  '.BorderGrid-cell > ul.list-style-none',
+  '[data-testid^="breadcrumbs"]',
+].join(',')
+
+const GITHUB_MARKDOWN_TABLE_CELL_SELECTOR = [
+  '.markdown-body td',
+  '.markdown-body th',
+  '[class*=DirectoryRichtextContent] td',
+  '[class*=DirectoryRichtextContent] th',
+].join(',')
+
+const GITHUB_TEXT_SAFE_SELECTOR = [
+  'p',
+  'li',
+  'blockquote',
+  'figcaption',
+  'dt',
+  'dd',
+  'caption',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  '.markdown-title',
+  '.markdown-body p',
+  '.markdown-body li',
+  '[itemprop=description]',
+  '.pinned-item-desc',
+  '.blankslate-heading',
+  '.discussion-title',
+  '.heading-element',
+  '.search-title',
+  '.search-match',
+  'div.user-profile-bio',
+].join(',')
+
+const STAY_ORIGINAL_INLINE_SELECTOR = [
+  'code',
+  'kbd',
+  'samp',
+  'tt',
+  '.notranslate',
+  '[translate="no"]',
+  '[translate=no]',
 ].join(',')
 
 const ROOT_SELECTOR = [
@@ -216,9 +365,30 @@ function injectTranslationStyle() {
 
 .${TRANS_NODE_CLASS} {
   opacity: 0.88;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
+
+${getPageSpecificTranslationStyle()}
 `
   ;(document.head || document.documentElement).appendChild(style)
+}
+
+function getPageSpecificTranslationStyle(): string {
+  if (!isGitHubPage()) return ''
+
+  return `
+.bpDald,
+.discussion-title,
+[class*='GridCard-module__description'] {
+  -webkit-line-clamp: unset !important;
+}
+
+#memex-project-view-root [class*=table-row__StyledTableRow-sc],
+#memex-project-view-root [class*=base-cell-module__Box] {
+  height: unset !important;
+}
+`
 }
 
 function parseSrcSet(srcset: string): string[] {
@@ -461,13 +631,90 @@ function removeTranslations(): boolean {
   return true
 }
 
+function isGitHubPage(): boolean {
+  return window.location.hostname === 'github.com'
+}
+
+function getCandidateSelectors(): string[] {
+  return isGitHubPage() ? GITHUB_CANDIDATE_SELECTORS : DEFAULT_CANDIDATE_SELECTORS
+}
+
+function getSkipSelector(): string {
+  const selectors = isGitHubPage()
+    ? [...BASE_SKIP_SELECTORS, ...githubPassTransSelectors]
+    : BASE_SKIP_SELECTORS
+
+  return selectors.join(',')
+}
+
+function safeMatches(node: Element, selector: string): boolean {
+  try {
+    return node.matches(selector)
+  } catch {
+    return false
+  }
+}
+
+function safeMatchesAny(node: Element, selectors: string[]): boolean {
+  return selectors.some((selector) => safeMatches(node, selector))
+}
+
+function safeQuerySelectorAll(root: ParentNode, selectors: string[]): HTMLElement[] {
+  const nodes = new Set<HTMLElement>()
+
+  selectors.forEach((selector) => {
+    try {
+      root.querySelectorAll<HTMLElement>(selector).forEach((node) => nodes.add(node))
+    } catch {
+      // 某些旧浏览器可能不支持 :has() 等现代选择器；单条失败不影响其他规则。
+    }
+  })
+
+  return Array.from(nodes)
+}
+
+function closestSkipElement(node: HTMLElement): Element | null {
+  try {
+    return node.closest(getSkipSelector())
+  } catch {
+    return null
+  }
+}
+
+function isGithubLayoutSensitiveElement(node: HTMLElement): boolean {
+  if (!isGitHubPage()) return false
+  if (isGithubMarkdownTableCell(node)) return false
+  if (safeMatches(node, GITHUB_TEXT_SAFE_SELECTOR)) return false
+  if (safeMatches(node, GITHUB_LAYOUT_SENSITIVE_SELECTOR)) return true
+
+  const display = window.getComputedStyle(node).display
+  return [
+    'flex',
+    'inline-flex',
+    'grid',
+    'inline-grid',
+    'table',
+    'inline-table',
+    'table-row',
+    'table-cell',
+  ].includes(display)
+}
+
+function isGithubMarkdownTableCell(node: HTMLElement): boolean {
+  return isTableCellElement(node) && safeMatches(node, GITHUB_MARKDOWN_TABLE_CELL_SELECTOR)
+}
+
+function isTableCellElement(node: HTMLElement): node is HTMLTableCellElement {
+  return node.tagName === 'TD' || node.tagName === 'TH'
+}
+
 function pickTranslationRoot(): HTMLElement {
   const body = document.body
   let best: HTMLElement = body
   let bestLength = 0
 
   document.querySelectorAll<HTMLElement>(ROOT_SELECTOR).forEach((node) => {
-    if (node.closest(SKIP_SELECTOR) || !isVisible(node)) return
+    if (closestSkipElement(node) || !isVisible(node)) return
     const textLength = getElementText(node).length
     if (textLength > bestLength && textLength >= 200) {
       best = node
@@ -534,10 +781,12 @@ function scheduleScan(root: HTMLElement, session: number) {
 function scanAndTrack(root: HTMLElement, session: number) {
   if (session !== translationSession || !translationActive || !root.isConnected) return
 
-  if (root.matches(CANDIDATE_SELECTOR)) {
+  const candidateSelectors = getCandidateSelectors()
+
+  if (safeMatchesAny(root, candidateSelectors)) {
     trackCandidate(root, session)
   }
-  root.querySelectorAll<HTMLElement>(CANDIDATE_SELECTOR).forEach((node) => {
+  safeQuerySelectorAll(root, candidateSelectors).forEach((node) => {
     trackCandidate(node, session)
   })
 }
@@ -594,7 +843,7 @@ async function flushQueue(session: number) {
   nodes.forEach((node) => node.classList.add(TRANSLATING_CLASS))
 
   try {
-    const { uniqueTexts, textIndexes } = buildBatchPayload(nodes)
+    const { renderContexts, textIndexes, uniqueTexts } = buildBatchPayload(nodes)
     const response = await sendRuntimeMessage({
       type: 'translate-batch',
       texts: uniqueTexts,
@@ -604,7 +853,10 @@ async function flushQueue(session: number) {
     if (session !== translationSession || !translationActive) return
 
     nodes.forEach((node, index) => {
-      const translated = response.texts[textIndexes[index]] ?? ''
+      const translated = restoreTranslationPlaceholders(
+        response.texts[textIndexes[index]] ?? '',
+        renderContexts[index],
+      )
       node.classList.remove(TRANSLATING_CLASS)
       node.classList.add(TRANSLATED_CLASS)
       node.setAttribute(ORIGINAL_ATTR, 'true')
@@ -622,13 +874,18 @@ async function flushQueue(session: number) {
 }
 
 function buildBatchPayload(nodes: HTMLElement[]): {
+  renderContexts: TranslationRenderContext[]
   textIndexes: number[]
   uniqueTexts: string[]
 } {
   const uniqueTexts: string[] = []
   const uniqueIndex = new Map<string, number>()
+  const renderContexts: TranslationRenderContext[] = []
   const textIndexes = nodes.map((node) => {
-    const source = buildSourceHtml(node)
+    const renderContext = createTranslationRenderContext()
+    const source = buildSourceHtml(node, renderContext)
+    renderContexts.push(renderContext)
+
     const cachedIndex = uniqueIndex.get(source)
     if (cachedIndex != null) return cachedIndex
 
@@ -638,11 +895,26 @@ function buildBatchPayload(nodes: HTMLElement[]): {
     return nextIndex
   })
 
-  return { textIndexes, uniqueTexts }
+  return { renderContexts, textIndexes, uniqueTexts }
 }
 
-function buildSourceHtml(node: HTMLElement): string {
-  const html = node.innerHTML.trim()
+interface TranslationRenderContext {
+  placeholders: Map<string, string>
+}
+
+function createTranslationRenderContext(): TranslationRenderContext {
+  return { placeholders: new Map() }
+}
+
+function buildSourceHtml(node: HTMLElement, renderContext: TranslationRenderContext): string {
+  const clone = node.cloneNode(true) as HTMLElement
+  replaceStayOriginalInlineNodes(clone, (ignoredNode) => {
+    const token = `__DEVGO_TRANSLATION_SKIP_${renderContext.placeholders.size}__`
+    renderContext.placeholders.set(token, ignoredNode.outerHTML)
+    return token
+  })
+
+  const html = clone.innerHTML.trim()
   return html || getElementText(node)
 }
 
@@ -655,23 +927,40 @@ function isCandidateElement(node: HTMLElement): boolean {
   if (node.getAttribute(ORIGINAL_ATTR) === 'true' || node.getAttribute(TRANS_ATTR) === 'true') {
     return false
   }
-  if (node.closest(SKIP_SELECTOR)) return false
+  if (closestSkipElement(node)) return false
+  if (isGithubLayoutSensitiveElement(node)) return false
   if (!isVisible(node)) return false
   if (hasStructuralChild(node)) return false
 
-  return isTranslatableText(getElementText(node))
+  return isTranslatableText(getTranslatableText(node))
 }
 
 function hasStructuralChild(node: HTMLElement): boolean {
   return [...node.children].some((child) => {
     if (!(child instanceof HTMLElement)) return false
-    if (child.closest(SKIP_SELECTOR)) return false
+    if (closestSkipElement(child)) return false
     return child.matches(STRUCTURAL_CHILD_SELECTOR) && isTranslatableText(getElementText(child))
   })
 }
 
 function getElementText(node: HTMLElement): string {
   return (node.innerText || node.textContent || '').replace(/\s+/g, ' ').trim()
+}
+
+function getTranslatableText(node: HTMLElement): string {
+  const clone = node.cloneNode(true) as HTMLElement
+  replaceStayOriginalInlineNodes(clone, () => '')
+  return (clone.textContent || '').replace(/\s+/g, ' ').trim()
+}
+
+function replaceStayOriginalInlineNodes(
+  root: HTMLElement,
+  replacer: (node: HTMLElement) => string,
+) {
+  root.querySelectorAll<HTMLElement>(STAY_ORIGINAL_INLINE_SELECTOR).forEach((node) => {
+    if (!node.isConnected && !root.contains(node)) return
+    node.replaceWith(document.createTextNode(replacer(node)))
+  })
 }
 
 function isVisible(node: HTMLElement): boolean {
@@ -757,14 +1046,53 @@ function sanitizeTranslationHtml(html: string): string {
   return container.innerHTML
 }
 
+function restoreTranslationPlaceholders(
+  text: string,
+  renderContext: TranslationRenderContext,
+): string {
+  let restored = text
+  renderContext.placeholders.forEach((html, token) => {
+    restored = restored.replace(new RegExp(escapeRegExp(token), 'g'), html)
+  })
+  return restored
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function setTranslationContent(node: HTMLElement, text: string) {
+  if (looksLikeHtml(text)) {
+    node.innerHTML = sanitizeTranslationHtml(text)
+  } else {
+    node.textContent = text
+  }
+}
+
+function insertTableCellTransResult(node: HTMLTableCellElement, text: string): boolean {
+  const wrapper = document.createElement('div')
+  wrapper.classList.add(TRANS_NODE_CLASS, 'notranslate')
+  wrapper.setAttribute(TRANS_ATTR, 'true')
+  wrapper.style.display = 'block'
+  wrapper.style.marginTop = '4px'
+
+  setTranslationContent(wrapper, text)
+  node.appendChild(wrapper)
+  return true
+}
+
 // 插入译文：克隆原元素，保留其标签 / class / 颜色 / 字号等样式，仅替换文字，
-// 使译文与原文外观一致（参考沉浸式翻译的对照阅读体验）
+// 使译文与原文外观一致。
 export function insertTransResult(node: HTMLElement, transResult: string): boolean {
   const text = cleanTranslatedText(transResult)
   if (!text) return false
 
   const sourceText = getElementText(node)
   if (normalizeComparableText(sourceText) === normalizeComparableText(text)) return false
+
+  if (isTableCellElement(node)) {
+    return insertTableCellTransResult(node, text)
+  }
 
   // 克隆原节点（不含子节点）-> 继承同标签、同 class、同颜色、同字号
   const clone = node.cloneNode(false) as HTMLElement
@@ -775,11 +1103,7 @@ export function insertTransResult(node: HTMLElement, transResult: string): boole
   clone.setAttribute(TRANS_ATTR, 'true')
   clone.style.marginTop = '2px'
 
-  if (looksLikeHtml(text)) {
-    clone.innerHTML = sanitizeTranslationHtml(text)
-  } else {
-    clone.textContent = text
-  }
+  setTranslationContent(clone, text)
 
   node.insertAdjacentElement('afterend', clone)
   return true

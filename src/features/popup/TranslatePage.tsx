@@ -39,6 +39,8 @@ export default function TranslatePage() {
     translateProvider.setValue(v)
   }
 
+  const translatePage = () => sendTabMessage({ type: 'translate-page' })
+
   // 查词
   const translate = async () => {
     if (!text.trim()) return
@@ -62,7 +64,7 @@ export default function TranslatePage() {
   }
 
   return (
-    <div className='flex flex-col gap-4 pb-[10px]'>
+    <div className='flex flex-col gap-3 pb-1'>
       {/* ── 查词：下拉 + 输入 + 按钮 一行 ── */}
       <section className='flex flex-col gap-2'>
         <div className='flex items-center gap-2'>
@@ -139,31 +141,26 @@ export default function TranslatePage() {
         )}
       </section>
 
-      {/* 分隔 */}
-      <div className='h-px bg-slate-200' />
-
       {/* ── 整页翻译：下拉 + 按钮 一行 ── */}
-      <section className='flex flex-col gap-1.5'>
-        <p className='text-xs text-slate-400 text-left'>原文下方插入译文 · 再次点击可移除</p>
-
+      <section className='rounded-lg border border-slate-200 bg-white/80 p-2.5'>
         <div className='flex items-center gap-2'>
           <Select
             value={provider}
             onChange={changeProvider}
-            className='w-[152px] shrink-0'
+            placement='top'
+            className='w-[140px] shrink-0'
             options={[
               { value: 'microsoft', label: '微软 · 免翻墙' },
               { value: 'google', label: 'Google · 需翻墙' },
             ]}
           />
-          <Button
-            variant='primary'
-            block
-            onClick={() => sendTabMessage({ type: 'translate-page' })}
-          >
+          <Button variant='primary' block onClick={translatePage} className='shrink min-w-[128px]'>
             翻译当前页面
           </Button>
         </div>
+        <p className='mt-1.5 truncate text-left text-[11px] leading-none text-slate-400'>
+          原文下方插入译文 · 再次点击可移除
+        </p>
       </section>
     </div>
   )

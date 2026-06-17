@@ -1,7 +1,7 @@
 /**
  * 微软（Edge）免费翻译接口。
  *
- * 参考沉浸式翻译等工具的做法，复用 Edge 浏览器自带翻译所使用的内部接口：
+ * 复用 Edge 浏览器自带翻译所使用的内部接口：
  * - 通过 `edge.microsoft.com/translate/auth` 获取临时 JWT（有效期约 10 分钟）
  * - 通过 `api-edge.cognitive.microsofttranslator.com/translate` 翻译文本
  *

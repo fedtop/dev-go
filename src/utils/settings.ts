@@ -2,6 +2,8 @@
  * 扩展设置（基于 WXT storage，跨页面共享、持久化）。
  */
 
+import { normalizeBypassList } from '@/utils/network'
+
 export type TranslateProvider = 'microsoft' | 'google'
 
 /** 查词引擎（popup 顶部查词框用，含有道） */
@@ -222,7 +224,7 @@ const networkProxyBypassListMigrated = storage.defineItem<boolean>(
 )
 
 function normalizeNetworkProxyBypassList(value: string[]): string[] {
-  return Array.from(new Set(value.map((item) => item.trim()).filter(Boolean)))
+  return normalizeBypassList(value)
 }
 
 function isDefaultNetworkProxyBypassList(value: string[]): boolean {

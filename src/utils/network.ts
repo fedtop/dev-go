@@ -15,9 +15,72 @@ export interface ParsedNetworkRuleList {
   skipped: number
 }
 
+const URL_SCHEME_RE = /^[a-z][a-z0-9+.-]*:\/\//i
+const WILDCARD_SCHEME_RE = /^\*:\/\//i
+const IPV4_CIDR_RE = /^\d{1,3}(?:\.\d{1,3}){3}\/\d{1,2}$/
+const IPV6_CIDR_RE = /^\[?[0-9a-f:]+\]?\/\d{1,3}$/i
+
+function trimWrappingQuotes(value: string): string {
+  return value.replace(/^["']|["']$/g, '')
+}
+
+function isCidrBypassPattern(value: string): boolean {
+  return IPV4_CIDR_RE.test(value) || IPV6_CIDR_RE.test(value)
+}
+
+function stripPortFromHostPattern(value: string): string {
+  if (value.startsWith('[')) {
+    const end = value.indexOf(']')
+    return end >= 0 ? value.slice(0, end + 1) : value
+  }
+
+  return value.replace(/:\d+$/, '')
+}
+
+function normalizeHostPattern(value: string): string {
+  const host = stripPortFromHostPattern(value.trim()).replace(/\.+$/g, '').toLowerCase()
+  if (host.startsWith('.')) return `*${host}`
+  return host
+}
+
+function extractHostPatternFromUrlLike(value: string): string | null {
+  let urlInput = `http://${value}`
+  if (WILDCARD_SCHEME_RE.test(value)) {
+    urlInput = value.replace(WILDCARD_SCHEME_RE, 'http://')
+  } else if (URL_SCHEME_RE.test(value)) {
+    urlInput = value
+  }
+
+  try {
+    const url = new URL(urlInput)
+    return normalizeHostPattern(url.hostname)
+  } catch {
+    const withoutScheme = value.replace(WILDCARD_SCHEME_RE, '').replace(URL_SCHEME_RE, '')
+    const host = withoutScheme.startsWith('[')
+      ? withoutScheme.slice(0, withoutScheme.indexOf(']') + 1 || undefined)
+      : withoutScheme.split(/[/?#]/)[0]
+    return host ? normalizeHostPattern(host) : null
+  }
+}
+
+function normalizeBypassPattern(value: string): string | null {
+  const raw = trimWrappingQuotes(value.trim())
+  if (!raw) return null
+  if (raw.toLowerCase() === '<local>') return '<local>'
+  if (isCidrBypassPattern(raw)) return raw.toLowerCase()
+
+  return extractHostPatternFromUrlLike(raw)
+}
+
 export function normalizeBypassList(value: string[] | string): string[] {
   const items = Array.isArray(value) ? value : value.split(/[\n,]+/)
-  return Array.from(new Set(items.map((item) => item.trim()).filter(Boolean)))
+  return Array.from(
+    new Set(
+      items
+        .map((item) => normalizeBypassPattern(item))
+        .filter((item): item is string => Boolean(item)),
+    ),
+  )
 }
 
 export function normalizeNetworkProxyProfile(profile: NetworkProxyProfile): NetworkProxyProfile {

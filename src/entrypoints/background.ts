@@ -32,7 +32,10 @@ import {
 import {
   enableCorsBypass,
   popupInitialTab,
+  getNetworkProxyProfile,
+  migrateLocalToSync,
   networkMode,
+  networkProxyBypassList,
   networkProxyManaged,
   networkProxyProfile,
   networkRuleList,
@@ -666,7 +669,7 @@ async function applyNetworkMode(mode: NetworkMode): Promise<NetworkProxyStatus> 
 
   try {
     const [profile, ruleList] = await Promise.all([
-      networkProxyProfile.getValue(),
+      getNetworkProxyProfile(),
       networkRuleList.getValue(),
     ])
     await setChromeProxyConfig(buildNetworkProxyConfig(mode, profile, ruleList))
@@ -686,7 +689,7 @@ async function syncNetworkProxy(): Promise<NetworkProxyStatus> {
   try {
     const [mode, profile, ruleList] = await Promise.all([
       networkMode.getValue(),
-      networkProxyProfile.getValue(),
+      getNetworkProxyProfile(),
       networkRuleList.getValue(),
     ])
     await setChromeProxyConfig(buildNetworkProxyConfig(mode, profile, ruleList))
@@ -696,8 +699,13 @@ async function syncNetworkProxy(): Promise<NetworkProxyStatus> {
   }
 }
 
+async function migrateThenSyncNetworkProxy(): Promise<void> {
+  await migrateLocalToSync()
+  await syncNetworkProxy()
+}
+
 function syncNetworkProxySafely() {
-  syncNetworkProxy().catch((error) => {
+  migrateThenSyncNetworkProxy().catch((error) => {
     console.warn('[DevGo] sync network proxy failed:', error)
   })
 }
@@ -1105,6 +1113,7 @@ export default defineBackground(() => {
   enableCorsBypass.watch(syncCorsBypassRulesSafely)
   networkMode.watch(syncNetworkProxySafely)
   networkProxyProfile.watch(syncNetworkProxySafely)
+  networkProxyBypassList.watch(syncNetworkProxySafely)
   networkRuleList.watch(syncNetworkProxySafely)
 
   // 工具栏图标随网络模式变色（SW 每次启动都重设，避免动态图标丢失）

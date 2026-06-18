@@ -4,21 +4,24 @@
 
 import {
   defaultPopupTab,
+  DEFAULT_NETWORK_PROXY_PROFILE,
   enableCorsBypass,
   enableGithubEnhance,
   enableReloadOnProxySwitch,
   enableSelectionTranslate,
+  getNetworkProxyProfile,
   lookupProvider,
   networkMode,
-  networkProxyProfile,
   networkRuleList,
   quickNavCategoryLabels,
   quickNavCategorySeeded,
   quickNavItems,
   searchEngine,
+  setNetworkProxyProfile,
   themeMode,
   todoItems,
   translateProvider,
+  type NetworkProxyProfile,
 } from '@/utils/settings'
 
 /** 备份文件结构 */
@@ -47,7 +50,11 @@ const BACKUP_ITEMS: Record<string, BackupItem> = {
   enableGithubEnhance,
   enableCorsBypass,
   networkMode,
-  networkProxyProfile,
+  networkProxyProfile: {
+    getValue: getNetworkProxyProfile,
+    setValue: (value) => setNetworkProxyProfile(value as NetworkProxyProfile),
+    fallback: DEFAULT_NETWORK_PROXY_PROFILE,
+  },
   networkRuleList,
   enableReloadOnProxySwitch,
   searchEngine,

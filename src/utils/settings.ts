@@ -90,13 +90,18 @@ export const networkMode = storage.defineItem<NetworkMode>('local:networkMode', 
   fallback: 'system',
 })
 
-/** 情境模式的固定代理配置 */
+/** 代理服务器配置（本机保存，避免不同设备的代理端口互相覆盖） */
 export const networkProxyProfile = storage.defineItem<NetworkProxyProfile>(
   'local:networkProxyProfile',
   {
     fallback: DEFAULT_NETWORK_PROXY_PROFILE,
   },
 )
+
+/** 手填绕过列表（跨设备同步） */
+export const networkProxyBypassList = storage.defineItem<string[]>('sync:networkProxyBypassList', {
+  fallback: DEFAULT_NETWORK_PROXY_PROFILE.bypassList,
+})
 
 /** 情境模式规则列表：启用后命中规则走代理，未命中直连 */
 export const networkRuleList = storage.defineItem<NetworkRuleListConfig>('local:networkRuleList', {
@@ -211,15 +216,100 @@ export const defaultPopupTab = storage.defineItem<string>('sync:defaultPopupTab'
 
 /** 迁移完成标记，确保只搬一次（即便用户清空了 sync 数据也不会反复覆盖） */
 const syncMigrated = storage.defineItem<boolean>('sync:migratedFromLocal', { fallback: false })
+const networkProxyBypassListMigrated = storage.defineItem<boolean>(
+  'local:networkProxyBypassListMigratedToSync',
+  { fallback: false },
+)
+
+function normalizeNetworkProxyBypassList(value: string[]): string[] {
+  return Array.from(new Set(value.map((item) => item.trim()).filter(Boolean)))
+}
+
+function isDefaultNetworkProxyBypassList(value: string[]): boolean {
+  const normalized = normalizeNetworkProxyBypassList(value)
+  return (
+    normalized.length === DEFAULT_NETWORK_PROXY_PROFILE.bypassList.length &&
+    normalized.every((item, index) => item === DEFAULT_NETWORK_PROXY_PROFILE.bypassList[index])
+  )
+}
+
+function isNetworkProxyProfile(value: unknown): value is NetworkProxyProfile {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+
+  const profile = value as Partial<NetworkProxyProfile>
+  return (
+    (profile.scheme === 'http' ||
+      profile.scheme === 'https' ||
+      profile.scheme === 'socks4' ||
+      profile.scheme === 'socks5') &&
+    typeof profile.host === 'string' &&
+    typeof profile.port === 'number' &&
+    Array.isArray(profile.bypassList) &&
+    profile.bypassList.every((item) => typeof item === 'string')
+  )
+}
+
+function getBypassListFromProfile(value: unknown): string[] | null {
+  return isNetworkProxyProfile(value) ? normalizeNetworkProxyBypassList(value.bypassList) : null
+}
+
+async function migrateNetworkProxyBypassListToSync(): Promise<void> {
+  if (await networkProxyBypassListMigrated.getValue()) return
+
+  const [localProfile, oldSyncProfile, syncBypassList] = await Promise.all([
+    storage.getItem<NetworkProxyProfile>('local:networkProxyProfile'),
+    storage.getItem<NetworkProxyProfile>('sync:networkProxyProfile'),
+    networkProxyBypassList.getValue(),
+  ])
+  const localBypassList = getBypassListFromProfile(localProfile)
+  const oldSyncBypassList = getBypassListFromProfile(oldSyncProfile)
+  const nextBypassList = localBypassList || oldSyncBypassList
+
+  if (
+    nextBypassList &&
+    !isDefaultNetworkProxyBypassList(nextBypassList) &&
+    isDefaultNetworkProxyBypassList(syncBypassList)
+  ) {
+    await networkProxyBypassList.setValue(nextBypassList)
+  }
+
+  await networkProxyBypassListMigrated.setValue(true)
+}
+
+export async function getNetworkProxyProfile(): Promise<NetworkProxyProfile> {
+  const [profile, bypassList] = await Promise.all([
+    networkProxyProfile.getValue(),
+    networkProxyBypassList.getValue(),
+  ])
+
+  return {
+    ...profile,
+    bypassList: normalizeNetworkProxyBypassList(bypassList),
+  }
+}
+
+export async function setNetworkProxyProfile(profile: NetworkProxyProfile): Promise<void> {
+  const nextProfile = {
+    ...profile,
+    bypassList: normalizeNetworkProxyBypassList(profile.bypassList),
+  }
+
+  await Promise.all([
+    networkProxyProfile.setValue(nextProfile),
+    networkProxyBypassList.setValue(nextProfile.bypassList),
+  ])
+}
 
 /**
- * 把早期存于 local 的新标签页 / 待办数据搬到 sync，使其可跨设备同步、抗卸载。
+ * 把早期存于 local 的新标签页 / 待办 / 网络面板绕过列表搬到 sync，使其可跨设备同步、抗卸载。
  * - 仅当从未迁移过时执行（一次性）。
  * - 逐项仅在「sync 还是默认值 且 local 有有效数据」时搬运，避免覆盖更新的 sync 数据。
  * - 旧 local 数据保留不删，作为本机兜底。
  * 应在各页面渲染前 await（见各 entrypoint 的 main.tsx）。
  */
 export async function migrateLocalToSync(): Promise<void> {
+  await migrateNetworkProxyBypassListToSync()
+
   if (await syncMigrated.getValue()) return
 
   // 这些 key 已从 local: 改为 sync:；直接读旧的 local 原始值。

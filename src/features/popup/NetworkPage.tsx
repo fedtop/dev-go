@@ -7,9 +7,10 @@ import {
   DEFAULT_NETWORK_RULE_LIST,
   enableCorsBypass,
   enableReloadOnProxySwitch,
+  getNetworkProxyProfile,
   networkMode,
-  networkProxyProfile,
   networkRuleList,
+  setNetworkProxyProfile,
   type NetworkMode,
   type NetworkProxyProfile,
   type NetworkProxyScheme,
@@ -123,7 +124,7 @@ export default function NetworkPage() {
 
     Promise.all([
       networkMode.getValue(),
-      networkProxyProfile.getValue(),
+      getNetworkProxyProfile(),
       networkRuleList.getValue(),
       enableReloadOnProxySwitch.getValue(),
       sendRuntimeMessage({ type: 'get-network-status' }).catch(() => null),
@@ -170,7 +171,7 @@ export default function NetworkPage() {
       return null
     }
 
-    await networkProxyProfile.setValue(nextProfile)
+    await setNetworkProxyProfile(nextProfile)
     setProfile(nextProfile)
     setBypassText(nextProfile.bypassList.join('\n'))
     return nextProfile
@@ -267,7 +268,7 @@ export default function NetworkPage() {
         : [...bypassList, currentHost]
       const nextProfile = normalizeProfileFromForm(profile, nextBypassList.join('\n'))
 
-      await networkProxyProfile.setValue(nextProfile)
+      await setNetworkProxyProfile(nextProfile)
       setProfile(nextProfile)
       setBypassText(nextProfile.bypassList.join('\n'))
 

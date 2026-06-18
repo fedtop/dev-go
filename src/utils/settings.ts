@@ -186,6 +186,21 @@ export interface TodoItem {
   createdAt: number
 }
 
+/** popup 快捷键可打开的 Tab */
+export type PopupShortcutTab = 'translate' | 'todo' | 'network' | 'tools' | 'function'
+
+/** 后台快捷键命令发给已打开 popup 的一次性信号 */
+export interface PopupShortcutSignal {
+  tab: PopupShortcutTab
+  nonce: number
+}
+
+/** popup 当前是否处于打开状态，用于后台快捷键避免重复 openPopup。 */
+export interface PopupOpenState {
+  open: boolean
+  updatedAt: number
+}
+
 /** 新标签页 TODO 任务列表（持久化、跨设备同步，抗扩展卸载/重装） */
 export const todoItems = storage.defineItem<TodoItem[]>('sync:todoItems', {
   fallback: [],
@@ -193,14 +208,26 @@ export const todoItems = storage.defineItem<TodoItem[]>('sync:todoItems', {
 
 /**
  * popup 下次打开时要定位的 Tab（一次性信号）。
- * Alt+2 等命令经后台写入对应 Tab，popup 读取后立即清空。
+ * Alt+2..4 等命令经后台写入对应 Tab，popup 读取后立即清空。
  */
 export const popupInitialTab = storage.defineItem<string>('local:popupInitialTab', {
   fallback: '',
 })
 
+/** popup 已打开时，后台快捷键命令通过该信号请求切换或关闭当前面板。 */
+export const popupShortcutSignal = storage.defineItem<PopupShortcutSignal | null>(
+  'local:popupShortcutSignal',
+  {
+    fallback: null,
+  },
+)
+
+export const popupOpenState = storage.defineItem<PopupOpenState>('local:popupOpenState', {
+  fallback: { open: false, updatedAt: 0 },
+})
+
 /**
- * Alt+1 打开面板时默认定位的 Tab（在「功能」页可配置，默认翻译）。
+ * 点击工具栏图标或 Alt+1 打开 popup 时默认定位的 Tab（在「功能」页可配置，默认翻译）。
  * 跨设备同步：换设备后默认 Tab 偏好保持一致。
  */
 export const defaultPopupTab = storage.defineItem<string>('sync:defaultPopupTab', {

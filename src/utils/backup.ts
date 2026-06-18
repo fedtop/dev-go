@@ -37,7 +37,7 @@ interface BackupItem {
 
 /**
  * 参与备份的全部存储项（key 即备份文件里的字段名，保持稳定，勿随意改名）。
- * 不含 popupInitialTab（一次性信号）和 networkProxyManaged（本机代理接管标记，
+ * 不含 popupInitialTab / popupShortcutSignal / popupOpenState（运行时信号）和 networkProxyManaged（本机代理接管标记，
  * 导入后是否接管浏览器代理应由用户在网络面板重新确认）。
  */
 const BACKUP_ITEMS: Record<string, BackupItem> = {

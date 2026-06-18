@@ -32,6 +32,8 @@ import {
 import {
   enableCorsBypass,
   popupInitialTab,
+  popupOpenState,
+  popupShortcutSignal,
   networkMode,
   networkProxyManaged,
   networkProxyProfile,
@@ -40,6 +42,7 @@ import {
   type NetworkMode,
   type NetworkProxyProfile,
   type NetworkRuleListConfig,
+  type PopupShortcutTab,
   type TranslateProvider,
 } from '@/utils/settings'
 import type { DictResult } from '@/types/dict'
@@ -50,6 +53,12 @@ const MS_TRANSLATE_UA_RULE_ID = 9003
 const EDGE_TRANSLATE_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0'
 const TRANSLATION_CACHE_LIMIT = 800
+const POPUP_OPEN_HEARTBEAT_TTL = 5000
+const COMMAND_TO_TAB: Record<string, PopupShortcutTab> = {
+  'open-todo': 'todo',
+  'open-network': 'network',
+  'open-tools': 'tools',
+}
 const CORS_RULE_RESOURCE_TYPES = [
   chrome.declarativeNetRequest.ResourceType.XMLHTTPREQUEST,
   chrome.declarativeNetRequest.ResourceType.OTHER,
@@ -1057,16 +1066,16 @@ export default defineBackground(() => {
       return
     }
 
-    // open-todo / open-network / open-tools：打开 popup 并定位到对应 Tab。
-    // 先写一次性信号，再主动弹出 popup。
-    const COMMAND_TO_TAB: Record<string, string> = {
-      'open-todo': 'todo',
-      'open-network': 'network',
-      'open-tools': 'tools',
-    }
     const tab = COMMAND_TO_TAB[command]
     if (tab) {
-      popupInitialTab.setValue(tab).then(() => {
+      Promise.all([
+        popupInitialTab.setValue(tab),
+        popupShortcutSignal.setValue({ tab, nonce: Date.now() }),
+        popupOpenState.getValue(),
+      ]).then(([, , state]) => {
+        const isPopupOpen = state.open && Date.now() - state.updatedAt < POPUP_OPEN_HEARTBEAT_TTL
+        if (isPopupOpen) return
+
         browser.action.openPopup?.().catch((error) => {
           console.warn('[DevGo] openPopup failed:', error)
         })

@@ -1,7 +1,7 @@
 {
   "name": "dev-go",
   "displayName": "DevGo",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "A super unbeatable browser extension plugin for developers.",
   "author": "荣顶",
   "type": "module",

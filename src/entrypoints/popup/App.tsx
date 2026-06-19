@@ -43,7 +43,6 @@ export default function App() {
   }, [])
 
   // 当前面板对应的快捷键：有独立命令用其快捷键，否则回退到打开面板的 _execute_action。
-  // eslint-disable-next-line no-underscore-dangle -- _execute_action 是 Chrome 内置命令名，不可改名
   const activeShortcut = shortcuts[TAB_COMMANDS[active]] || shortcuts._execute_action || ''
 
   return (

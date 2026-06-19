@@ -13,19 +13,22 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{js,cjs,mjs,jsx,ts,tsx,css,scss,less,html,json,md}\"",
+    "format:check": "prettier --check \"**/*.{js,cjs,mjs,jsx,ts,tsx,css,scss,less,html,json,md}\"",
     "postinstall": "wxt prepare",
-    "prettier": "prettier --write \"**/*.{js,jsx,ts,tsx,css,scss,less,html,json,md}\"",
-    "eslint": "eslint \"./**/*{.js,.ts,.jsx,.tsx}\" --fix",
+    "prettier": "prettier --write \"**/*.{js,cjs,mjs,jsx,ts,tsx,css,scss,less,html,json,md}\"",
     "prepare": "husky install",
     "release": "standard-version",
     "cz": "cz"
   },
   "lint-staged": {
-    "*.{js,ts,jsx,tsx,css,sass,scss,less,md,json,html}": [
+    "*.{js,cjs,mjs,ts,jsx,tsx,css,sass,scss,less,md,json,html}": [
       "prettier --write"
     ],
-    "*.{ts,js,tsx,jsx}": [
-      "eslint"
+    "*.{ts,js,cjs,mjs,tsx,jsx}": [
+      "eslint --fix"
     ]
   },
   "config": {
@@ -46,31 +49,30 @@
     "@commitlint/cli": "^17.8.1",
     "@commitlint/config-conventional": "^17.8.1",
     "@commitlint/cz-commitlint": "^17.8.1",
+    "@eslint/js": "^9.39.4",
     "@tailwindcss/vite": "^4.0.0",
     "@types/chrome": "^0.0.287",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
-    "@typescript-eslint/eslint-plugin": "^8.60.1",
-    "@typescript-eslint/parser": "^8.60.1",
     "@wxt-dev/auto-icons": "^1.1.1",
     "@wxt-dev/module-react": "^1.2.2",
     "commitizen": "^4.2.5",
     "commitlint-config-cz": "^0.13.3",
     "cz-customizable": "^7.0.0",
-    "eslint": "^8.0.1",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-react": "^7.31.11",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.6.0",
     "husky": "^8.0.2",
     "lint-staged": "^13.0.4",
     "prettier": "2.8.0",
     "standard-version": "^9.5.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.2",
+    "typescript-eslint": "^8.61.0",
     "wxt": "^0.20.6"
   },
   "homepage": "https://github.com/wangrongding",

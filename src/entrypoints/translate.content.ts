@@ -314,7 +314,6 @@ export default defineContentScript({
           })
           break
         case 'tip':
-          // eslint-disable-next-line no-alert
           alert(message.msg)
           break
         default:
@@ -607,7 +606,6 @@ function resetTranslationRuntime() {
 async function testConnection(): Promise<boolean> {
   const ok = await sendRuntimeMessage({ type: 'test' })
   if (!ok) {
-    // eslint-disable-next-line no-alert
     alert('翻译服务不稳定！请检查网络，或在弹窗里切换翻译引擎。')
   }
   return ok

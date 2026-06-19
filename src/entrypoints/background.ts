@@ -1,6 +1,7 @@
 import { microsoftLookup, microsoftTransList, testMicrosoftTrans } from '@/api/microsoft'
 import { googleLookup, googleTransList, testGoogleTrans } from '@/api/translator'
 import { updateNetworkActionIconSafely } from '@/utils/actionIcon'
+import { restoreDevBackupIfNeeded } from '@/utils/dev-backup'
 import { pickTarget } from '@/utils/lang'
 import {
   type NetworkRuleListDownloadStatus,
@@ -947,6 +948,10 @@ async function testProvider(): Promise<boolean> {
 }
 
 export default defineBackground(() => {
+  restoreDevBackupIfNeeded().catch((error) => {
+    console.warn('[DevGo] failed to import devgo-backup.json:', error)
+  })
+
   // 监听来自内容脚本 / Popup 的请求消息
   browser.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
     if (message?.type === 'test') {

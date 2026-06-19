@@ -1,9 +1,17 @@
 import aiIns from '@ai-ins/vite'
 import tailwindcss from '@tailwindcss/vite'
+import { existsSync, readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'wxt'
 
 const DEV_EXTENSION_KEY =
   'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAn/zYjShBjRda8+YmfcuQprWHUoHe8mUQ/wnF8tr4BI4qiYexNaiMKQ/qHQ9WucT1GOy9OgOxErwOcuq6rvMAAMQD7C/4sgkTXnh6T9qlWfLQ0Dsinn99JUlWbcfvmyZ4Mz5Z6/CK5BsPHKuDzUJbo4G5W7ujSIaHXxyf3lDd9wee7/4Kvo7yv35yQtrROTZXOtTWH3SJbL6DF7cv2AoASEhArj0pUiX3H0sDUQfyDnNi1RBwRm2nICqs/3PqX+QuQGiOZjUzmET5eq1higFx7YwtYLvvZBBdZo64E6CCZJs9368xPoPbK5fGFK5zXSpI9sPQSzIFNR7AW100v0VODQIDAQAB'
+const DEV_BACKUP_PATH = fileURLToPath(new URL('./devgo-backup.json', import.meta.url))
+
+function loadDevBackupJson(mode: string): string | null {
+  if (mode !== 'development' || !existsSync(DEV_BACKUP_PATH)) return null
+  return readFileSync(DEV_BACKUP_PATH, 'utf8')
+}
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
@@ -22,7 +30,7 @@ export default defineConfig({
   // aiIns() 为 AI Ins 点选改源插件，自带 enforce:'pre' + apply:'serve'，仅 dev 生效、不进生产构建。
   vite: ({ mode }) => ({
     define: {
-      __DEVGO_BACKUP_JSON__: JSON.stringify(loadDevBackupJson(mode)),
+      DEVGO_BACKUP_JSON: JSON.stringify(loadDevBackupJson(mode)),
     },
     plugins: [aiIns(), tailwindcss()],
   }),

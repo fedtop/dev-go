@@ -411,7 +411,7 @@ export default function NetworkPage() {
     }
   }
 
-  const useRecommendedRuleList = (url: string) => {
+  const selectRecommendedRuleList = (url: string) => {
     setRuleListUrl(url)
     setRuleListStatus('')
     setRuleListError(false)
@@ -558,7 +558,7 @@ export default function NetworkPage() {
                     key={item.url}
                     type='button'
                     title={item.url}
-                    onClick={() => useRecommendedRuleList(item.url)}
+                    onClick={() => selectRecommendedRuleList(item.url)}
                     className={`rounded border px-2 py-1 text-[10px] leading-4 transition-colors ${
                       ruleListUrl === item.url
                         ? 'border-blue-500 bg-blue-50 text-blue-700'

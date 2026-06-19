@@ -64,10 +64,11 @@ export default defineConfig({
       },
     ],
     commands: {
-      // 打开/切换 popup 面板，定位到「功能」页配置的默认 Tab。
       // Alt 在 Win/Linux 为 Alt，在 Mac 自动映射为 Option(⌥)
-      _execute_action: {
+      // 打开 popup，并定位到用户配置的默认 Tab
+      'open-default': {
         suggested_key: { default: 'Alt+1' },
+        description: '打开默认面板',
       },
       // 打开 popup 并定位到「待办」Tab
       'open-todo': {

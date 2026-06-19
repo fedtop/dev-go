@@ -193,6 +193,14 @@ export interface TodoItem {
   createdAt: number
 }
 
+/** popup 快捷键可打开的 Tab */
+export const POPUP_SHORTCUT_TABS = ['translate', 'todo', 'network', 'tools', 'function'] as const
+export type PopupShortcutTab = typeof POPUP_SHORTCUT_TABS[number]
+
+export function isPopupShortcutTab(value: unknown): value is PopupShortcutTab {
+  return typeof value === 'string' && (POPUP_SHORTCUT_TABS as readonly string[]).includes(value)
+}
+
 /** 新标签页 TODO 任务列表（持久化、跨设备同步，抗扩展卸载/重装） */
 export const todoItems = storage.defineItem<TodoItem[]>('sync:todoItems', {
   fallback: [],
@@ -200,14 +208,14 @@ export const todoItems = storage.defineItem<TodoItem[]>('sync:todoItems', {
 
 /**
  * popup 下次打开时要定位的 Tab（一次性信号）。
- * Alt+2 等命令经后台写入对应 Tab，popup 读取后立即清空。
+ * Alt+1..4 等命令经后台写入对应 Tab，popup 读取后立即清空。
  */
-export const popupInitialTab = storage.defineItem<string>('local:popupInitialTab', {
+export const popupInitialTab = storage.defineItem<PopupShortcutTab | ''>('local:popupInitialTab', {
   fallback: '',
 })
 
 /**
- * Alt+1 打开面板时默认定位的 Tab（在「功能」页可配置，默认翻译）。
+ * 点击工具栏图标或 Alt+1 打开 popup 时默认定位的 Tab（在「功能」页可配置，默认翻译）。
  * 跨设备同步：换设备后默认 Tab 偏好保持一致。
  */
 export const defaultPopupTab = storage.defineItem<string>('sync:defaultPopupTab', {

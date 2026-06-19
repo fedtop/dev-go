@@ -7,7 +7,7 @@
  */
 
 import type { DictResult } from '@/types/dict'
-import type { NetworkMode } from '@/utils/settings'
+import type { NetworkMode, PopupShortcutTab } from '@/utils/settings'
 
 export interface CorsProxyRequest {
   url: string
@@ -94,6 +94,17 @@ export interface MediaDownloadResult {
   ok: boolean
   downloadId?: number
   error?: string
+}
+
+/** Background -> Popup：快捷键请求切换或关闭 popup 面板 */
+export interface PopupShortcutMessage {
+  type: 'popup-shortcut'
+  tab: PopupShortcutTab
+  nonce: number
+}
+
+export interface PopupShortcutResponse {
+  handled: true
 }
 
 /** Background 负责响应的请求消息（runtime 通道） */

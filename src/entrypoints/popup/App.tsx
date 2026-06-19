@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { SHIP_NAME, SITE_URL } from '@/utils/constants'
 import FunctionPage from '@/features/popup/FunctionPage'
@@ -6,12 +6,21 @@ import TodoPage from '@/features/popup/TodoPage'
 import NetworkPage from '@/features/popup/NetworkPage'
 import ToolsPage from '@/features/popup/ToolsPage'
 import TranslatePage from '@/features/popup/TranslatePage'
-import { POPUP_PAGES, POPUP_PAGE_VALUES } from '@/features/popup/pages'
+import { POPUP_PAGES } from '@/features/popup/pages'
 import Tabs from '@/ui/Tabs'
-import { defaultPopupTab, popupInitialTab } from '@/utils/settings'
+import {
+  defaultPopupTab,
+  isPopupShortcutTab,
+  popupInitialTab,
+  type PopupShortcutTab,
+} from '@/utils/settings'
+import type { PopupShortcutMessage, PopupShortcutResponse } from '@/utils/messaging'
 import { formatShortcut } from '@/utils/shortcut'
 
-// 各面板 -> 打开它的命令名。翻译/功能没有独立命令，回退到 _execute_action（打开面板）。
+const DEFAULT_POPUP_COMMAND = 'open-default'
+const DEFAULT_POPUP_TAB: PopupShortcutTab = 'translate'
+
+// 各面板 -> 打开它的命令名。
 const TAB_COMMANDS: Record<string, string> = {
   todo: 'open-todo',
   network: 'open-network',
@@ -21,20 +30,43 @@ const TAB_COMMANDS: Record<string, string> = {
 export default function App() {
   const [active, setActive] = useState('translate')
   const [shortcuts, setShortcuts] = useState<Record<string, string>>({})
+  const [defaultShortcutTab, setDefaultShortcutTab] = useState<PopupShortcutTab>(DEFAULT_POPUP_TAB)
+  const activeRef = useRef(active)
 
-  // 打开面板时定位 Tab：优先一次性信号（Alt+2 等命令写入），否则用「功能」页配置的默认 Tab。
   useEffect(() => {
-    popupInitialTab.getValue().then((tab) => {
-      if (tab && POPUP_PAGE_VALUES.has(tab)) {
-        setActive(tab)
-        popupInitialTab.setValue('')
-        return
-      }
-      if (tab) popupInitialTab.setValue('')
-      defaultPopupTab.getValue().then((fallback) => {
-        if (POPUP_PAGE_VALUES.has(fallback)) setActive(fallback)
-      })
-    })
+    activeRef.current = active
+  }, [active])
+
+  const applyShortcutTab = useCallback((tab: PopupShortcutTab) => {
+    popupInitialTab.setValue('')
+
+    if (activeRef.current === tab) {
+      window.close()
+      return
+    }
+
+    activeRef.current = tab
+    setActive(tab)
+  }, [])
+
+  // 打开面板时定位 Tab：优先一次性信号（Alt+1..4 等命令写入），否则用「功能」页配置的默认 Tab。
+  useEffect(() => {
+    Promise.all([popupInitialTab.getValue(), defaultPopupTab.getValue()]).then(
+      ([tab, fallback]) => {
+        const defaultTab = isPopupShortcutTab(fallback) ? fallback : DEFAULT_POPUP_TAB
+        setDefaultShortcutTab(defaultTab)
+
+        if (tab && isPopupShortcutTab(tab)) {
+          activeRef.current = tab
+          setActive(tab)
+          popupInitialTab.setValue('')
+          return
+        }
+        if (tab) popupInitialTab.setValue('')
+        activeRef.current = defaultTab
+        setActive(defaultTab)
+      },
+    )
 
     // 读取实际注册的命令快捷键（用户在 chrome://extensions/shortcuts 改动后会同步）
     browser.commands?.getAll().then((cmds) => {
@@ -42,8 +74,35 @@ export default function App() {
     })
   }, [])
 
-  // 当前面板对应的快捷键：有独立命令用其快捷键，否则回退到打开面板的 _execute_action。
-  const activeShortcut = shortcuts[TAB_COMMANDS[active]] || shortcuts._execute_action || ''
+  useEffect(() => {
+    const unwatch = defaultPopupTab.watch((tab) => {
+      if (isPopupShortcutTab(tab)) setDefaultShortcutTab(tab)
+    })
+
+    return () => unwatch()
+  }, [])
+
+  useEffect(() => {
+    const onMessage = (
+      message: unknown,
+      _sender: chrome.runtime.MessageSender,
+      sendResponse: (response: PopupShortcutResponse) => void,
+    ): boolean => {
+      if (!isPopupShortcutMessage(message)) return false
+
+      applyShortcutTab(message.tab)
+      sendResponse({ handled: true })
+      return false
+    }
+
+    browser.runtime.onMessage.addListener(onMessage)
+    return () => browser.runtime.onMessage.removeListener(onMessage)
+  }, [applyShortcutTab])
+
+  // 当前面板对应的快捷键。
+  const defaultShortcut =
+    active === defaultShortcutTab ? shortcuts[DEFAULT_POPUP_COMMAND] || '' : ''
+  const activeShortcut = shortcuts[TAB_COMMANDS[active]] || defaultShortcut
 
   return (
     <div className='popup-shell relative flex w-[500px] flex-col overflow-hidden text-slate-800'>
@@ -92,5 +151,15 @@ export default function App() {
         </a>
       </footer>
     </div>
+  )
+}
+
+function isPopupShortcutMessage(message: unknown): message is PopupShortcutMessage {
+  return (
+    typeof message === 'object' &&
+    message != null &&
+    (message as PopupShortcutMessage).type === 'popup-shortcut' &&
+    isPopupShortcutTab((message as PopupShortcutMessage).tab) &&
+    typeof (message as PopupShortcutMessage).nonce === 'number'
   )
 }

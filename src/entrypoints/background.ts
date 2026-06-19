@@ -13,6 +13,8 @@ import {
   type MediaResource,
   type MediaResourceCandidate,
   type MediaResourceListResult,
+  type PopupShortcutMessage,
+  type PopupShortcutResponse,
   type RuntimeMessage,
 } from '@/utils/messaging'
 import {
@@ -31,9 +33,11 @@ import {
   parseNetworkRuleList,
 } from '@/utils/network'
 import {
+  defaultPopupTab,
   enableCorsBypass,
   popupInitialTab,
   getNetworkProxyProfile,
+  isPopupShortcutTab,
   migrateLocalToSync,
   networkMode,
   networkProxyBypassList,
@@ -44,6 +48,7 @@ import {
   type NetworkMode,
   type NetworkProxyProfile,
   type NetworkRuleListConfig,
+  type PopupShortcutTab,
   type TranslateProvider,
 } from '@/utils/settings'
 import type { DictResult } from '@/types/dict'
@@ -54,6 +59,13 @@ const MS_TRANSLATE_UA_RULE_ID = 9003
 const EDGE_TRANSLATE_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0'
 const TRANSLATION_CACHE_LIMIT = 800
+const DEFAULT_POPUP_COMMAND = 'open-default'
+const DEFAULT_POPUP_TAB: PopupShortcutTab = 'translate'
+const COMMAND_TO_TAB: Record<string, PopupShortcutTab> = {
+  'open-todo': 'todo',
+  'open-network': 'network',
+  'open-tools': 'tools',
+}
 const CORS_RULE_RESOURCE_TYPES = [
   chrome.declarativeNetRequest.ResourceType.XMLHTTPREQUEST,
   chrome.declarativeNetRequest.ResourceType.OTHER,
@@ -189,6 +201,56 @@ function parseContentLength(value?: string): number | undefined {
 function getWebRequestDocumentUrl(details: unknown): string | undefined {
   const documentUrl = (details as { documentUrl?: unknown }).documentUrl
   return typeof documentUrl === 'string' ? documentUrl : undefined
+}
+
+function isPopupShortcutResponse(value: unknown): value is PopupShortcutResponse {
+  return (
+    typeof value === 'object' && value != null && (value as PopupShortcutResponse).handled === true
+  )
+}
+
+function normalizePopupShortcutTab(value: string): PopupShortcutTab {
+  return isPopupShortcutTab(value) ? value : DEFAULT_POPUP_TAB
+}
+
+async function getPopupCommandTab(command: string): Promise<PopupShortcutTab | null> {
+  if (command === DEFAULT_POPUP_COMMAND) {
+    return normalizePopupShortcutTab(await defaultPopupTab.getValue())
+  }
+
+  return COMMAND_TO_TAB[command] ?? null
+}
+
+async function notifyOpenPopup(tab: PopupShortcutTab): Promise<boolean> {
+  try {
+    const message: PopupShortcutMessage = {
+      type: 'popup-shortcut',
+      tab,
+      nonce: Date.now(),
+    }
+    const response = await browser.runtime.sendMessage(message)
+    return isPopupShortcutResponse(response)
+  } catch {
+    return false
+  }
+}
+
+async function openPopupWithInitialTab(tab: PopupShortcutTab): Promise<void> {
+  await popupInitialTab.setValue(tab)
+
+  try {
+    await browser.action.openPopup?.()
+  } catch (error) {
+    console.warn('[DevGo] openPopup failed:', error)
+  }
+}
+
+async function handlePopupShortcutCommand(command: string): Promise<void> {
+  const tab = await getPopupCommandTab(command)
+  if (!tab) return
+
+  if (await notifyOpenPopup(tab)) return
+  await openPopupWithInitialTab(tab)
 }
 
 function getTabMediaStore(tabId: number): Map<string, MediaResource> {
@@ -1070,21 +1132,9 @@ export default defineBackground(() => {
       return
     }
 
-    // open-todo / open-network / open-tools：打开 popup 并定位到对应 Tab。
-    // 先写一次性信号，再主动弹出 popup。
-    const COMMAND_TO_TAB: Record<string, string> = {
-      'open-todo': 'todo',
-      'open-network': 'network',
-      'open-tools': 'tools',
-    }
-    const tab = COMMAND_TO_TAB[command]
-    if (tab) {
-      popupInitialTab.setValue(tab).then(() => {
-        browser.action.openPopup?.().catch((error) => {
-          console.warn('[DevGo] openPopup failed:', error)
-        })
-      })
-    }
+    void handlePopupShortcutCommand(command).catch((error) => {
+      console.warn('[DevGo] popup shortcut failed:', error)
+    })
   })
 
   browser.tabs.onUpdated.addListener((tabId, changeInfo) => {

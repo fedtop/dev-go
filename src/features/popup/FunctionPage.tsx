@@ -10,7 +10,7 @@ import Switch from '@/ui/Switch'
 
 // 命令 name -> 展示名
 const COMMAND_LABELS: Record<string, string> = {
-  _execute_action: '打开面板',
+  'open-default': '打开默认面板',
   'open-todo': '打开待办面板',
   'open-network': '打开网络面板',
   'open-tools': '打开资源面板',
@@ -111,7 +111,7 @@ export default function FunctionPage() {
       <div className='flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
         <div className='flex flex-col'>
           <span className='text-sm font-medium text-slate-800'>默认打开 Tab</span>
-          <span className='text-xs text-slate-400'>Alt+1 打开面板时定位的页面</span>
+          <span className='text-xs text-slate-400'>点击工具栏图标 / Alt+1 时定位的页面</span>
         </div>
         <Select
           value={defaultTab}

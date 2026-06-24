@@ -52,6 +52,17 @@ const VIDEO_MIME_VALUES = new Set([
   'audio/x-mpegurl',
 ])
 
+const STREAM_MANIFEST_EXTENSIONS = new Set(['dash', 'm3u8', 'mpd'])
+const STREAM_MANIFEST_MIME_VALUES = new Set([
+  'application/dash+xml',
+  'application/vnd.apple.mpegurl',
+  'application/x-mpegurl',
+  'application/mpegurl',
+  'audio/mpegurl',
+  'audio/x-mpegurl',
+])
+const STREAM_SEGMENT_EXTENSIONS = new Set(['m4s'])
+
 const MIME_EXTENSION_MAP: Record<string, string> = {
   'image/avif': 'avif',
   'image/bmp': 'bmp',
@@ -69,6 +80,13 @@ const MIME_EXTENSION_MAP: Record<string, string> = {
   'application/x-mpegurl': 'm3u8',
   'application/mpegurl': 'm3u8',
 }
+
+export type MediaDeliveryType =
+  | 'direct'
+  | 'stream-manifest'
+  | 'stream-segment'
+  | 'twitter-audio-track'
+  | 'twitter-video-track'
 
 export function normalizeMime(value?: string): string {
   return value?.split(';')[0]?.trim().toLowerCase() || ''
@@ -106,6 +124,76 @@ export function isDownloadableMediaUrl(url: string): boolean {
   } catch {
     return false
   }
+}
+
+function getTwitterDashTrackType(
+  url: string,
+): Extract<MediaDeliveryType, 'twitter-audio-track' | 'twitter-video-track'> | null {
+  try {
+    const parsed = new URL(url)
+    const hostname = parsed.hostname.toLowerCase()
+    if (!hostname.endsWith('twimg.com')) return null
+
+    const pathname = parsed.pathname
+    if (/\/(?:ext_tw_video|amplify_video)\/[^/]+\/aud\//.test(pathname)) {
+      return 'twitter-audio-track'
+    }
+
+    if (/\/(?:ext_tw_video|amplify_video)\/[^/]+\/vid\/[^/]+\/\d+\/\d+\//.test(pathname)) {
+      return 'twitter-video-track'
+    }
+
+    return null
+  } catch {
+    return null
+  }
+}
+
+export function getMediaDeliveryType(url: string, mime?: string): MediaDeliveryType {
+  const twitterTrackType = getTwitterDashTrackType(url)
+  if (twitterTrackType) return twitterTrackType
+
+  const extension = getUrlExtension(url)
+  const normalizedMime = normalizeMime(mime)
+
+  if (
+    STREAM_MANIFEST_EXTENSIONS.has(extension) ||
+    STREAM_MANIFEST_MIME_VALUES.has(normalizedMime)
+  ) {
+    return 'stream-manifest'
+  }
+
+  if (STREAM_SEGMENT_EXTENSIONS.has(extension)) return 'stream-segment'
+
+  return 'direct'
+}
+
+export function getDirectMediaDownloadBlockReason(url: string, mime?: string): string | undefined {
+  if (!isDownloadableMediaUrl(url)) return '仅支持 http/https 资源下载'
+
+  const deliveryType = getMediaDeliveryType(url, mime)
+
+  if (deliveryType === 'stream-manifest') {
+    return '这是流媒体清单，直接保存不会得到完整视频'
+  }
+
+  if (deliveryType === 'stream-segment') {
+    return '这是流媒体分片，单独下载通常无法播放'
+  }
+
+  if (deliveryType === 'twitter-audio-track') {
+    return '这是 X 的独立音频轨，需要和视频轨合并后才能成为完整视频'
+  }
+
+  if (deliveryType === 'twitter-video-track') {
+    return '这是 X 的独立视频轨，需要和音频轨合并后才能成为完整视频'
+  }
+
+  return undefined
+}
+
+export function isDirectDownloadableMediaUrl(url: string, mime?: string): boolean {
+  return getDirectMediaDownloadBlockReason(url, mime) == null
 }
 
 export function inferMediaKind(input: {

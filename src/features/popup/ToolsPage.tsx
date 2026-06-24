@@ -1,6 +1,13 @@
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 
-import { getUrlExtension, isDownloadableMediaUrl, normalizeMime } from '@/utils/media'
+import {
+  getDirectMediaDownloadBlockReason,
+  getMediaDeliveryType,
+  getUrlExtension,
+  isDirectDownloadableMediaUrl,
+  normalizeMime,
+  type MediaDeliveryType,
+} from '@/utils/media'
 import { sendRuntimeMessage, type MediaResource, type MediaResourceKind } from '@/utils/messaging'
 import Button from '@/ui/Button'
 
@@ -21,6 +28,12 @@ const SOURCE_LABELS: Record<MediaResource['source'], string> = {
   network: '请求',
   dom: '页面',
   'network+dom': '请求+页面',
+}
+const DELIVERY_LABELS: Partial<Record<MediaDeliveryType, string>> = {
+  'stream-manifest': '流清单',
+  'stream-segment': '流分片',
+  'twitter-audio-track': 'X 音频轨',
+  'twitter-video-track': 'X 视频轨',
 }
 const VIDEO_PREVIEW_EXTENSIONS = new Set(['mp4', 'webm', 'ogv', 'mov', 'm4v'])
 
@@ -58,7 +71,10 @@ function getPageLabel(tab: chrome.tabs.Tab | null): string {
 }
 
 function getResourceMeta(resource: MediaResource): string[] {
+  const deliveryLabel = DELIVERY_LABELS[getMediaDeliveryType(resource.url, resource.mime)]
+
   return [
+    deliveryLabel,
     resource.extension?.toUpperCase(),
     resource.mime,
     resource.width && resource.height ? `${resource.width}x${resource.height}` : '',
@@ -123,6 +139,7 @@ function StopIcon() {
 
 function canPreviewVideo(resource: MediaResource): boolean {
   if (resource.kind !== 'video') return false
+  if (getMediaDeliveryType(resource.url, resource.mime) !== 'direct') return false
 
   const extension = (resource.extension || getUrlExtension(resource.url)).toLowerCase()
   const mime = normalizeMime(resource.mime)
@@ -265,6 +282,7 @@ function ResourceItem({
 }: ResourceItemProps) {
   const meta = getResourceMeta(resource)
   const previewable = canPreviewVideo(resource)
+  const downloadBlockReason = getDirectMediaDownloadBlockReason(resource.url, resource.mime)
   let previewTitle = '当前格式不能在 popup 预览'
 
   if (previewing) {
@@ -331,8 +349,8 @@ function ResourceItem({
             <span className='h-7 w-7' aria-hidden='true' />
           )}
           <IconButton
-            title='下载'
-            disabled={downloading || !isDownloadableMediaUrl(resource.url)}
+            title={downloadBlockReason || '下载'}
+            disabled={downloading || Boolean(downloadBlockReason)}
             onClick={() => onDownload(resource)}
           >
             <DownloadIcon />
@@ -491,9 +509,10 @@ export default function ToolsPage() {
   }
 
   const downloadResource = async (resource: MediaResource, saveAs = true): Promise<boolean> => {
-    if (!isDownloadableMediaUrl(resource.url)) {
+    const blockReason = getDirectMediaDownloadBlockReason(resource.url, resource.mime)
+    if (blockReason) {
       setStatusError(true)
-      setStatus('仅支持 http/https 资源下载')
+      setStatus(blockReason)
       return false
     }
 
@@ -504,6 +523,7 @@ export default function ToolsPage() {
         type: 'download-media-resource',
         url: resource.url,
         fileName: resource.fileName,
+        mime: resource.mime,
         saveAs,
       })
 
@@ -529,11 +549,13 @@ export default function ToolsPage() {
     if (bulkBusy) return
 
     const downloadables = filteredResources.filter((resource) =>
-      isDownloadableMediaUrl(resource.url),
+      isDirectDownloadableMediaUrl(resource.url, resource.mime),
     )
+    const skippedCount = filteredResources.length - downloadables.length
+
     if (downloadables.length === 0) {
       setStatusError(true)
-      setStatus('没有可下载资源')
+      setStatus(skippedCount > 0 ? '没有可直接下载成完整文件的资源' : '没有可下载资源')
       return
     }
 
@@ -546,7 +568,11 @@ export default function ToolsPage() {
 
     setBulkBusy(false)
     setStatusError(okCount === 0)
-    setStatus(`已创建 ${okCount}/${downloadables.length} 个下载任务`)
+    setStatus(
+      skippedCount > 0
+        ? `已创建 ${okCount}/${downloadables.length} 个下载任务，跳过 ${skippedCount} 个流媒体片段`
+        : `已创建 ${okCount}/${downloadables.length} 个下载任务`,
+    )
   }
 
   return (

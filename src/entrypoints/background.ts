@@ -20,10 +20,10 @@ import {
 import {
   buildMediaResource,
   buildMediaFileName,
+  getDirectMediaDownloadBlockReason,
   getMediaResourceId,
   getTwitterMediaKey,
   inferMediaKind,
-  isDownloadableMediaUrl,
   mergeMediaSource,
 } from '@/utils/media'
 import {
@@ -423,14 +423,16 @@ async function clearMediaResources(tabId?: number): Promise<{ ok: boolean; remov
 async function downloadMediaResource(
   url: string,
   fileName?: string,
+  mime?: string,
   saveAs = true,
 ): Promise<MediaDownloadResult> {
-  if (!isDownloadableMediaUrl(url)) {
-    return { ok: false, error: '仅支持 http/https 资源下载' }
+  const blockReason = getDirectMediaDownloadBlockReason(url, mime)
+  if (blockReason) {
+    return { ok: false, error: blockReason }
   }
 
-  const kind = inferMediaKind({ url }) || 'video'
-  const filename = `${MEDIA_DOWNLOAD_DIR}/${buildMediaFileName(url, kind, undefined, fileName)}`
+  const kind = inferMediaKind({ url, mime }) || 'video'
+  const filename = `${MEDIA_DOWNLOAD_DIR}/${buildMediaFileName(url, kind, mime, fileName)}`
 
   try {
     const downloadId = await browser.downloads.download({
@@ -1082,7 +1084,9 @@ export default defineBackground(() => {
     }
 
     if (message?.type === 'download-media-resource') {
-      downloadMediaResource(message.url, message.fileName, message.saveAs).then(sendResponse)
+      downloadMediaResource(message.url, message.fileName, message.mime, message.saveAs).then(
+        sendResponse,
+      )
       return true
     }
 

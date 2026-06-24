@@ -121,7 +121,13 @@ export type RuntimeMessage =
   | { type: 'download-network-rule-list'; url: string }
   | { type: 'get-media-resources'; tabId?: number; includeDom?: boolean }
   | { type: 'clear-media-resources'; tabId?: number }
-  | { type: 'download-media-resource'; url: string; fileName?: string; saveAs?: boolean }
+  | {
+      type: 'download-media-resource'
+      url: string
+      fileName?: string
+      mime?: string
+      saveAs?: boolean
+    }
 
 /** Background 对 RuntimeMessage 的响应 */
 export interface RuntimeResponseMap {

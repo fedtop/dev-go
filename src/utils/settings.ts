@@ -82,6 +82,11 @@ export const DEFAULT_NETWORK_RULE_LIST: NetworkRuleListConfig = {
   directRuleCount: 0,
 }
 
+/** 网络功能总开关：控制代理与 CORS 调试辅助是否运行时生效（配置偏好仍保留） */
+export const networkFeaturesEnabled = storage.defineItem<boolean>('local:networkFeaturesEnabled', {
+  fallback: false,
+})
+
 /** 是否由 DevGo 接管浏览器代理配置（用户首次在网络面板应用后开启） */
 export const networkProxyManaged = storage.defineItem<boolean>('local:networkProxyManaged', {
   fallback: false,
@@ -230,6 +235,10 @@ const networkProxyBypassListMigrated = storage.defineItem<boolean>(
   'local:networkProxyBypassListMigratedToSync',
   { fallback: false },
 )
+const networkFeaturesEnabledMigrated = storage.defineItem<boolean>(
+  'local:networkFeaturesEnabledMigrated',
+  { fallback: false },
+)
 
 function normalizeNetworkProxyBypassList(value: string[]): string[] {
   return normalizeBypassList(value)
@@ -317,8 +326,25 @@ export async function setNetworkProxyProfile(profile: NetworkProxyProfile): Prom
  * - 旧 local 数据保留不删，作为本机兜底。
  * 应在各页面渲染前 await（见各 entrypoint 的 main.tsx）。
  */
+/** 升级后：若用户此前已启用代理或 CORS，则默认打开网络功能总开关 */
+export async function migrateNetworkFeaturesEnabled(): Promise<void> {
+  if (await networkFeaturesEnabledMigrated.getValue()) return
+
+  const [managed, corsEnabled] = await Promise.all([
+    networkProxyManaged.getValue(),
+    enableCorsBypass.getValue(),
+  ])
+
+  if (managed || corsEnabled) {
+    await networkFeaturesEnabled.setValue(true)
+  }
+
+  await networkFeaturesEnabledMigrated.setValue(true)
+}
+
 export async function migrateLocalToSync(): Promise<void> {
   await migrateNetworkProxyBypassListToSync()
+  await migrateNetworkFeaturesEnabled()
 
   if (await syncMigrated.getValue()) return
 

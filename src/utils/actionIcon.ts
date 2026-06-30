@@ -4,7 +4,12 @@
  * PNG 并覆盖一个对应颜色的圆，再以 ImageData 写入（MV3 service worker 可用）。
  */
 
-import { networkMode, networkProxyManaged, type NetworkMode } from '@/utils/settings'
+import {
+  networkFeaturesEnabled,
+  networkMode,
+  networkProxyManaged,
+  type NetworkMode,
+} from '@/utils/settings'
 
 /** 左下角圆在源图中的位置（按 src/assets/icon.png 395×395 实测：圆心 (121, 299)） */
 const CIRCLE_CX = 121 / 395
@@ -41,12 +46,13 @@ async function drawIcon(size: typeof ICON_SIZES[number], color: string): Promise
 
 /** 按网络模式刷新工具栏图标；DevGo 未接管代理时恢复默认图标 */
 export async function updateNetworkActionIcon(): Promise<void> {
-  const [managed, mode] = await Promise.all([
+  const [managed, mode, featuresEnabled] = await Promise.all([
     networkProxyManaged.getValue(),
     networkMode.getValue(),
+    networkFeaturesEnabled.getValue(),
   ])
 
-  if (!managed) {
+  if (!managed || !featuresEnabled) {
     await browser.action.setIcon({
       path: Object.fromEntries(ICON_SIZES.map((size) => [size, `/icons/${size}.png`])),
     })

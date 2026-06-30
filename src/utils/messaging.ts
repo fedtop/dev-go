@@ -32,6 +32,8 @@ export interface NetworkProxyStatus {
   ok: boolean
   mode: NetworkMode
   managed: boolean
+  enabled?: boolean
+  corsActive?: boolean
   levelOfControl?: chrome.types.ChromeSettingGetResultDetails['levelOfControl']
   error?: string
 }
@@ -118,6 +120,7 @@ export type RuntimeMessage =
   | { type: 'apply-network-mode'; mode: NetworkMode }
   | { type: 'sync-network-proxy' }
   | { type: 'get-network-status' }
+  | { type: 'set-network-features-enabled'; enabled: boolean }
   | { type: 'download-network-rule-list'; url: string }
   | { type: 'get-media-resources'; tabId?: number; includeDom?: boolean }
   | { type: 'clear-media-resources'; tabId?: number }
@@ -140,6 +143,7 @@ export interface RuntimeResponseMap {
   'apply-network-mode': NetworkProxyStatus
   'sync-network-proxy': NetworkProxyStatus
   'get-network-status': NetworkProxyStatus
+  'set-network-features-enabled': NetworkProxyStatus
   'download-network-rule-list': NetworkRuleListDownloadStatus
   'get-media-resources': MediaResourceListResult
   'clear-media-resources': { ok: boolean; removed: number }

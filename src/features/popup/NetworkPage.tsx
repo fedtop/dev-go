@@ -8,6 +8,7 @@ import {
   enableCorsBypass,
   enableReloadOnProxySwitch,
   getNetworkProxyProfile,
+  networkFeaturesEnabled,
   networkMode,
   networkRuleList,
   setNetworkProxyProfile,
@@ -17,6 +18,7 @@ import {
   type NetworkRuleListConfig,
 } from '@/utils/settings'
 import Button from '@/ui/Button'
+import NetworkFeaturesSwitch from '@/features/popup/NetworkFeaturesSwitch'
 import Select from '@/ui/Select'
 import Switch from '@/ui/Switch'
 
@@ -115,9 +117,11 @@ export default function NetworkPage() {
   const [corsBusy, setCorsBusy] = useState(false)
   const [corsStatus, setCorsStatus] = useState('')
   const [reloadOnSwitch, setReloadOnSwitch] = useState(false)
+  const [featuresEnabled, setFeaturesEnabled] = useState(false)
 
   const bypassList = useMemo(() => normalizeBypassList(bypassText), [bypassText])
   const currentHostBypassed = Boolean(currentHost && bypassList.includes(currentHost))
+  const inactiveClass = featuresEnabled ? '' : 'opacity-60'
 
   useEffect(() => {
     let active = true
@@ -127,21 +131,33 @@ export default function NetworkPage() {
       getNetworkProxyProfile(),
       networkRuleList.getValue(),
       enableReloadOnProxySwitch.getValue(),
+      networkFeaturesEnabled.getValue(),
       sendRuntimeMessage({ type: 'get-network-status' }).catch(() => null),
       browser.tabs.query({ active: true, currentWindow: true }),
-    ]).then(([storedMode, storedProfile, storedRuleList, storedReload, networkStatus, tabs]) => {
-      if (!active) return
+    ]).then(
+      ([
+        storedMode,
+        storedProfile,
+        storedRuleList,
+        storedReload,
+        storedFeaturesEnabled,
+        networkStatus,
+        tabs,
+      ]) => {
+        if (!active) return
 
-      setMode(storedMode)
-      setAppliedMode(storedMode)
-      setProfile(storedProfile)
-      setBypassText(storedProfile.bypassList.join('\n'))
-      setRuleList(storedRuleList)
-      setRuleListUrl(storedRuleList.url)
-      setReloadOnSwitch(storedReload)
-      setStatus(networkStatus)
-      setCurrentHost(getUrlHostname(tabs[0]?.url))
-    })
+        setMode(storedMode)
+        setAppliedMode(storedMode)
+        setProfile(storedProfile)
+        setBypassText(storedProfile.bypassList.join('\n'))
+        setRuleList(storedRuleList)
+        setRuleListUrl(storedRuleList.url)
+        setReloadOnSwitch(storedReload)
+        setFeaturesEnabled(storedFeaturesEnabled)
+        setStatus(networkStatus)
+        setCurrentHost(getUrlHostname(tabs[0]?.url))
+      },
+    )
 
     enableCorsBypass.getValue().then((enabled) => {
       if (!active) return
@@ -153,8 +169,19 @@ export default function NetworkPage() {
       }
     })
 
+    const unwatchFeatures = networkFeaturesEnabled.watch((enabled) => {
+      if (!active) return
+      setFeaturesEnabled(enabled)
+      void sendRuntimeMessage({ type: 'get-network-status' })
+        .then((nextStatus) => {
+          if (active) setStatus(nextStatus)
+        })
+        .catch(() => null)
+    })
+
     return () => {
       active = false
+      unwatchFeatures()
     }
   }, [])
 
@@ -203,6 +230,7 @@ export default function NetworkPage() {
       setMode(nextStatus.mode)
       setAppliedMode(nextStatus.mode)
       setStatus(nextStatus)
+      setFeaturesEnabled(nextStatus.enabled ?? true)
 
       if (reloadOnSwitch && nextStatus.ok && nextStatus.mode !== prevAppliedMode) {
         await reloadActiveTab()
@@ -313,8 +341,10 @@ export default function NetworkPage() {
 
     try {
       if (checked) {
+        await networkFeaturesEnabled.setValue(true)
         await enableCorsBypass.setValue(true)
         const active = await sendRuntimeMessage({ type: 'sync-cors-bypass' })
+        setFeaturesEnabled(true)
         setCorsOn(active)
         setCorsStatus(active ? '已对网页 XHR/fetch 响应补充 CORS 头' : '规则未生效')
         return
@@ -426,7 +456,16 @@ export default function NetworkPage() {
 
   return (
     <div className='flex flex-col gap-2.5'>
-      <section className='rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm'>
+      <section className='rounded-lg border border-slate-200 bg-white px-2 py-1.5 shadow-sm'>
+        <div className='flex items-center justify-between gap-2'>
+          <span className='text-xs font-medium text-slate-700'>网络功能</span>
+          <NetworkFeaturesSwitch />
+        </div>
+      </section>
+
+      <section
+        className={`rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm ${inactiveClass}`}
+      >
         <div className='mb-2 flex items-center justify-between gap-3'>
           <div className='min-w-0'>
             <h2 className='text-sm font-semibold text-slate-800'>网络模式</h2>
@@ -483,7 +522,7 @@ export default function NetworkPage() {
       </section>
 
       {showProxySettings && (
-        <>
+        <div className={`flex flex-col gap-2.5 ${inactiveClass}`}>
           <section className='rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm'>
             <div className='mb-2 flex items-center justify-between'>
               <h2 className='text-sm font-semibold text-slate-800'>代理服务器</h2>
@@ -615,10 +654,12 @@ export default function NetworkPage() {
               每行一个域名或 Chrome 代理绕过规则；编辑后点「保存」生效，在代理模式与情境模式中生效。
             </p>
           </section>
-        </>
+        </div>
       )}
 
-      <section className='rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm'>
+      <section
+        className={`rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm ${inactiveClass}`}
+      >
         <div className='flex items-center justify-between gap-3'>
           <div className='min-w-0'>
             <h2 className='text-sm font-semibold text-slate-800'>

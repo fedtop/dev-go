@@ -1,6 +1,6 @@
 import { injectScript, type ScriptPublicPath } from 'wxt/utils/inject-script'
 import { sendRuntimeMessage, type CorsProxyRequest } from '@/utils/messaging'
-import { enableCorsBypass } from '@/utils/settings'
+import { enableCorsBypass, networkFeaturesEnabled } from '@/utils/settings'
 
 const PAGE_SOURCE = 'devgo-cors-proxy-page'
 const CONTENT_SOURCE = 'devgo-cors-proxy-content'
@@ -31,6 +31,14 @@ function postEnabled(enabled: boolean) {
     },
     '*',
   )
+}
+
+async function isCorsRuntimeEnabled(): Promise<boolean> {
+  const [corsEnabled, featuresEnabled] = await Promise.all([
+    enableCorsBypass.getValue(),
+    networkFeaturesEnabled.getValue(),
+  ])
+  return corsEnabled && featuresEnabled
 }
 
 export default defineContentScript({
@@ -100,25 +108,35 @@ export default defineContentScript({
       })
     }
 
-    // 文档开始阶段读取一次开关：开启则立即注入，以尽量赶在页面脚本之前接管 fetch/XHR。
-    if (await enableCorsBypass.getValue()) {
-      await ensureInjected()
-      postEnabled(true)
-    }
-
-    const unwatch = enableCorsBypass.watch(async (enabled) => {
-      if (enabled) {
+    async function syncCorsRuntimeState() {
+      if (await isCorsRuntimeEnabled()) {
         // 运行时才开启：注入后接管的是「此刻之后」发起的请求；页面已缓存的
         // fetch/XHR 引用不受影响，必要时提示用户刷新页面。
         await ensureInjected()
         postEnabled(true)
-      } else if (injected) {
+        return
+      }
+
+      if (injected) {
         // 关闭：无法移除已注入的页面脚本，但通过状态消息让其变为原生透传，
         // 不再代理任何请求。彻底回到原生环境需刷新页面。
         postEnabled(false)
       }
+    }
+
+    // 文档开始阶段读取一次开关：开启则立即注入，以尽量赶在页面脚本之前接管 fetch/XHR。
+    await syncCorsRuntimeState()
+
+    const unwatchCors = enableCorsBypass.watch(() => {
+      void syncCorsRuntimeState()
+    })
+    const unwatchFeatures = networkFeaturesEnabled.watch(() => {
+      void syncCorsRuntimeState()
     })
 
-    ctx.onInvalidated(() => unwatch())
+    ctx.onInvalidated(() => {
+      unwatchCors()
+      unwatchFeatures()
+    })
   },
 })

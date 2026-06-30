@@ -39,6 +39,7 @@ import {
   getNetworkProxyProfile,
   isPopupShortcutTab,
   migrateLocalToSync,
+  networkFeaturesEnabled,
   networkMode,
   networkProxyBypassList,
   networkProxyManaged,
@@ -565,7 +566,11 @@ function syncMicrosoftRequestRulesSafely() {
 
 /** 按开关状态安装 / 移除 CORS 动态规则。 */
 async function syncCorsBypassRules(): Promise<boolean> {
-  const enabled = await enableCorsBypass.getValue()
+  const [corsEnabled, featuresEnabled] = await Promise.all([
+    enableCorsBypass.getValue(),
+    networkFeaturesEnabled.getValue(),
+  ])
+  const enabled = corsEnabled && featuresEnabled
 
   await chrome.declarativeNetRequest.updateDynamicRules({
     removeRuleIds: [CORS_BYPASS_RULE_ID],
@@ -624,6 +629,19 @@ function chromeLastError(): Error | null {
 function setChromeProxyConfig(config: chrome.proxy.ProxyConfig): Promise<void> {
   return new Promise((resolve, reject) => {
     getProxySettings().set({ value: config, scope: 'regular' }, () => {
+      const error = chromeLastError()
+      if (error) {
+        reject(error)
+        return
+      }
+      resolve()
+    })
+  })
+}
+
+function clearChromeProxyConfig(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    getProxySettings().clear({ scope: 'regular' }, () => {
       const error = chromeLastError()
       if (error) {
         reject(error)
@@ -696,16 +714,21 @@ function buildNetworkProxyConfig(
 }
 
 async function getNetworkStatus(error?: unknown): Promise<NetworkProxyStatus> {
-  const [mode, managed] = await Promise.all([
+  const [mode, managed, enabled, corsEnabled] = await Promise.all([
     networkMode.getValue(),
     networkProxyManaged.getValue(),
+    networkFeaturesEnabled.getValue(),
+    enableCorsBypass.getValue(),
   ])
+  const corsActive = corsEnabled && enabled
 
   if (error) {
     return {
       ok: false,
       mode,
       managed,
+      enabled,
+      corsActive,
       error: error instanceof Error ? error.message : String(error),
     }
   }
@@ -716,6 +739,8 @@ async function getNetworkStatus(error?: unknown): Promise<NetworkProxyStatus> {
       ok: true,
       mode,
       managed,
+      enabled,
+      corsActive,
       levelOfControl: details.levelOfControl,
     }
   } catch (statusError) {
@@ -723,12 +748,66 @@ async function getNetworkStatus(error?: unknown): Promise<NetworkProxyStatus> {
       ok: false,
       mode,
       managed,
+      enabled,
+      corsActive,
       error: statusError instanceof Error ? statusError.message : String(statusError),
     }
   }
 }
 
+async function releaseNetworkFeatures(): Promise<NetworkProxyStatus> {
+  await networkFeaturesEnabled.setValue(false)
+  await networkProxyManaged.setValue(false)
+
+  try {
+    await clearChromeProxyConfig()
+    await syncCorsBypassRules()
+    updateNetworkActionIconSafely()
+    return getNetworkStatus()
+  } catch (releaseError) {
+    await syncCorsBypassRules().catch(() => false)
+    updateNetworkActionIconSafely()
+    return getNetworkStatus(releaseError)
+  }
+}
+
+async function applyNetworkFeatures(): Promise<NetworkProxyStatus> {
+  await networkFeaturesEnabled.setValue(true)
+  await networkProxyManaged.setValue(true)
+
+  try {
+    const [mode, profile, ruleList] = await Promise.all([
+      networkMode.getValue(),
+      getNetworkProxyProfile(),
+      networkRuleList.getValue(),
+    ])
+    await setChromeProxyConfig(buildNetworkProxyConfig(mode, profile, ruleList))
+    await syncCorsBypassRules()
+    updateNetworkActionIconSafely()
+    return getNetworkStatus()
+  } catch (error) {
+    return getNetworkStatus(error)
+  }
+}
+
+async function setNetworkFeaturesEnabled(enabled: boolean): Promise<NetworkProxyStatus> {
+  if (enabled) {
+    return applyNetworkFeatures()
+  }
+  return releaseNetworkFeatures()
+}
+
+function syncNetworkFeaturesSafely() {
+  networkFeaturesEnabled
+    .getValue()
+    .then((enabled) => setNetworkFeaturesEnabled(enabled))
+    .catch((error) => {
+      console.warn('[DevGo] sync network features failed:', error)
+    })
+}
+
 async function applyNetworkMode(mode: NetworkMode): Promise<NetworkProxyStatus> {
+  await networkFeaturesEnabled.setValue(true)
   await networkMode.setValue(mode)
   await networkProxyManaged.setValue(true)
 
@@ -738,6 +817,7 @@ async function applyNetworkMode(mode: NetworkMode): Promise<NetworkProxyStatus> 
       networkRuleList.getValue(),
     ])
     await setChromeProxyConfig(buildNetworkProxyConfig(mode, profile, ruleList))
+    updateNetworkActionIconSafely()
     return getNetworkStatus()
   } catch (error) {
     return getNetworkStatus(error)
@@ -745,9 +825,12 @@ async function applyNetworkMode(mode: NetworkMode): Promise<NetworkProxyStatus> 
 }
 
 async function syncNetworkProxy(): Promise<NetworkProxyStatus> {
-  const managed = await networkProxyManaged.getValue()
+  const [managed, featuresEnabled] = await Promise.all([
+    networkProxyManaged.getValue(),
+    networkFeaturesEnabled.getValue(),
+  ])
 
-  if (!managed) {
+  if (!managed || !featuresEnabled) {
     return getNetworkStatus()
   }
 
@@ -831,7 +914,12 @@ async function downloadNetworkRuleList(url: string): Promise<NetworkRuleListDown
 }
 
 async function proxyCorsRequest(request: CorsProxyRequest): Promise<CorsProxyResponse> {
-  if (!(await enableCorsBypass.getValue())) {
+  const [corsEnabled, featuresEnabled] = await Promise.all([
+    enableCorsBypass.getValue(),
+    networkFeaturesEnabled.getValue(),
+  ])
+
+  if (!corsEnabled || !featuresEnabled) {
     return {
       url: request.url,
       status: 0,
@@ -1068,6 +1156,11 @@ export default defineBackground(() => {
       return true
     }
 
+    if (message?.type === 'set-network-features-enabled') {
+      setNetworkFeaturesEnabled(message.enabled).then(sendResponse)
+      return true
+    }
+
     if (message?.type === 'download-network-rule-list') {
       downloadNetworkRuleList(message.url).then(sendResponse)
       return true
@@ -1170,6 +1263,7 @@ export default defineBackground(() => {
   })
 
   enableCorsBypass.watch(syncCorsBypassRulesSafely)
+  networkFeaturesEnabled.watch(syncNetworkFeaturesSafely)
   networkMode.watch(syncNetworkProxySafely)
   networkProxyProfile.watch(syncNetworkProxySafely)
   networkProxyBypassList.watch(syncNetworkProxySafely)
@@ -1179,6 +1273,7 @@ export default defineBackground(() => {
   updateNetworkActionIconSafely()
   networkMode.watch(updateNetworkActionIconSafely)
   networkProxyManaged.watch(updateNetworkActionIconSafely)
+  networkFeaturesEnabled.watch(updateNetworkActionIconSafely)
 
   chrome.proxy?.onProxyError?.addListener((details) => {
     console.warn('[DevGo] proxy error:', details)

@@ -44,6 +44,8 @@ function normalizeHostPattern(value: string): string {
 }
 
 function extractHostPatternFromUrlLike(value: string): string | null {
+  const rawHost = value.replace(WILDCARD_SCHEME_RE, '').replace(URL_SCHEME_RE, '').split(/[/?#]/)[0]
+  const hasSubdomainWildcard = /^(?:\*|%2a)\./i.test(stripPortFromHostPattern(rawHost))
   let urlInput = `http://${value}`
   if (WILDCARD_SCHEME_RE.test(value)) {
     urlInput = value.replace(WILDCARD_SCHEME_RE, 'http://')
@@ -53,13 +55,10 @@ function extractHostPatternFromUrlLike(value: string): string | null {
 
   try {
     const url = new URL(urlInput)
-    return normalizeHostPattern(url.hostname)
+    const hostname = normalizeHostPattern(url.hostname)
+    return hasSubdomainWildcard ? `*.${hostname.replace(/^(?:\*|%2a)\./i, '')}` : hostname
   } catch {
-    const withoutScheme = value.replace(WILDCARD_SCHEME_RE, '').replace(URL_SCHEME_RE, '')
-    const host = withoutScheme.startsWith('[')
-      ? withoutScheme.slice(0, withoutScheme.indexOf(']') + 1 || undefined)
-      : withoutScheme.split(/[/?#]/)[0]
-    return host ? normalizeHostPattern(host) : null
+    return null
   }
 }
 

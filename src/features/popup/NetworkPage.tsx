@@ -1208,8 +1208,8 @@ export default function NetworkPage() {
                 className='w-full resize-none rounded-lg border border-slate-300 bg-white px-2.5 py-2 font-mono text-xs leading-5 text-slate-700 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500'
               />
               <p className='mt-1.5 text-[10px] leading-4 text-slate-400'>
-                每行一个域名或 Chrome
-                代理绕过规则；代理模式、自动模式与每个自定义代理模式都会独立保存。
+                每行一个域名或 Chrome 代理绕过规则；支持 `*.example.com`
+                匹配子域名。代理模式、自动模式与每个自定义代理模式都会独立保存。
               </p>
             </div>
           </div>

@@ -162,7 +162,7 @@ export const networkMode = storage.defineItem<NetworkMode>('local:networkMode', 
   fallback: 'system',
 })
 
-/** 旧版手填绕过列表（仅作为迁移来源保留） */
+/** 旧版手填绕过列表（仅作为迁移来源保留，旧版本存于 sync） */
 export const networkProxyBypassList = storage.defineItem<string[]>('sync:networkProxyBypassList', {
   fallback: DEFAULT_NETWORK_PROXY_PROFILE.bypassList,
 })
@@ -250,9 +250,9 @@ export type QuickNavCategoryId = 'common' | 'dev' | 'ai' | 'community' | 'tools'
 /** 分类自定义名称覆盖（仅存与默认名不同的项，缺省用默认名） */
 export type QuickNavCategoryLabels = Partial<Record<QuickNavCategoryId, string>>
 
-/** 分类自定义名称（跨设备同步） */
+/** 分类自定义名称（经同步镜像跨设备同步） */
 export const quickNavCategoryLabels = storage.defineItem<QuickNavCategoryLabels>(
-  'sync:quickNavCategoryLabels',
+  'local:quickNavCategoryLabels',
   { fallback: {} },
 )
 
@@ -268,12 +268,12 @@ export interface QuickNavItem {
 }
 
 /** 新标签页当前搜索引擎 id（见 features/newtab/engines.ts，默认 google） */
-export const searchEngine = storage.defineItem<string>('sync:searchEngine', {
+export const searchEngine = storage.defineItem<string>('local:searchEngine', {
   fallback: 'google',
 })
 
-/** 快捷导航卡片列表（为空时由 newtab 落库默认开发者站点） */
-export const quickNavItems = storage.defineItem<QuickNavItem[]>('sync:quickNavItems', {
+/** 快捷导航卡片列表（为空时由 newtab 落库默认开发者站点；经同步镜像跨设备同步） */
+export const quickNavItems = storage.defineItem<QuickNavItem[]>('local:quickNavItems', {
   fallback: [],
 })
 
@@ -282,42 +282,42 @@ export const newtabActiveCategory = storage.defineItem<string>('local:newtabActi
   fallback: 'common',
 })
 
-/** 分类默认站点一次性种子标记（仿 sync:migratedFromLocal 模式，不参与备份） */
-export const quickNavCategorySeeded = storage.defineItem<boolean>('sync:quickNavCategorySeeded', {
+/** 分类默认站点一次性种子标记（本机） */
+export const quickNavCategorySeeded = storage.defineItem<boolean>('local:quickNavCategorySeeded', {
   fallback: false,
 })
 
 /** 默认固定栏一次性种子标记：仅在用户还没有固定项时应用默认固定 */
 export const quickNavDefaultPinsSeeded = storage.defineItem<boolean>(
-  'sync:quickNavDefaultPinsSeeded',
+  'local:quickNavDefaultPinsSeeded',
   { fallback: false },
 )
 
 /** 浏览器内建页入口一次性种子标记：补齐历史 / 下载 / 扩展管理 */
 export const quickNavBuiltinPagesSeeded = storage.defineItem<boolean>(
-  'sync:quickNavBuiltinPagesSeeded',
+  'local:quickNavBuiltinPagesSeeded',
   { fallback: false },
 )
 
 /** 主题模式：默认自动（18:00-06:00 深色，其余浅色） */
-export const themeMode = storage.defineItem<StoredThemeMode>('sync:themeMode', {
+export const themeMode = storage.defineItem<StoredThemeMode>('local:themeMode', {
   fallback: 'auto',
 })
 
 /** 新标签页动态背景效果 */
 export const newtabShaderEffect = storage.defineItem<NewtabShaderEffect>(
-  'sync:newtabShaderEffect',
+  'local:newtabShaderEffect',
   { fallback: 'mesh' },
 )
 
 /** 新标签页动态背景模式 */
-export const newtabShaderMode = storage.defineItem<NewtabShaderMode>('sync:newtabShaderMode', {
+export const newtabShaderMode = storage.defineItem<NewtabShaderMode>('local:newtabShaderMode', {
   fallback: 'random',
 })
 
 /** 随机背景首次展示标记：默认随机，但首次固定展示流体 */
 export const newtabShaderRandomSeeded = storage.defineItem<boolean>(
-  'sync:newtabShaderRandomSeeded',
+  'local:newtabShaderRandomSeeded',
   { fallback: false },
 )
 
@@ -340,8 +340,8 @@ export function isPopupShortcutTab(value: unknown): value is PopupShortcutTab {
   return typeof value === 'string' && (POPUP_SHORTCUT_TABS as readonly string[]).includes(value)
 }
 
-/** 新标签页 TODO 任务列表（持久化、跨设备同步，抗扩展卸载/重装） */
-export const todoItems = storage.defineItem<TodoItem[]>('sync:todoItems', {
+/** 新标签页 TODO 任务列表（经同步镜像跨设备同步） */
+export const todoItems = storage.defineItem<TodoItem[]>('local:todoItems', {
   fallback: [],
 })
 
@@ -358,18 +358,54 @@ export const popupLastActiveTab = storage.defineItem<PopupShortcutTab>('local:po
   fallback: 'translate',
 })
 
-/**
- * 点击工具栏图标或 Alt+1 打开 popup 时默认定位的 Tab（在「功能」页可配置，默认翻译）。
- * 跨设备同步：换设备后默认 Tab 偏好保持一致。
- */
-export const defaultPopupTab = storage.defineItem<string>('sync:defaultPopupTab', {
+/** 点击工具栏图标或 Alt+1 打开 popup 时默认定位的 Tab（在「功能」页可配置，默认翻译）。 */
+export const defaultPopupTab = storage.defineItem<string>('local:defaultPopupTab', {
   fallback: 'translate',
 })
 
-/* ------------------------------ local → sync 迁移 ------------------------------ */
+/* -------------------------------- 跨设备同步 -------------------------------- */
 
-/** 迁移完成标记，确保只搬一次（即便用户清空了 sync 数据也不会反复覆盖） */
-const syncMigrated = storage.defineItem<boolean>('sync:migratedFromLocal', { fallback: false })
+/** 同步镜像的运行状态（后台写入，「功能」页展示） */
+export interface SyncStatus {
+  state: 'idle' | 'syncing' | 'ok' | 'error'
+  /** 失败原因（中文，可直接展示） */
+  message?: string
+  /** 最近一次成功完成同步（上传或下载）的时间 */
+  lastSyncedAt?: number
+  /** chrome.storage.sync 已用字节数 */
+  bytesInUse?: number
+}
+
+export const syncStatus = storage.defineItem<SyncStatus>('local:syncStatus', {
+  fallback: { state: 'idle' },
+})
+
+/* -------------------------------- 存储迁移 -------------------------------- */
+
+/**
+ * 存储布局版本：
+ * - v1（旧版）：新标签页 / 待办 / 部分偏好直接存在 sync 的单个 key 里，列表变长后超过单项 8KB 上限导致同步失败；
+ * - v2：所有数据以 local 为准，需要跨设备的数据由后台分片镜像到 sync（见 utils/sync-mirror.ts）。
+ */
+const storageLayoutVersion = storage.defineItem<number>('local:storageLayoutVersion', {
+  fallback: 0,
+})
+
+/** v1 时代存在 sync 里的 key（v2 起改为 local 同名 key） */
+const LEGACY_SYNC_KEYS = [
+  'quickNavCategoryLabels',
+  'searchEngine',
+  'quickNavItems',
+  'quickNavCategorySeeded',
+  'quickNavDefaultPinsSeeded',
+  'quickNavBuiltinPagesSeeded',
+  'themeMode',
+  'newtabShaderEffect',
+  'newtabShaderMode',
+  'newtabShaderRandomSeeded',
+  'todoItems',
+  'defaultPopupTab',
+] as const
 const networkProxyProfilesMigrated = storage.defineItem<boolean>(
   'local:networkProxyProfilesMigratedByMode',
   { fallback: false },
@@ -516,46 +552,25 @@ export async function setNetworkProxyProfile(
 }
 
 /**
- * 把早期存于 local 的新标签页 / 待办 / 网络面板绕过列表搬到 sync，使其可跨设备同步、抗卸载。
- * - 仅当从未迁移过时执行（一次性）。
- * - 逐项仅在「sync 还是默认值 且 local 有有效数据」时搬运，避免覆盖更新的 sync 数据。
- * - 旧 local 数据保留不删，作为本机兜底。
- * 应在各页面渲染前 await（见各 entrypoint 的 main.tsx）。
+ * v1 → v2：把旧版存在 sync 里的数据搬回 local（sync 中的值是旧版的权威数据，覆盖 local 同名旧值）。
+ * 旧 sync key 保留不删：还没升级的其他设备仍在读写它们，删除会让那些设备看到空数据。
  */
-export async function migrateLocalToSync(): Promise<void> {
+async function migrateLegacySyncToLocal(): Promise<void> {
+  if ((await storageLayoutVersion.getValue()) >= 2) return
+
+  const legacy = await browser.storage.sync.get([...LEGACY_SYNC_KEYS])
+  const values = Object.fromEntries(
+    Object.entries(legacy).filter(([, value]) => value !== undefined && value !== null),
+  )
+  if (Object.keys(values).length) await browser.storage.local.set(values)
+  await storageLayoutVersion.setValue(2)
+}
+
+/**
+ * 存储迁移入口（幂等）：各页面渲染前与后台启动时 await。
+ * 迁移失败不会抛到调用方之外的逻辑里，最坏情况是继续使用 local 现有数据。
+ */
+export async function migrateStorage(): Promise<void> {
   await migrateNetworkProxyProfilesByMode()
-
-  if (await syncMigrated.getValue()) return
-
-  // 这些 key 已从 local: 改为 sync:；直接读旧的 local 原始值。
-  const [localTodos, localNav, localTheme, localEngine] = await Promise.all([
-    storage.getItem<TodoItem[]>('local:todoItems'),
-    storage.getItem<QuickNavItem[]>('local:quickNavItems'),
-    storage.getItem<StoredThemeMode>('local:themeMode'),
-    storage.getItem<string>('local:searchEngine'),
-  ])
-
-  const [syncTodos, syncNav, syncTheme, syncEngine] = await Promise.all([
-    todoItems.getValue(),
-    quickNavItems.getValue(),
-    themeMode.getValue(),
-    searchEngine.getValue(),
-  ])
-
-  const tasks: Promise<unknown>[] = []
-  if (Array.isArray(localTodos) && localTodos.length > 0 && syncTodos.length === 0) {
-    tasks.push(todoItems.setValue(localTodos))
-  }
-  if (Array.isArray(localNav) && localNav.length > 0 && syncNav.length === 0) {
-    tasks.push(quickNavItems.setValue(localNav))
-  }
-  if (localTheme && syncTheme === 'auto') {
-    tasks.push(themeMode.setValue(localTheme))
-  }
-  if (localEngine && syncEngine === 'google') {
-    tasks.push(searchEngine.setValue(localEngine))
-  }
-
-  await Promise.all(tasks)
-  await syncMigrated.setValue(true)
+  await migrateLegacySyncToLocal()
 }

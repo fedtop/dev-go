@@ -51,7 +51,7 @@ import {
   popupInitialTab,
   getNetworkProxyProfileForMode,
   isPopupShortcutTab,
-  migrateLocalToSync,
+  migrateStorage,
   networkActiveCustomProxyModeId,
   networkCustomProxyModeProfiles,
   networkGlobalProxyProfile,
@@ -66,6 +66,7 @@ import {
   type NetworkRuleListConfig,
   type PopupShortcutTab,
 } from '@/utils/settings'
+import { startSyncMirror, syncNow } from '@/utils/sync-mirror'
 import type { DictResult } from '@/types/dict'
 
 const CORS_BYPASS_RULE_ID = 9001
@@ -775,8 +776,19 @@ async function syncNetworkProxy(): Promise<NetworkProxyStatus> {
   }
 }
 
+let storageMigration: Promise<void> | null = null
+
+/** 存储迁移只跑一次；失败后允许下次重试 */
+function ensureStorageMigrated(): Promise<void> {
+  storageMigration ??= migrateStorage().catch((error: unknown) => {
+    storageMigration = null
+    throw error
+  })
+  return storageMigration
+}
+
 async function migrateThenSyncNetworkProxy(): Promise<void> {
-  await migrateLocalToSync()
+  await ensureStorageMigrated()
   await syncNetworkProxy()
 }
 
@@ -944,6 +956,13 @@ async function lookupWord(word: string): Promise<DictResult | null> {
 }
 
 export default defineBackground(() => {
+  // 跨设备同步：监听需同步执行注册；首次对账等存储迁移完成后再进行
+  const syncMirror = startSyncMirror()
+  ensureStorageMigrated()
+    .catch(() => undefined)
+    .then(() => syncMirror.reconcileAll())
+    .catch((error: unknown) => console.warn('[DevGo] initial sync failed:', error))
+
   restoreDevBackupIfNeeded().catch((error) => {
     console.warn('[DevGo] failed to import devgo-backup.json:', error)
   })
@@ -959,6 +978,11 @@ export default defineBackground(() => {
     if (message?.type === 'translate') {
       // 划词翻译：通过当前所选引擎翻译文本
       translateSelectionText(message.text).then(sendResponse)
+      return true
+    }
+
+    if (message?.type === 'sync-now') {
+      syncNow().then(sendResponse)
       return true
     }
 

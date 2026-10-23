@@ -11,7 +11,7 @@ import type { TranslateErrorPayload } from '@/features/translate/errors'
 import type { TranslateLangCode } from '@/features/translate/languages'
 import type { LlmConfig } from '@/features/translate/llm-config'
 import type { DictResult } from '@/types/dict'
-import type { NetworkMode, PopupShortcutTab, TranslateProvider } from '@/utils/settings'
+import type { NetworkMode, PopupShortcutTab, SyncStatus, TranslateProvider } from '@/utils/settings'
 
 export interface CorsProxyRequest {
   url: string
@@ -184,6 +184,8 @@ export type RuntimeMessage =
   | { type: 'lookup'; word: string }
   | ({ type: 'test-translate' } & TranslateTestRequest)
   | { type: 'list-llm-models'; baseUrl: string; apiKey: string }
+  /** 立即执行一次跨设备同步对账 */
+  | { type: 'sync-now' }
   | { type: 'open-options-page' }
   | { type: 'sync-cors-bypass' }
   | { type: 'cors-proxy-fetch'; request: CorsProxyRequest }
@@ -207,6 +209,7 @@ export interface RuntimeResponseMap {
   lookup: DictResult | null
   'test-translate': TranslateTestResult
   'list-llm-models': LlmModelListResult
+  'sync-now': SyncStatus
   'open-options-page': { ok: boolean }
   'sync-cors-bypass': boolean
   'cors-proxy-fetch': CorsProxyResponse

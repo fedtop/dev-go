@@ -1,8 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { buildBackup, restoreBackup } from '@/utils/backup'
-import { defaultPopupTab, enableGithubEnhance, enableSelectionTranslate } from '@/utils/settings'
+import { sendRuntimeMessage } from '@/utils/messaging'
+import {
+  defaultPopupTab,
+  enableGithubEnhance,
+  enableSelectionTranslate,
+  syncStatus,
+} from '@/utils/settings'
 import { formatShortcut } from '@/utils/shortcut'
+import { useStorageItem } from '@/utils/useStorageItem'
 import { POPUP_PAGES } from '@/features/popup/pages'
 import Button from '@/ui/Button'
 import Select from '@/ui/Select'
@@ -15,6 +22,72 @@ const COMMAND_LABELS: Record<string, string> = {
   'open-network': '打开网络面板',
   'open-tools': '打开资源面板',
   'inline-translate': '整页行间翻译',
+}
+
+/** chrome.storage.sync 总配额 */
+const SYNC_QUOTA_BYTES = 102_400
+
+function formatSyncTime(timestamp: number): string {
+  const date = new Date(timestamp)
+  const sameDay = date.toDateString() === new Date().toDateString()
+  return sameDay
+    ? date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+    : date.toLocaleString('zh-CN', {
+        month: 'numeric',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+}
+
+/** 跨设备同步：同步范围说明 + 状态 + 手动同步 */
+function SyncCard() {
+  const [status] = useStorageItem(syncStatus)
+  const [running, setRunning] = useState(false)
+
+  const syncing = running || status.state === 'syncing'
+  const usage =
+    status.bytesInUse !== undefined
+      ? `已用 ${(status.bytesInUse / 1024).toFixed(1)}KB / ${SYNC_QUOTA_BYTES / 1024}KB`
+      : ''
+
+  let summary = '尚未同步'
+  if (syncing) summary = '同步中…'
+  else if (status.state === 'error') summary = status.message || '同步失败'
+  else if (status.lastSyncedAt) summary = `上次同步 ${formatSyncTime(status.lastSyncedAt)}`
+
+  const syncNow = async () => {
+    setRunning(true)
+    try {
+      await sendRuntimeMessage({ type: 'sync-now' })
+    } finally {
+      setRunning(false)
+    }
+  }
+
+  return (
+    <div className='rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
+      <div className='flex items-center justify-between gap-3'>
+        <div className='flex min-w-0 flex-col'>
+          <span className='text-sm font-medium text-slate-800'>跨设备同步</span>
+          <span className='text-xs text-slate-400'>待办、快捷导航、代理配置随浏览器账号同步</span>
+        </div>
+        <Button onClick={syncNow} disabled={syncing} className='shrink-0 !px-2 !py-1 text-xs'>
+          立即同步
+        </Button>
+      </div>
+      <div className='mt-1.5 flex items-center justify-between gap-2 text-xs'>
+        <span
+          className={`truncate ${
+            status.state === 'error' && !syncing ? 'text-rose-500' : 'text-slate-500'
+          }`}
+        >
+          {summary}
+        </span>
+        {usage && <span className='shrink-0 text-slate-400'>{usage}</span>}
+      </div>
+    </div>
+  )
 }
 
 interface ShortcutItem {
@@ -160,6 +233,8 @@ export default function FunctionPage() {
           ))}
         </div>
       </div>
+
+      <SyncCard />
 
       {/* 数据备份：导出 / 导入全部配置与待办 */}
       <div className='rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>

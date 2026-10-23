@@ -2,13 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 
 import CopyIcon from '@/assets/copy.svg'
 import { lookupWord } from '@/api/lookup'
-import { sendTabMessage } from '@/utils/messaging'
-import {
-  lookupProvider,
-  translateProvider,
-  type LookupProvider,
-  type TranslateProvider,
-} from '@/utils/settings'
+import PageTranslatePanel from '@/features/popup/PageTranslatePanel'
+import { lookupProvider, type LookupProvider } from '@/utils/settings'
 import type { WordResult } from '@/types/word'
 import Button from '@/ui/Button'
 import Select from '@/ui/Select'
@@ -18,12 +13,10 @@ export default function TranslatePage() {
   const [result, setResult] = useState<WordResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [lookupEngine, setLookupEngine] = useState<LookupProvider>('youdao')
-  const [provider, setProvider] = useState<TranslateProvider>('microsoft')
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     lookupProvider.getValue().then(setLookupEngine)
-    translateProvider.getValue().then(setProvider)
     inputRef.current?.focus()
   }, [])
 
@@ -32,14 +25,6 @@ export default function TranslatePage() {
     setLookupEngine(v)
     lookupProvider.setValue(v)
   }
-
-  const changeProvider = (value: string) => {
-    const v = value as TranslateProvider
-    setProvider(v)
-    translateProvider.setValue(v)
-  }
-
-  const translatePage = () => sendTabMessage({ type: 'translate-page' })
 
   // 查词
   const translate = async () => {
@@ -141,27 +126,8 @@ export default function TranslatePage() {
         )}
       </section>
 
-      {/* ── 整页翻译：下拉 + 按钮 一行 ── */}
-      <section className='rounded-lg border border-slate-200 bg-white/80 p-2.5'>
-        <div className='flex items-center gap-2'>
-          <Select
-            value={provider}
-            onChange={changeProvider}
-            placement='top'
-            className='w-[140px] shrink-0'
-            options={[
-              { value: 'microsoft', label: '微软 · 免翻墙' },
-              { value: 'google', label: 'Google · 需翻墙' },
-            ]}
-          />
-          <Button variant='primary' block onClick={translatePage} className='shrink min-w-[128px]'>
-            翻译当前页面
-          </Button>
-        </div>
-        <p className='mt-1.5 truncate text-left text-[11px] leading-none text-slate-400'>
-          原文下方插入译文 · 再次点击可移除
-        </p>
-      </section>
+      {/* ── 网页翻译 ── */}
+      <PageTranslatePanel />
     </div>
   )
 }

@@ -150,7 +150,11 @@ export default function SelectionApp() {
     setBubble({
       pos,
       status: transRes?.text ? 'done' : 'error',
-      text: transRes?.text || '翻译失败，请检查网络或切换翻译引擎',
+      text:
+        transRes?.text ||
+        (transRes?.error
+          ? `翻译失败：${transRes.error.message}`
+          : '翻译失败，请检查网络或切换翻译引擎'),
       source: text,
       dict,
     })

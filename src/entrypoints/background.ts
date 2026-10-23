@@ -1,8 +1,16 @@
-import { microsoftLookup, microsoftTransList, testMicrosoftTrans } from '@/api/microsoft'
-import { googleLookup, googleTransList, testGoogleTrans } from '@/api/translator'
+import { listModels } from '@/api/llm'
+import { microsoftLookup } from '@/api/microsoft'
+import { googleLookup } from '@/api/translator'
+import { toTranslateError } from '@/features/translate/errors'
+import { isLikelyInTargetLang, resolveTargetLang } from '@/features/translate/languages'
+import { handleTranslatePort } from '@/features/translate/port-server'
+import {
+  readProviderSettings,
+  testTranslateSettings,
+  translateSingleText,
+} from '@/features/translate/service'
 import { updateNetworkActionIconSafely } from '@/utils/actionIcon'
 import { restoreDevBackupIfNeeded } from '@/utils/dev-backup'
-import { pickTarget } from '@/utils/lang'
 import {
   type NetworkRuleListDownloadStatus,
   type NetworkProxyStatus,
@@ -15,7 +23,12 @@ import {
   type MediaResourceListResult,
   type PopupShortcutMessage,
   type PopupShortcutResponse,
+  type LlmModelListResult,
   type RuntimeMessage,
+  TRANSLATE_PORT_NAME,
+  type TranslateTestRequest,
+  type TranslateTestResult,
+  type TranslateTextResult,
 } from '@/utils/messaging'
 import {
   buildMediaResource,
@@ -47,11 +60,11 @@ import {
   networkScenarioProxyProfile,
   networkRuleList,
   translateProvider,
+  translateTargetLang,
   type NetworkMode,
   type NetworkProxyProfile,
   type NetworkRuleListConfig,
   type PopupShortcutTab,
-  type TranslateProvider,
 } from '@/utils/settings'
 import type { DictResult } from '@/types/dict'
 
@@ -60,7 +73,6 @@ const MS_AUTH_UA_RULE_ID = 9002
 const MS_TRANSLATE_UA_RULE_ID = 9003
 const EDGE_TRANSLATE_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0'
-const TRANSLATION_CACHE_LIMIT = 800
 const DEFAULT_POPUP_COMMAND = 'open-default'
 const DEFAULT_POPUP_TAB: PopupShortcutTab = 'translate'
 const COMMAND_TO_TAB: Record<string, PopupShortcutTab> = {
@@ -878,136 +890,57 @@ async function proxyCorsRequest(request: CorsProxyRequest): Promise<CorsProxyRes
   }
 }
 
-const translationCache = new Map<string, string>()
+/** 划词翻译：按目标语言设置翻译；选中文本已是目标语言时自动反向（中⇄英） */
+async function translateSelectionText(text: string): Promise<TranslateTextResult> {
+  const source = text.trim()
+  if (!source) return { text: '' }
 
-function htmlToPlainText(text: string): string {
-  return text
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/(p|div|li|h[1-6]|blockquote|tr|td|th)>/gi, '\n')
-    .replace(/<[^>]*>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+\n/g, '\n')
-    .replace(/\n\s+/g, '\n')
-    .trim()
+  let target = resolveTargetLang(await translateTargetLang.getValue(), source)
+  if (isLikelyInTargetLang(source, target)) target = target === 'en' ? 'zh-CN' : 'en'
+
+  try {
+    return { text: await translateSingleText(source, target) }
+  } catch (error) {
+    const translateError = toTranslateError(error)
+    console.warn('[DevGo] translate selection failed:', translateError)
+    return { text: '', error: translateError.toJSON() }
+  }
 }
 
-function getTranslationTarget(provider: TranslateProvider, text: string): string {
-  return provider === 'google'
-    ? pickTarget(text, { zh: 'zh-CN', en: 'en' })
-    : pickTarget(text, { zh: 'zh-Hans', en: 'en' })
+/** 测试翻译引擎；未传入的字段使用已保存的设置 */
+async function testTranslate(request: TranslateTestRequest): Promise<TranslateTestResult> {
+  const saved = await readProviderSettings()
+  try {
+    const sample = await testTranslateSettings({
+      provider: request.provider ?? saved.provider,
+      llm: request.llm ?? saved.llm,
+      apiKey: request.apiKey ?? saved.apiKey,
+    })
+    return sample
+      ? { ok: true, sample }
+      : { ok: false, error: { code: 'parse', message: '服务返回了空结果' } }
+  } catch (error) {
+    return { ok: false, error: toTranslateError(error).toJSON() }
+  }
 }
 
-function getTranslationCacheKey(
-  provider: TranslateProvider,
-  html: boolean,
-  target: string,
-  text: string,
-): string {
-  return [provider, html ? 'html' : 'text', target, text].join('\u0000')
-}
-
-function getCachedTranslation(key: string): string | null {
-  const cached = translationCache.get(key)
-  if (cached == null) return null
-
-  translationCache.delete(key)
-  translationCache.set(key, cached)
-  return cached
-}
-
-function setCachedTranslation(key: string, text: string) {
-  if (!text) return
-
-  translationCache.set(key, text)
-  if (translationCache.size <= TRANSLATION_CACHE_LIMIT) return
-
-  const oldestKey = translationCache.keys().next().value
-  if (oldestKey) translationCache.delete(oldestKey)
-}
-
-/** 按当前所选引擎批量翻译；微软支持 HTML 模式，Google 免费路径统一降级为纯文本。 */
-async function translateBatch(texts: string[], html = false): Promise<string[]> {
-  const provider = await translateProvider.getValue()
-  const results = Array(texts.length).fill('')
-  const groups = new Map<
-    string,
-    {
-      cacheKeys: string[]
-      html: boolean
-      indices: number[]
-      target: string
-      texts: string[]
+/** 拉取 AI 服务的模型列表（选项表单的模型下拉用） */
+async function listLlmModels(baseUrl: string, apiKey: string): Promise<LlmModelListResult> {
+  try {
+    return { models: await listModels(baseUrl, apiKey) }
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'TimeoutError') {
+      return { models: [], error: { code: 'timeout', message: '请求超时' } }
     }
-  >()
-
-  texts.forEach((sourceText, index) => {
-    const plainText = html ? htmlToPlainText(sourceText) : sourceText.trim()
-    if (!plainText) return
-
-    const target = getTranslationTarget(provider, plainText)
-    const requestHtml = provider === 'microsoft' && html
-    const requestText = requestHtml ? sourceText : plainText
-    const cacheKey = getTranslationCacheKey(provider, requestHtml, target, requestText)
-    const cached = getCachedTranslation(cacheKey)
-    if (cached != null) {
-      results[index] = cached
-      return
-    }
-
-    const groupKey = `${target}\u0000${requestHtml ? 'html' : 'text'}`
-    const group = groups.get(groupKey) ?? {
-      cacheKeys: [],
-      html: requestHtml,
-      indices: [],
-      target,
-      texts: [],
-    }
-
-    group.indices.push(index)
-    group.texts.push(requestText)
-    group.cacheKeys.push(cacheKey)
-    groups.set(groupKey, group)
-  })
-
-  await Promise.all(
-    [...groups.values()].map(async (group) => {
-      const translated =
-        provider === 'google'
-          ? await googleTransList(group.texts, group.target)
-          : await microsoftTransList(group.texts, group.html, group.target)
-
-      group.indices.forEach((sourceIndex, resultIndex) => {
-        const text = translated[resultIndex] ?? ''
-        results[sourceIndex] = text
-        setCachedTranslation(group.cacheKeys[resultIndex], text)
-      })
-    }),
-  )
-
-  return results
+    const { code, message } = toTranslateError(error)
+    return { models: [], error: { code, message } }
+  }
 }
 
-/** 按当前所选引擎翻译文本；html=true 时尽量保留内联标签（仅微软支持） */
-async function translateText(text: string, html = false): Promise<string> {
-  const [result] = await translateBatch([text], html)
-  return result ?? ''
-}
-
-/** 按当前所选引擎查词典 */
+/** 按当前所选引擎查词典（AI 翻译没有词典能力，回落到微软） */
 async function lookupWord(word: string): Promise<DictResult | null> {
   const provider = await translateProvider.getValue()
   return provider === 'google' ? googleLookup(word) : microsoftLookup(word)
-}
-
-/** 按当前所选引擎测试连通性 */
-async function testProvider(): Promise<boolean> {
-  const provider = await translateProvider.getValue()
-  return provider === 'google' ? testGoogleTrans() : testMicrosoftTrans()
 }
 
 export default defineBackground(() => {
@@ -1017,21 +950,28 @@ export default defineBackground(() => {
 
   // 监听来自内容脚本 / Popup 的请求消息
   browser.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
-    if (message?.type === 'test') {
-      // 测试当前引擎连通性
-      testProvider().then(sendResponse)
+    if (message?.type === 'test-translate') {
+      // 测试翻译引擎连通性（选项页可传入未保存的配置）
+      testTranslate(message).then(sendResponse)
       return true // 保持消息通道打开以等待异步响应
     }
 
     if (message?.type === 'translate') {
-      // 通过当前所选引擎翻译文本
-      translateText(message.text, message.html).then((text) => sendResponse({ text }))
+      // 划词翻译：通过当前所选引擎翻译文本
+      translateSelectionText(message.text).then(sendResponse)
       return true
     }
 
-    if (message?.type === 'translate-batch') {
-      // 整页翻译批处理：后台统一做缓存、分组和限流
-      translateBatch(message.texts, message.html).then((texts) => sendResponse({ texts }))
+    if (message?.type === 'list-llm-models') {
+      listLlmModels(message.baseUrl, message.apiKey).then(sendResponse)
+      return true
+    }
+
+    if (message?.type === 'open-options-page') {
+      browser.runtime
+        .openOptionsPage()
+        .then(() => sendResponse({ ok: true }))
+        .catch(() => sendResponse({ ok: false }))
       return true
     }
 
@@ -1092,6 +1032,11 @@ export default defineBackground(() => {
     return false
   })
 
+  // 整页翻译长连接：每个内容脚本一条，按段流式回传译文
+  browser.runtime.onConnect.addListener((port) => {
+    if (port.name === TRANSLATE_PORT_NAME) handleTranslatePort(port)
+  })
+
   chrome.webRequest?.onBeforeRequest.addListener(rememberMediaFromRequest, {
     urls: ['<all_urls>'],
     types: MEDIA_WEB_REQUEST_TYPES,
@@ -1121,7 +1066,7 @@ export default defineBackground(() => {
     { urls: ['<all_urls>'], types: MEDIA_WEB_REQUEST_TYPES },
   )
 
-  // 右键菜单点击 -> 通知当前页面进行整页对比翻译
+  // 右键菜单点击 -> 切换当前页面的整页双语翻译
   browser.contextMenus.onClicked.addListener((info) => {
     if (info.menuItemId === 'inline-translate') {
       sendTabMessage({ type: 'translate-page' })
@@ -1154,7 +1099,7 @@ export default defineBackground(() => {
   browser.runtime.onInstalled.addListener(() => {
     browser.contextMenus.create({
       id: 'inline-translate',
-      title: '对比翻译',
+      title: '翻译当前页面（再次点击恢复原文）',
       contexts: ['page', 'selection'],
     })
 

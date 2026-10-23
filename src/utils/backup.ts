@@ -9,6 +9,7 @@ import {
   enableGithubEnhance,
   enableReloadOnProxySwitch,
   enableSelectionTranslate,
+  hoverTranslateMode,
   lookupProvider,
   networkActiveCustomProxyModeId,
   networkCustomProxyModeProfiles,
@@ -25,7 +26,12 @@ import {
   setNetworkProxyProfile,
   themeMode,
   todoItems,
+  translateAutoHosts,
+  translateDisplayMode,
+  translateLlmConfig,
   translateProvider,
+  translateTargetLang,
+  translateUnderline,
   type NetworkProxyProfile,
 } from '@/utils/settings'
 
@@ -45,11 +51,17 @@ interface BackupItem {
 
 /**
  * 参与备份的全部存储项（key 即备份文件里的字段名，保持稳定，勿随意改名）。
- * 不含 popupInitialTab（一次性运行时信号）和 networkProxyManaged（本机代理接管标记，
- * 导入后是否接管浏览器代理应由用户在网络面板重新确认）。
+ * 不含 popupInitialTab（一次性运行时信号）、networkProxyManaged（本机代理接管标记，
+ * 导入后是否接管浏览器代理应由用户在网络面板重新确认）和 translateLlmApiKey（密钥不落盘到备份文件）。
  */
 const BACKUP_ITEMS: Record<string, BackupItem> = {
   translateProvider,
+  translateTargetLang,
+  translateDisplayMode,
+  translateUnderline,
+  translateAutoHosts,
+  hoverTranslateMode,
+  translateLlmConfig,
   lookupProvider,
   enableSelectionTranslate,
   enableGithubEnhance,

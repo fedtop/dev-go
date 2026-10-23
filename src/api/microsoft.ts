@@ -1,22 +1,25 @@
 /**
  * 微软（Edge）免费翻译接口。
  *
- * 复用 Edge 浏览器自带翻译所使用的内部接口：
- * - 通过 `edge.microsoft.com/translate/auth` 获取临时 JWT（有效期约 10 分钟）
- * - 通过 `api-edge.cognitive.microsofttranslator.com/translate` 翻译文本
+ * - 翻译：`edge.microsoft.com/translate/translatetext`（Edge 内置翻译使用的接口，
+ *   无需 token，请求体为字符串数组，可批量；纯文本模式会原样保留 <bN> 占位标记）
+ * - 词典：`api-edge.cognitive.microsofttranslator.com/dictionary/lookup`，
+ *   需先经 `edge.microsoft.com/translate/auth` 取临时 JWT（该鉴权接口目前可能不可用，失败时查词返回空）
  *
- * 该接口国内可直连、免费、无需翻墙；但属于微软未公开文档的内部接口，
+ * 接口国内可直连、免费、无需翻墙；但属于微软未公开文档的内部接口，
  * 仅供个人学习使用，可能随时变动。
  */
 
+import { httpStatusToError, TranslateError } from '@/features/translate/errors'
 import type { DictResult } from '@/types/dict'
 import { hasChinese, pickTarget } from '@/utils/lang'
 
 const AUTH_URL = 'https://edge.microsoft.com/translate/auth'
-const TRANS_URL = 'https://api-edge.cognitive.microsofttranslator.com/translate'
+const TRANS_URL = 'https://edge.microsoft.com/translate/translatetext'
 const LOOKUP_URL =
   'https://api-edge.cognitive.microsofttranslator.com/dictionary/lookup?api-version=3.0&from={from}&to={to}'
-const MICROSOFT_BATCH_SIZE = 25
+/** 单次请求的最大条数（保守取值，避免单个请求过大） */
+export const MICROSOFT_BATCH_SIZE = 25
 
 interface MicrosoftTransItem {
   translations: Array<{ text: string; to: string }>
@@ -47,7 +50,7 @@ function parseJwtExpire(token: string): number {
 }
 
 /** 获取（并缓存）翻译用的临时 token */
-async function getToken(): Promise<string> {
+async function getToken(signal?: AbortSignal): Promise<string> {
   if (tokenCache && Date.now() < tokenCache.expireAt) {
     return tokenCache.token
   }
@@ -57,57 +60,50 @@ async function getToken(): Promise<string> {
       'cache-control': 'no-cache',
       pragma: 'no-cache',
     },
+    signal,
   })
-  if (!res.ok) throw new Error(`auth failed: ${res.status}`)
+  if (!res.ok) throw new TranslateError('auth', `微软翻译鉴权失败（${res.status}）`)
   const token = await res.text()
+  if (!token) throw new TranslateError('auth', '微软翻译鉴权失败：未获取到 token')
   tokenCache = { token, expireAt: parseJwtExpire(token) }
   return token
 }
 
-function buildTranslateUrl(target: string, html?: boolean): string {
-  const params = new URLSearchParams({
-    'api-version': '3.0',
-    to: target,
-  })
-  if (html) params.set('textType', 'html')
-  return `${TRANS_URL}?${params.toString()}`
-}
-
-async function requestMicrosoftTranslate(
+/**
+ * 微软批量翻译（单次请求，调用方负责分块，建议 ≤ 25 条）。失败直接抛 TranslateError。
+ * 文本按纯文本翻译：<bN>…</bN> 占位标记会被原样保留在译文中。
+ */
+export async function microsoftTranslate(
   texts: string[],
-  html: boolean,
   target: string,
+  options: { signal?: AbortSignal } = {},
 ): Promise<string[]> {
-  const token = await getToken()
-  const res = await fetch(buildTranslateUrl(target, html), {
+  const params = new URLSearchParams({ to: target, isEnterpriseClient: 'false' })
+  const res = await fetch(`${TRANS_URL}?${params.toString()}`, {
     method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(texts.map((text) => ({ Text: text }))),
+    headers: { accept: '*/*', 'content-type': 'application/json' },
+    body: JSON.stringify(texts),
+    credentials: 'omit',
+    signal: options.signal,
   })
+  if (!res.ok) throw httpStatusToError(res.status, '微软翻译')
 
-  if (!res.ok) {
-    if (res.status === 401) tokenCache = null
-    throw new Error(`translate failed: ${res.status}`)
+  const data: unknown = await res.json()
+  if (!Array.isArray(data) || data.length !== texts.length) {
+    throw new TranslateError('parse', '微软翻译返回的结果数量与请求不一致')
   }
-
-  const data: MicrosoftTransItem[] = await res.json()
-  return texts.map((_, index) => data[index]?.translations?.[0]?.text ?? '')
+  return (data as MicrosoftTransItem[]).map((item) => item?.translations?.[0]?.text ?? '')
 }
 
-/** 微软翻译（整句机器翻译；默认中英互译：含中文译英，否则译中）
- *  html=true 时用 HTML 模式翻译，保留 a/b 等内联标签 */
-export async function microsoftTrans(text: string, html?: boolean, to?: string): Promise<string> {
+/** 微软翻译（整句机器翻译；默认中英互译：含中文译英，否则译中；失败返回空串） */
+export async function microsoftTrans(text: string, to?: string): Promise<string> {
   if (!text.trim()) return ''
 
   // 未指定目标语言时按源文本自动判断方向
   const target = to ?? pickTarget(text, { zh: 'zh-Hans', en: 'en' })
 
   try {
-    const [result] = await microsoftTransList([text], html, target)
+    const [result] = await microsoftTransList([text], target)
     return result ?? ''
   } catch (error) {
     console.error('[DevGo] microsoftTrans failed:', error)
@@ -115,12 +111,8 @@ export async function microsoftTrans(text: string, html?: boolean, to?: string):
   }
 }
 
-/** 微软批量翻译：同一目标语言、同一 textType 下合并请求，减少整页翻译的请求数。 */
-export async function microsoftTransList(
-  texts: string[],
-  html?: boolean,
-  to?: string,
-): Promise<string[]> {
+/** 微软批量翻译（吞掉错误，失败项为空串）：供查词等容错场景使用 */
+export async function microsoftTransList(texts: string[], to?: string): Promise<string[]> {
   const results = Array(texts.length).fill('')
   const target = to ?? pickTarget(texts.join('\n'), { zh: 'zh-Hans', en: 'en' })
   const chunkCount = Math.ceil(texts.length / MICROSOFT_BATCH_SIZE)
@@ -136,16 +128,10 @@ export async function microsoftTransList(
       if (indexed.length === 0) return
 
       try {
-        const sourceTexts = indexed.map(({ text }) => text)
-        let translated: string[]
-        try {
-          translated = await requestMicrosoftTranslate(sourceTexts, Boolean(html), target)
-        } catch (error) {
-          // Edge token 偶尔会提前失效；401 后清缓存并重试一次。
-          if (tokenCache !== null) throw error
-          translated = await requestMicrosoftTranslate(sourceTexts, Boolean(html), target)
-        }
-
+        const translated = await microsoftTranslate(
+          indexed.map(({ text }) => text),
+          target,
+        )
         indexed.forEach(({ offset }, index) => {
           results[start + offset] = translated[index] ?? ''
         })
@@ -156,16 +142,6 @@ export async function microsoftTransList(
   )
 
   return results
-}
-
-/** 测试微软翻译连通性 */
-export async function testMicrosoftTrans(): Promise<boolean> {
-  try {
-    const result = await microsoftTrans('hello')
-    return Boolean(result)
-  } catch {
-    return false
-  }
 }
 
 interface MicrosoftLookupItem {

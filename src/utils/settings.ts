@@ -2,9 +2,16 @@
  * 扩展设置（基于 WXT storage，跨页面共享、持久化）。
  */
 
+import type { TranslateTargetSetting } from '@/features/translate/languages'
+import { DEFAULT_LLM_CONFIG, type LlmConfig } from '@/features/translate/llm-config'
 import { normalizeBypassList } from '@/utils/network'
 
-export type TranslateProvider = 'microsoft' | 'google'
+/** 翻译引擎：微软 / Google 免费接口，或用户自配的 AI 大模型（OpenAI 兼容） */
+export type TranslateProvider = 'microsoft' | 'google' | 'llm'
+
+export function isTranslateProvider(value: unknown): value is TranslateProvider {
+  return value === 'microsoft' || value === 'google' || value === 'llm'
+}
 
 /** 查词引擎（popup 顶部查词框用，含有道） */
 export type LookupProvider = 'youdao' | 'microsoft' | 'google'
@@ -12,6 +19,60 @@ export type LookupProvider = 'youdao' | 'microsoft' | 'google'
 /** 网页翻译引擎：默认微软（国内可直连、免费、无需翻墙） */
 export const translateProvider = storage.defineItem<TranslateProvider>('local:translateProvider', {
   fallback: 'microsoft',
+})
+
+/* -------------------------------- 网页翻译 -------------------------------- */
+
+/** 译文展示方式：双语对照 / 仅显示译文（隐藏原文） */
+export type TranslateDisplayMode = 'bilingual' | 'translation'
+
+export function isTranslateDisplayMode(value: unknown): value is TranslateDisplayMode {
+  return value === 'bilingual' || value === 'translation'
+}
+
+/** 悬停翻译触发方式：关闭 / 鼠标停留 / 按住修饰键 */
+export type HoverTranslateMode = 'off' | 'dwell' | 'alt' | 'ctrl' | 'shift'
+
+export function isHoverTranslateMode(value: unknown): value is HoverTranslateMode {
+  return ['off', 'dwell', 'alt', 'ctrl', 'shift'].includes(value as string)
+}
+
+/** 目标语言：默认自动（中文页面译英文，其余译简体中文） */
+export const translateTargetLang = storage.defineItem<TranslateTargetSetting>(
+  'local:translateTargetLang',
+  { fallback: 'auto' },
+)
+
+/** 译文展示方式：默认双语对照 */
+export const translateDisplayMode = storage.defineItem<TranslateDisplayMode>(
+  'local:translateDisplayMode',
+  { fallback: 'bilingual' },
+)
+
+/** 译文下方显示虚线，方便区分原文 / 译文（默认关闭） */
+export const translateUnderline = storage.defineItem<boolean>('local:translateUnderline', {
+  fallback: false,
+})
+
+/** 打开即自动整页翻译的网站（hostname 列表） */
+export const translateAutoHosts = storage.defineItem<string[]>('local:translateAutoHosts', {
+  fallback: [],
+})
+
+/** 悬停翻译：默认按住 Alt(⌥) 时翻译鼠标下的段落 */
+export const hoverTranslateMode = storage.defineItem<HoverTranslateMode>(
+  'local:hoverTranslateMode',
+  { fallback: 'alt' },
+)
+
+/** AI 翻译配置（接口地址 / 模型 / 自定义提示词；参与备份） */
+export const translateLlmConfig = storage.defineItem<LlmConfig>('local:translateLlmConfig', {
+  fallback: DEFAULT_LLM_CONFIG,
+})
+
+/** AI 翻译 API Key：仅存本机，不参与备份导出，避免明文泄露 */
+export const translateLlmApiKey = storage.defineItem<string>('local:translateLlmApiKey', {
+  fallback: '',
 })
 
 /** 查词引擎：默认有道（含音标、释义最全） */

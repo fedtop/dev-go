@@ -1,12 +1,7 @@
-import {
-  type CSSProperties,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+
+import { useFloatingMenu } from './useFloatingMenu'
 
 interface Option {
   value: string
@@ -18,6 +13,7 @@ interface SelectProps {
   options: Option[]
   onChange?: (value: string) => void
   className?: string
+  /** 首选展开方向；空间不足时自动翻转 */
   placement?: 'bottom' | 'top'
 }
 
@@ -30,29 +26,19 @@ export default function Select({
   placement = 'bottom',
 }: SelectProps) {
   const [open, setOpen] = useState(false)
-  const [menuStyle, setMenuStyle] = useState<CSSProperties>({})
   const ref = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const menuStyle = useFloatingMenu(ref, open, { placement })
 
   const current = options.find((o) => o.value === value)
-  const updateMenuPosition = useCallback(() => {
-    const rect = ref.current?.getBoundingClientRect()
-    if (!rect) return
 
-    const gap = 4
-    setMenuStyle({
-      left: rect.left,
-      width: rect.width,
-      ...(placement === 'top'
-        ? { bottom: window.innerHeight - rect.top + gap }
-        : { top: rect.bottom + gap }),
-    })
-  }, [placement])
-
+  // 打开时让当前选中项出现在可视区域内
   useLayoutEffect(() => {
     if (!open) return
-    updateMenuPosition()
-  }, [open, updateMenuPosition])
+    menuRef.current
+      ?.querySelector<HTMLElement>('[aria-selected="true"]')
+      ?.scrollIntoView({ block: 'nearest' })
+  }, [open])
 
   // 点击外部关闭
   useEffect(() => {
@@ -65,18 +51,6 @@ export default function Select({
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
   }, [open])
-
-  useEffect(() => {
-    if (!open) return undefined
-
-    window.addEventListener('resize', updateMenuPosition)
-    window.addEventListener('scroll', updateMenuPosition, true)
-
-    return () => {
-      window.removeEventListener('resize', updateMenuPosition)
-      window.removeEventListener('scroll', updateMenuPosition, true)
-    }
-  }, [open, updateMenuPosition])
 
   const select = (v: string) => {
     onChange?.(v)
@@ -106,12 +80,15 @@ export default function Select({
           <div
             ref={menuRef}
             style={menuStyle}
-            className='popup-select-menu fixed z-50 overflow-hidden rounded-xl p-1'
+            role='listbox'
+            className='popup-select-menu fixed z-50 overflow-y-auto overscroll-contain rounded-xl p-1'
           >
             {options.map((o) => (
               <button
                 key={o.value}
                 type='button'
+                role='option'
+                aria-selected={o.value === value}
                 onClick={() => select(o.value)}
                 className={`popup-select-item flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors ${
                   o.value === value ? 'is-selected font-medium' : ''

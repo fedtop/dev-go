@@ -32,8 +32,8 @@ pnpm exec prettier --check <改动的文件>
 
 这是一个**多上下文扩展**。代码运行在三个相互隔离的环境中，它们只能通过消息层通信——切勿假设它们之间共享内存状态：
 
-1. **后台 Service Worker**（`src/entrypoints/background.ts`）——唯一的中枢。负责翻译/查词调度、CORS 动态规则、代理模式切换、媒体资源跟踪（通过 `webRequest` 监听）、右键菜单和键盘 `commands`。所有特权 Chrome API 都在这里。
-2. **内容脚本**（`src/entrypoints/*.content.ts(x)`）——注入到页面：`translate.content.ts`（整页行间翻译）、`selection.content.tsx`（划词气泡 UI）、`github.content.tsx`、`link-go.content.ts`（跳过外链中转页）、`unlock.content.ts`（解除复制/选择限制）、`cors-bridge.content.ts`。
+1. **后台 Service Worker**——唯一的中枢，所有特权 Chrome API 都在这里。入口 `src/entrypoints/background.ts` 只负责同步注册监听（MV3 SW 会被回收重启，监听必须在入口同步注册）；具体逻辑按职责放在 `src/background/`：`router.ts`（runtime 消息路由）、`translate.ts`（划词翻译/查词/测试）、`proxy.ts`（代理模式与规则列表）、`cors.ts`（CORS 动态规则与跨域代理）、`media.ts`（`webRequest` 媒体嗅探与下载）、`commands.ts`（快捷键与右键菜单）、`migration.ts`（存储迁移）。跨设备同步镜像在 `src/utils/sync-mirror.ts`。
+2. **内容脚本**（`src/entrypoints/*.content.ts(x)`）——注入到页面：`translate.content.ts`（整页行间翻译）、`selection.content.tsx`（划词气泡 UI）、`github.content.tsx`、`media.content.ts`（媒体资源 DOM 采集）、`unlock.content.ts`（按站点解除复制/选择限制，只在用户开启的站点生效）、`cors-bridge.content.ts`。
 3. **扩展 UI 页面**——`popup/`、`newtab/`、`options/`，各自是标准 React 应用（`index.html` + `main.tsx` + `App.tsx`）。popup 是主控制面板（4 个 Tab：默认 / 待办 / 网络 / 资源）。
 
 ### 跨上下文通信——`src/utils/messaging.ts`
@@ -44,7 +44,7 @@ pnpm exec prettier --check <改动的文件>
 - `TabMessage`：后台/Popup → 某个标签页的内容脚本（translate-page、tip、collect-media-resources）。用 `sendTabMessage(msg)` 发送。
 - `PopupShortcutMessage`：后台 → Popup，用于按键盘命令切换/关闭面板。
 
-新增跨上下文功能时：在 `messaging.ts` 的联合类型里加上变体，在 `background.ts` 的 `onMessage` switch 中处理，再通过类型化的 helper 调用。
+新增跨上下文功能时：在 `messaging.ts` 的联合类型里加上变体，在 `src/entrypoints/background.ts` 的 `registerMessageRouter({...})` 处理表里加上对应处理函数（漏写会编译报错），再通过类型化的 helper 调用。处理函数抛错时路由会回复错误，`sendRuntimeMessage` 会 reject，调用方需处理异常。
 
 ### 持久化状态——`src/utils/settings.ts`
 

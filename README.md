@@ -16,8 +16,7 @@ DevGo 是一个面向开发者的浏览器效率扩展，聚焦翻译、GitHub �
   - 代码页悬浮快捷按钮：在线编辑、DeepWiki、回到顶部
   - 键盘快捷键 `,` 一键打开 github1s
 - 网页体验增强
-  - 去除掘金 / 知乎 / 简书外链中转页
-  - 解除部分站点复制/剪切/选择限制
+  - 按站点解除复制 / 选择 / 右键限制（在「功能」页对当前站点开启）
   - 标记不应被浏览器翻译的页面元素（含 GitHub 场景）
 - 开发调试能力
   - 可开关的 CORS 调试辅助（针对网页 XHR/fetch 响应补充 CORS 头）
@@ -78,17 +77,17 @@ pnpm zip:firefox
 ```text
 src/
 ├─ entrypoints/            # WXT 入口（自动映射 manifest）
-│  ├─ background.ts        # 后台消息与翻译/CORS 调度
+│  ├─ background.ts        # 后台入口：只注册监听，逻辑见 src/background/
 │  ├─ translate.content.ts # 整页行间翻译
 │  ├─ selection.content.tsx# 划词翻译 UI
 │  ├─ github.content.tsx   # GitHub 增强 UI
-│  ├─ link-go.content.ts   # 外链中转页直达
-│  ├─ unlock.content.ts    # 解除复制/选择限制
+│  ├─ unlock.content.ts    # 按站点解除复制/选择限制
 │  ├─ cors-bridge.content.ts
 │  ├─ cors-proxy.ts
 │  ├─ popup/
 │  ├─ options/
 │  └─ newtab/
+├─ background/             # 后台各模块（消息路由、代理、CORS、媒体嗅探、命令）
 ├─ api/                    # 翻译与查词接口封装
 ├─ features/               # 各功能模块实现
 ├─ ui/                     # 通用 UI 组件

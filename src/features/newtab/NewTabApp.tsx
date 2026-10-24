@@ -5,7 +5,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { SHIP_NAME, SITE_URL } from '@/utils/constants'
-import { newtabActiveCategory, newtabShaderEffect, newtabShaderMode, newtabShaderRandomSeeded, quickNavBuiltinPagesSeeded, quickNavCategoryLabels, quickNavCategorySeeded, quickNavDefaultPinsSeeded, quickNavItems, searchEngine, themeMode, type NewtabShaderEffect, type NewtabShaderMode, type QuickNavCategoryId, type QuickNavCategoryLabels, type QuickNavItem, type ThemeMode } from '@/utils/settings' // prettier-ignore
+import { isNewtabShaderEffect, newtabActiveCategory, newtabShaderEffect, newtabShaderMode, newtabShaderRandomSeeded, quickNavBuiltinPagesSeeded, quickNavCategoryLabels, quickNavCategorySeeded, quickNavDefaultPinsSeeded, quickNavItems, searchEngine, themeMode, type NewtabShaderEffect, type NewtabShaderMode, type QuickNavCategoryId, type QuickNavCategoryLabels, type QuickNavItem, type ThemeMode } from '@/utils/settings' // prettier-ignore
 import { applyTheme, normalizeThemeMode, watchAutoTheme } from '@/utils/theme'
 import { CATEGORY_LABEL_MAX, defaultLabelOf, isQuickNavCategory } from './categories'
 import CategoryTabs, { PencilIcon } from './CategoryTabs'
@@ -218,7 +218,9 @@ export default function NewTabApp() {
           ? randomSeeded
             ? getRandomShaderEffect()
             : FIRST_RANDOM_SHADER_EFFECT
-          : storedShaderEffect
+          : isNewtabShaderEffect(storedShaderEffect)
+            ? storedShaderEffect
+            : FIRST_RANDOM_SHADER_EFFECT // 已下线的效果回落到默认
 
       setShaderMode(storedShaderMode)
       setShaderEffect(nextShaderEffect)

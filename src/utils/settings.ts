@@ -91,6 +91,11 @@ export const enableGithubEnhance = storage.defineItem<boolean>('local:enableGith
   fallback: true,
 })
 
+/** 解除复制 / 选择 / 右键限制的网站（hostname 列表，按站点开启，默认为空） */
+export const unlockHosts = storage.defineItem<string[]>('local:unlockHosts', {
+  fallback: [],
+})
+
 /** 开发调试：为网页 XHR/fetch 响应补充 CORS 头（默认关闭） */
 export const enableCorsBypass = storage.defineItem<boolean>('local:enableCorsBypass', {
   fallback: false,

@@ -31,6 +31,7 @@ import {
   translateProvider,
   translateTargetLang,
   translateUnderline,
+  unlockHosts,
   type NetworkProxyProfile,
 } from '@/utils/settings'
 
@@ -64,6 +65,7 @@ const BACKUP_ITEMS: Record<string, BackupItem> = {
   lookupProvider,
   enableSelectionTranslate,
   enableGithubEnhance,
+  unlockHosts,
   enableCorsBypass,
   networkMode,
   networkGlobalProxyProfile,

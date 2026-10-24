@@ -7,8 +7,10 @@ import {
   enableGithubEnhance,
   enableSelectionTranslate,
   syncStatus,
+  unlockHosts,
 } from '@/utils/settings'
 import { formatShortcut } from '@/utils/shortcut'
+import { getActiveHostname } from '@/utils/tabs'
 import { useStorageItem } from '@/utils/useStorageItem'
 import { POPUP_PAGES } from '@/features/popup/pages'
 import Button from '@/ui/Button'
@@ -85,6 +87,36 @@ function SyncCard() {
         </span>
         {usage && <span className='shrink-0 text-slate-400'>{usage}</span>}
       </div>
+    </div>
+  )
+}
+
+/** 解除复制限制：只对当前站点开关（全局阻断 copy 等事件会让在线编辑器失灵） */
+function UnlockSiteRow() {
+  const [hosts, setHosts] = useStorageItem(unlockHosts)
+  const [hostname, setHostname] = useState('')
+
+  useEffect(() => {
+    getActiveHostname().then(setHostname)
+  }, [])
+
+  const enabled = Boolean(hostname) && hosts.includes(hostname)
+  const toggle = (checked: boolean) => {
+    if (!hostname) return
+    setHosts(checked ? [...new Set([...hosts, hostname])] : hosts.filter((h) => h !== hostname))
+  }
+
+  return (
+    <div className='flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
+      <div className='flex min-w-0 flex-col'>
+        <span className='text-sm font-medium text-slate-800'>解除本站复制限制</span>
+        <span className='truncate text-xs text-slate-400'>
+          {hostname
+            ? `${hostname}：放开复制、选择与右键${hosts.length > 1 ? `（共 ${hosts.length} 个站点已开启）` : ''}`
+            : '当前页面不支持'}
+        </span>
+      </div>
+      <Switch checked={enabled} onChange={toggle} disabled={!hostname} />
     </div>
   )
 }
@@ -208,6 +240,8 @@ export default function FunctionPage() {
         </div>
         <Switch checked={githubOn} onChange={toggleGithub} />
       </div>
+
+      <UnlockSiteRow />
 
       {/* 快捷键 */}
       <div className='rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>

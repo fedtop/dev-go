@@ -29,17 +29,7 @@ import Button from '@/ui/Button'
 import Select from '@/ui/Select'
 import Switch from '@/ui/Switch'
 import Tabs from '@/ui/Tabs'
-
-/** 当前标签页可翻译时的 hostname；chrome:// 等页面返回空串 */
-async function getActiveHostname(): Promise<string> {
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true })
-  try {
-    const url = new URL(tab?.url ?? '')
-    return url.protocol === 'http:' || url.protocol === 'https:' ? url.hostname : ''
-  } catch {
-    return ''
-  }
-}
+import { getActiveHostname } from '@/utils/tabs'
 
 function openOptionsPage() {
   void browser.runtime.openOptionsPage()

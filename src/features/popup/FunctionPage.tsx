@@ -18,7 +18,6 @@ import Switch from '@/ui/Switch'
 // 命令 name -> 展示名
 const COMMAND_LABELS: Record<string, string> = {
   'open-default': '打开默认面板',
-  'open-todo': '打开待办面板',
   'open-network': '打开网络面板',
   'open-tools': '打开资源面板',
   'inline-translate': '整页行间翻译',
@@ -70,7 +69,7 @@ function SyncCard() {
       <div className='flex items-center justify-between gap-3'>
         <div className='flex min-w-0 flex-col'>
           <span className='text-sm font-medium text-slate-800'>跨设备同步</span>
-          <span className='text-xs text-slate-400'>待办、快捷导航、代理配置随浏览器账号同步</span>
+          <span className='text-xs text-slate-400'>快捷导航、代理配置随浏览器账号同步</span>
         </div>
         <Button onClick={syncNow} disabled={syncing} className='shrink-0 !px-2 !py-1 text-xs'>
           立即同步
@@ -148,7 +147,7 @@ export default function FunctionPage() {
     browser.tabs.create({ url: 'chrome://extensions/shortcuts' })
   }
 
-  // 导出全部配置（含待办、快捷导航、网络配置等）为 JSON 文件
+  // 导出全部配置（含快捷导航、网络配置等）为 JSON 文件
   const exportBackup = async () => {
     try {
       const backup = await buildBackup()
@@ -236,12 +235,12 @@ export default function FunctionPage() {
 
       <SyncCard />
 
-      {/* 数据备份：导出 / 导入全部配置与待办 */}
+      {/* 数据备份：导出 / 导入全部配置 */}
       <div className='rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
         <div className='flex items-center justify-between gap-3'>
           <div className='flex flex-col'>
             <span className='text-sm font-medium text-slate-800'>数据备份</span>
-            <span className='text-xs text-slate-400'>导出 / 导入全部配置与待办</span>
+            <span className='text-xs text-slate-400'>导出 / 导入全部配置</span>
           </div>
           <div className='flex items-center gap-1.5'>
             <Button onClick={exportBackup} className='!px-2 !py-1 text-xs'>

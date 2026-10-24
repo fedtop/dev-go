@@ -5,7 +5,7 @@
  * - 本机 local 是唯一数据源，页面只读写 local；这里负责把选定的数据镜像到 sync。
  * - 每份数据序列化后按 ~7KB 分片存为 `mirror.<name>.<i>`，另存一个描述分片的 `mirror.<name>`
  *   元信息（版本、分片数、内容哈希、修改时间、设备 id），彻底避开单项 8KB 上限。
- * - 本地变更防抖合并后再写入，连续编辑待办不会触发写入频率限制；内容未变化时不写。
+ * - 本地变更防抖合并后再写入，连续编辑不会触发写入频率限制；内容未变化时不写。
  * - 其他设备的更新：分片可能分批到达，必须分片齐全且哈希一致才应用到本机。
  * - 冲突（两端在上次同步后都改过）按「最后修改者胜」处理。
  * - 失败不影响本机使用，原因写入 syncStatus 供「功能」页展示。
@@ -18,7 +18,6 @@ import {
   quickNavCategoryLabels,
   quickNavItems,
   syncStatus,
-  todoItems,
   type SyncStatus,
 } from '@/utils/settings'
 
@@ -165,7 +164,7 @@ class SyncMirror {
   /** 启动或手动触发：逐项比对本机与 sync，决定上传还是下载 */
   async reconcileAll(): Promise<SyncStatus> {
     await this.setStatus({ state: 'syncing' })
-    let failed = false
+    let failed = !(await this.enqueue(() => this.removeOrphans()))
     for (const spec of this.specs) {
       // 单项失败（如超配额）不影响其余数据同步；错误已写入状态
       if (!(await this.enqueue(() => this.reconcile(spec)))) failed = true
@@ -174,6 +173,16 @@ class SyncMirror {
   }
 
   /* ------------------------------ 内部 ------------------------------ */
+
+  /** 清理已不再同步的数据（如已下线的功能）留在 sync 里的镜像，释放配额 */
+  private async removeOrphans(): Promise<boolean> {
+    const names = new Set(this.specs.map((spec) => spec.name))
+    const orphans = Object.keys(await browser.storage.sync.get(null)).filter(
+      (key) => key.startsWith(KEY_PREFIX) && !names.has(key.slice(KEY_PREFIX.length).split('.')[0]),
+    )
+    if (orphans.length) await browser.storage.sync.remove(orphans)
+    return true
+  }
 
   private schedule(
     timers: Map<string, number>,
@@ -373,7 +382,6 @@ export function startSyncMirror() {
   if (mirror) return mirror
 
   const specs: MirrorSpec[] = [
-    { name: 'todoItems', item: todoItems as MirrorItem<unknown> },
     { name: 'quickNavItems', item: quickNavItems as MirrorItem<unknown> },
     { name: 'quickNavCategoryLabels', item: quickNavCategoryLabels as MirrorItem<unknown> },
     { name: 'networkGlobalProxyProfile', item: networkGlobalProxyProfile as MirrorItem<unknown> },

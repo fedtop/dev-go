@@ -17,7 +17,6 @@ import {
 const DEFAULT_POPUP_COMMAND = 'open-default'
 const DEFAULT_POPUP_TAB: PopupShortcutTab = 'translate'
 const COMMAND_TO_TAB: Record<string, PopupShortcutTab> = {
-  'open-todo': 'todo',
   'open-network': 'network',
   'open-tools': 'tools',
 }

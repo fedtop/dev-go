@@ -70,11 +70,6 @@ export default defineConfig({
         suggested_key: { default: 'Alt+1' },
         description: '打开默认面板',
       },
-      // 打开 popup 并定位到「待办」Tab
-      'open-todo': {
-        suggested_key: { default: 'Alt+2' },
-        description: '打开待办面板',
-      },
       // 打开 popup 并定位到「网络」Tab
       'open-network': {
         suggested_key: { default: 'Alt+3' },

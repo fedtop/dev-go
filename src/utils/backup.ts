@@ -1,5 +1,5 @@
 /**
- * 配置备份：把所有持久化设置（含待办、快捷导航、网络配置等）导出为 JSON / 从 JSON 导入。
+ * 配置备份：把所有持久化设置（含快捷导航、网络配置等）导出为 JSON / 从 JSON 导入。
  */
 
 import {
@@ -25,7 +25,6 @@ import {
   searchEngine,
   setNetworkProxyProfile,
   themeMode,
-  todoItems,
   translateAutoHosts,
   translateDisplayMode,
   translateLlmConfig,
@@ -79,7 +78,6 @@ const BACKUP_ITEMS: Record<string, BackupItem> = {
   themeMode,
   newtabShaderEffect,
   newtabShaderMode,
-  todoItems,
   defaultPopupTab,
 }
 

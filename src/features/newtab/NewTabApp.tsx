@@ -22,7 +22,6 @@ import PinnedNav, { PIN_LIMIT } from './PinnedNav'
 import QuickNav from './QuickNav'
 import QuietBackground, { SHADER_EFFECT_OPTIONS } from './QuietBackground'
 import SearchBar from './SearchBar'
-import TodoBoard from './TodoBoard'
 
 const THEME_LABEL: Record<ThemeMode, string> = { auto: '自动', light: '浅色', dark: '深色' }
 const THEME_OPTIONS: ThemeMode[] = ['dark', 'auto', 'light']
@@ -86,20 +85,6 @@ function ThemeIcon({ mode }: { mode: ThemeMode }) {
   if (mode === 'dark') return <MoonIcon />
   if (mode === 'light') return <SunIcon />
   return <AutoIcon />
-}
-
-function TodoIcon() {
-  return (
-    <svg viewBox='0 0 24 24' aria-hidden='true' className='h-4 w-4 fill-none stroke-current'>
-      <path d='M9 5h9M9 12h9M9 19h9' strokeLinecap='round' strokeWidth='2' />
-      <path
-        d='m3.5 5 1 1 1.5-2M3.5 12l1 1 1.5-2M3.5 19l1 1 1.5-2'
-        strokeLinecap='round'
-        strokeLinejoin='round'
-        strokeWidth='1.6'
-      />
-    </svg>
-  )
 }
 
 function BackgroundIcon() {
@@ -216,18 +201,8 @@ export default function NewTabApp() {
   const [renamingCategory, setRenamingCategory] = useState<QuickNavCategoryId | null>(null)
   const [ready, setReady] = useState(false)
   const [toast, setToast] = useState('')
-  const [todoOpen, setTodoOpen] = useState(() => window.location.hash === '#todo')
   const fileRef = useRef<HTMLInputElement>(null)
   const effectMenuRef = useRef<HTMLDivElement>(null)
-
-  // 支持通过 #todo 唤出看板（Alt+3 快捷键打开新标签页时带上该 hash）
-  useEffect(() => {
-    const syncFromHash = () => {
-      if (window.location.hash === '#todo') setTodoOpen(true)
-    }
-    window.addEventListener('hashchange', syncFromHash)
-    return () => window.removeEventListener('hashchange', syncFromHash)
-  }, [])
 
   // 初始化主题
   useEffect(() => {
@@ -457,15 +432,6 @@ export default function NewTabApp() {
           <span className='text-sm font-semibold tracking-tight'>{SHIP_NAME}</span>
         </div>
         <div className='flex items-center gap-2'>
-          <button
-            type='button'
-            onClick={() => setTodoOpen(true)}
-            title='打开 TODO 面板'
-            className='flex h-10 items-center gap-1.5 rounded-full border border-slate-200 bg-white/70 px-3.5 text-sm font-medium text-slate-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-600 hover:shadow-md dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-300 dark:hover:border-blue-500 dark:hover:text-blue-400'
-          >
-            <TodoIcon />
-            <span>TODO</span>
-          </button>
           <div ref={effectMenuRef} className='relative'>
             <button
               type='button'
@@ -602,24 +568,6 @@ export default function NewTabApp() {
           </section>
         )}
       </main>
-
-      {/* TODO 看板 */}
-      {todoOpen && (
-        <TodoBoard
-          onClose={() => {
-            setTodoOpen(false)
-            // 清掉 #todo，便于下次 Alt+3 再次触发 hashchange
-            if (window.location.hash === '#todo') {
-              window.history.replaceState(
-                null,
-                '',
-                window.location.pathname + window.location.search,
-              )
-            }
-          }}
-          onToast={showToast}
-        />
-      )}
 
       {/* 轻量提示 */}
       {toast && (

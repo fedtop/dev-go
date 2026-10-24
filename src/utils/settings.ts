@@ -321,29 +321,13 @@ export const newtabShaderRandomSeeded = storage.defineItem<boolean>(
   { fallback: false },
 )
 
-/** 任务状态：待办 / 进行中 / 已完成 */
-export type TodoStatus = 'todo' | 'doing' | 'done'
-
-/** TODO 任务项 */
-export interface TodoItem {
-  id: string
-  text: string
-  status: TodoStatus
-  createdAt: number
-}
-
 /** popup 快捷键可打开的 Tab */
-export const POPUP_SHORTCUT_TABS = ['translate', 'todo', 'network', 'tools', 'function'] as const
+export const POPUP_SHORTCUT_TABS = ['translate', 'network', 'tools', 'function'] as const
 export type PopupShortcutTab = (typeof POPUP_SHORTCUT_TABS)[number]
 
 export function isPopupShortcutTab(value: unknown): value is PopupShortcutTab {
   return typeof value === 'string' && (POPUP_SHORTCUT_TABS as readonly string[]).includes(value)
 }
-
-/** 新标签页 TODO 任务列表（经同步镜像跨设备同步） */
-export const todoItems = storage.defineItem<TodoItem[]>('local:todoItems', {
-  fallback: [],
-})
 
 /**
  * popup 下次打开时要定位的 Tab（一次性信号）。
@@ -403,7 +387,6 @@ const LEGACY_SYNC_KEYS = [
   'newtabShaderEffect',
   'newtabShaderMode',
   'newtabShaderRandomSeeded',
-  'todoItems',
   'defaultPopupTab',
 ] as const
 const networkProxyProfilesMigrated = storage.defineItem<boolean>(

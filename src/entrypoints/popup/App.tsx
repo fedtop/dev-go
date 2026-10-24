@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { SHIP_NAME, SITE_URL } from '@/utils/constants'
 import FunctionPage from '@/features/popup/FunctionPage'
-import TodoPage from '@/features/popup/TodoPage'
 import NetworkPage from '@/features/popup/NetworkPage'
 import ToolsPage from '@/features/popup/ToolsPage'
 import TranslatePage from '@/features/popup/TranslatePage'
@@ -23,7 +22,6 @@ const DEFAULT_POPUP_TAB: PopupShortcutTab = 'translate'
 
 // 各面板 -> 打开它的命令名。
 const TAB_COMMANDS: Record<string, string> = {
-  todo: 'open-todo',
   network: 'open-network',
   tools: 'open-tools',
 }
@@ -136,7 +134,6 @@ export default function App() {
       {/* 内容区 */}
       <main className='popup-main min-h-0 flex-auto overflow-y-auto overscroll-contain px-4 py-4'>
         {active === 'translate' && <TranslatePage />}
-        {active === 'todo' && <TodoPage />}
         {active === 'network' && <NetworkPage />}
         {active === 'tools' && <ToolsPage />}
         {active === 'function' && <FunctionPage />}

@@ -239,11 +239,26 @@ export interface TabResponseMap {
   'collect-media-resources': MediaResourceCandidate[]
 }
 
-/** 向 Background 发送请求并返回类型化结果 */
+/** Background 处理消息时抛错的统一响应；sendRuntimeMessage 收到后还原为异常抛给调用方 */
+export interface RuntimeErrorResponse {
+  devgoError: string
+}
+
+export function isRuntimeErrorResponse(value: unknown): value is RuntimeErrorResponse {
+  return (
+    typeof value === 'object' &&
+    value != null &&
+    typeof (value as RuntimeErrorResponse).devgoError === 'string'
+  )
+}
+
+/** 向 Background 发送请求并返回类型化结果；后台处理失败时 reject，而不是一直等待 */
 export async function sendRuntimeMessage<T extends RuntimeMessage['type']>(
   message: Extract<RuntimeMessage, { type: T }>,
 ): Promise<RuntimeResponseMap[T]> {
-  return browser.runtime.sendMessage(message)
+  const response: unknown = await browser.runtime.sendMessage(message)
+  if (isRuntimeErrorResponse(response)) throw new Error(response.devgoError)
+  return response as RuntimeResponseMap[T]
 }
 
 /** 向当前激活标签页发送指令 */

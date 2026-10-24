@@ -516,7 +516,7 @@ export class PageTranslator {
   }
 
   private findRecordOf(node: Node): ParagraphRecord | undefined {
-    for (let current: Node | null = node; current && current !== document.body; ) {
+    for (let current: Node | null = node; current && current !== document.body;) {
       const record = this.memberRecords.get(current)
       if (record && this.records.has(record)) return record
       current = current.parentNode

@@ -238,7 +238,7 @@ export const NEWTAB_SHADER_EFFECTS = [
   'liquid',
   'gem',
 ] as const
-export type NewtabShaderEffect = typeof NEWTAB_SHADER_EFFECTS[number]
+export type NewtabShaderEffect = (typeof NEWTAB_SHADER_EFFECTS)[number]
 
 export function isNewtabShaderEffect(value: unknown): value is NewtabShaderEffect {
   return typeof value === 'string' && (NEWTAB_SHADER_EFFECTS as readonly string[]).includes(value)
@@ -334,7 +334,7 @@ export interface TodoItem {
 
 /** popup 快捷键可打开的 Tab */
 export const POPUP_SHORTCUT_TABS = ['translate', 'todo', 'network', 'tools', 'function'] as const
-export type PopupShortcutTab = typeof POPUP_SHORTCUT_TABS[number]
+export type PopupShortcutTab = (typeof POPUP_SHORTCUT_TABS)[number]
 
 export function isPopupShortcutTab(value: unknown): value is PopupShortcutTab {
   return typeof value === 'string' && (POPUP_SHORTCUT_TABS as readonly string[]).includes(value)
@@ -482,8 +482,8 @@ async function migrateNetworkProxyProfilesByMode(): Promise<void> {
   const sourceProfile = isNetworkProxyProfile(localProfile)
     ? localProfile
     : isNetworkProxyProfile(oldSyncProfile)
-    ? oldSyncProfile
-    : null
+      ? oldSyncProfile
+      : null
 
   if (sourceProfile) {
     const nextProfile = normalizeStoredNetworkProxyProfile({

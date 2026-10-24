@@ -10,9 +10,7 @@
 const MARKER_PATTERN = /<\s*(\/?)\s*b\s*(\d+)\s*>/gi
 
 export type MarkerToken =
-  | { type: 'text'; value: string }
-  | { type: 'open'; id: number }
-  | { type: 'close'; id: number }
+  { type: 'text'; value: string } | { type: 'open'; id: number } | { type: 'close'; id: number }
 
 export function tokenizeMarkers(text: string): MarkerToken[] {
   const tokens: MarkerToken[] = []

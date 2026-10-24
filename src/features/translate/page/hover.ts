@@ -56,7 +56,7 @@ export function resolveHoverHost(element: Element | null): Element | null {
 
   const probe = new LayoutProbe()
   let host: Element = textOwner
-  for (let node: Element | null = textOwner, depth = 0; node && depth < MAX_ANCESTOR_LEVELS; ) {
+  for (let node: Element | null = textOwner, depth = 0; node && depth < MAX_ANCESTOR_LEVELS;) {
     if (node === document.body) break
     if (probe.isBlockLevel(node)) {
       host = node

@@ -79,7 +79,7 @@ export function getVisibleText(nodes: Node[]): string {
     } else if (node instanceof Element && !isOwnUi(node)) {
       text += node.querySelector(OWN_UI_SELECTOR)
         ? getVisibleText(Array.from(node.childNodes))
-        : node.textContent ?? ''
+        : (node.textContent ?? '')
     }
   }
   return text

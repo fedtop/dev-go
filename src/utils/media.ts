@@ -82,11 +82,7 @@ const MIME_EXTENSION_MAP: Record<string, string> = {
 }
 
 export type MediaDeliveryType =
-  | 'direct'
-  | 'stream-manifest'
-  | 'stream-segment'
-  | 'twitter-audio-track'
-  | 'twitter-video-track'
+  'direct' | 'stream-manifest' | 'stream-segment' | 'twitter-audio-track' | 'twitter-video-track'
 
 export function normalizeMime(value?: string): string {
   return value?.split(';')[0]?.trim().toLowerCase() || ''

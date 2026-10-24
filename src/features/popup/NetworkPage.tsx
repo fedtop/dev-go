@@ -801,13 +801,13 @@ export default function NetworkPage() {
   const saveProxyLabel = activeCustomProxyMode
     ? '更新并应用'
     : usesProxyProfile(appliedMode)
-    ? '保存并应用'
-    : '保存并启用'
+      ? '保存并应用'
+      : '保存并启用'
   const proxyConfigDescription = activeCustomProxyMode
     ? `${activeCustomProxyMode.name} · 自定义代理`
     : mode === 'scenario'
-    ? '自动模式 · 独立代理与规则'
-    : '代理模式 · 全部流量走代理'
+      ? '自动模式 · 独立代理与规则'
+      : '代理模式 · 全部流量走代理'
 
   return (
     <div className='flex flex-col gap-2.5'>

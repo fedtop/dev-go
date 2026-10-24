@@ -38,7 +38,7 @@ const ERROR_DETAIL_LIMIT = 300
 
 function readErrorMessage(payload: ChatCompletionChunk['error']): string {
   if (!payload) return ''
-  return typeof payload === 'string' ? payload : payload.message ?? ''
+  return typeof payload === 'string' ? payload : (payload.message ?? '')
 }
 
 async function readResponseError(res: Response): Promise<string> {
@@ -178,7 +178,7 @@ export async function listModels(baseUrl: string, apiKey: string): Promise<strin
   const body = (await res.json()) as ModelListResponse
   const entries = body.data ?? body.models ?? []
   const ids = entries
-    .map((entry) => (typeof entry === 'string' ? entry : entry.id ?? entry.name ?? ''))
+    .map((entry) => (typeof entry === 'string' ? entry : (entry.id ?? entry.name ?? '')))
     .filter((id): id is string => Boolean(id))
 
   return [...new Set(ids)].sort((a, b) => a.localeCompare(b))

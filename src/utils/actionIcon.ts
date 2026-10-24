@@ -25,7 +25,7 @@ const MODE_COLORS: Record<NetworkMode, string> = {
   scenario: '#F97316',
 }
 
-async function drawIcon(size: typeof ICON_SIZES[number], color: string): Promise<ImageData> {
+async function drawIcon(size: (typeof ICON_SIZES)[number], color: string): Promise<ImageData> {
   const url = browser.runtime.getURL(`/icons/${size}.png`)
   const bitmap = await createImageBitmap(await (await fetch(url)).blob())
   const canvas = new OffscreenCanvas(size, size)

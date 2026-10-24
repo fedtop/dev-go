@@ -275,7 +275,10 @@ export class TranslateRules {
   private readonly excludeSelector: string
   private readonly neverSelector: string
 
-  constructor(url: string, private readonly probe: LayoutProbe) {
+  constructor(
+    url: string,
+    private readonly probe: LayoutProbe,
+  ) {
     this.site = SITE_RULES.find((rule) => rule.match.test(url))
     this.includeSelector = joinSelectors(this.site?.include ?? [])
     this.paragraphSelector = joinSelectors(this.site?.paragraph ?? [])

@@ -45,7 +45,6 @@ export default defineConfig({
     homepage_url: 'https://github.com/wangrongding',
     permissions: [
       'contextMenus',
-      'tabs',
       'storage',
       'bookmarks',
       'declarativeNetRequest',

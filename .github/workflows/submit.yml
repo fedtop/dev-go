@@ -1,4 +1,4 @@
-name: 'Submit to Web Store'
+name: "Submit to Web Store"
 on:
   workflow_dispatch:
 
@@ -10,17 +10,21 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 10
-      - name: Use Node.js 20.x
+      - name: Use Node.js 22.x
         uses: actions/setup-node@v4
         with:
-          node-version: 20.x
-          cache: 'pnpm'
+          node-version: 22.x
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build and zip extension artifact
         run: pnpm zip
+      # 产物名随 package.json 版本变化（dev-go-<version>-chrome.zip），不要写死
+      - name: Resolve artifact path
+        id: artifact
+        run: echo "path=.output/dev-go-$(node -p "require('./package.json').version")-chrome.zip" >> "$GITHUB_OUTPUT"
       - name: Browser Platform Publish
         uses: PlasmoHQ/bpp@v3
         with:
           keys: ${{ secrets.SUBMIT_KEYS }}
-          artifact: .output/dev-go-0.0.6-chrome.zip
+          artifact: ${{ steps.artifact.outputs.path }}

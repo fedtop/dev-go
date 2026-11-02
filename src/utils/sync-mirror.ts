@@ -14,6 +14,8 @@
 import {
   networkCustomProxyModeProfiles,
   networkGlobalProxyProfile,
+  networkScenarioDefaultAction,
+  networkScenarioProxyList,
   networkScenarioProxyProfile,
   quickNavCategoryLabels,
   quickNavItems,
@@ -392,6 +394,11 @@ export function startSyncMirror() {
     {
       name: 'networkCustomProxyModeProfiles',
       item: networkCustomProxyModeProfiles as MirrorItem<unknown>,
+    },
+    { name: 'networkScenarioProxyList', item: networkScenarioProxyList as MirrorItem<unknown> },
+    {
+      name: 'networkScenarioDefaultAction',
+      item: networkScenarioDefaultAction as MirrorItem<unknown>,
     },
   ]
 

@@ -45,6 +45,8 @@ export default defineConfig({
     homepage_url: 'https://github.com/wangrongding',
     permissions: [
       'contextMenus',
+      // 定时更新自动模式的规则列表
+      'alarms',
       'storage',
       'bookmarks',
       'declarativeNetRequest',

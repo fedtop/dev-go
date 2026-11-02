@@ -9,6 +9,7 @@ import {
   decodeNetworkRuleListText,
   normalizeNetworkProxyProfile,
   parseNetworkRuleList,
+  type NetworkPacOptions,
 } from '@/utils/network'
 import {
   getNetworkProxyProfileForMode,
@@ -18,6 +19,8 @@ import {
   networkMode,
   networkProxyManaged,
   networkRuleList,
+  networkScenarioDefaultAction,
+  networkScenarioProxyList,
   networkScenarioProxyProfile,
   type NetworkMode,
   type NetworkProxyProfile,
@@ -83,10 +86,28 @@ function buildScenarioProxyConfig(profile: NetworkProxyProfile): chrome.proxy.Pr
   }
 }
 
+const RULE_LIST_REFRESH_ALARM = 'devgo-rule-list-refresh'
+const RULE_LIST_REFRESH_MINUTES = 6 * 60
+/** 规则列表超过这个时长未更新时自动重新下载（gfwlist 自身声明 6 小时过期） */
+const RULE_LIST_MAX_AGE_MS = 6 * 60 * 60 * 1000 - 10 * 60 * 1000
+
+async function readScenarioOptions(): Promise<NetworkPacOptions> {
+  const [proxyList, defaultAction] = await Promise.all([
+    networkScenarioProxyList.getValue(),
+    networkScenarioDefaultAction.getValue(),
+  ])
+  return { proxyList, defaultAction }
+}
+
+/**
+ * 自动模式：规则列表启用、有自定义代理域名或未命中默认走代理时，生成 PAC 按规则分流；
+ * 三者都没有时没有任何分流依据，退化为全部走代理（与旧版「未启用规则列表」行为一致）。
+ */
 function buildNetworkProxyConfig(
   mode: NetworkMode,
   profile: NetworkProxyProfile,
   ruleList: NetworkRuleListConfig,
+  scenario: NetworkPacOptions,
 ): chrome.proxy.ProxyConfig {
   if (mode === 'direct') {
     return { mode: 'direct' }
@@ -100,8 +121,9 @@ function buildNetworkProxyConfig(
     return buildScenarioProxyConfig(profile)
   }
 
-  if (ruleList.enabled && ruleList.text.trim()) {
-    const pacScript = buildNetworkPacScript(profile, ruleList.text)
+  const ruleListActive = ruleList.enabled && Boolean(ruleList.text.trim())
+  if (ruleListActive || scenario.proxyList?.length || scenario.defaultAction === 'proxy') {
+    const pacScript = buildNetworkPacScript(profile, ruleListActive ? ruleList.text : '', scenario)
 
     return {
       mode: 'pac_script',
@@ -153,11 +175,12 @@ export async function applyNetworkMode(mode: NetworkMode): Promise<NetworkProxyS
   await networkProxyManaged.setValue(true)
 
   try {
-    const [profile, ruleList] = await Promise.all([
+    const [profile, ruleList, scenario] = await Promise.all([
       getNetworkProxyProfileForMode(mode),
       networkRuleList.getValue(),
+      readScenarioOptions(),
     ])
-    await setChromeProxyConfig(buildNetworkProxyConfig(mode, profile, ruleList))
+    await setChromeProxyConfig(buildNetworkProxyConfig(mode, profile, ruleList, scenario))
     return getNetworkStatus()
   } catch (error) {
     return getNetworkStatus(error)
@@ -172,9 +195,13 @@ export async function syncNetworkProxy(): Promise<NetworkProxyStatus> {
   }
 
   try {
-    const [mode, ruleList] = await Promise.all([networkMode.getValue(), networkRuleList.getValue()])
+    const [mode, ruleList, scenario] = await Promise.all([
+      networkMode.getValue(),
+      networkRuleList.getValue(),
+      readScenarioOptions(),
+    ])
     const profile = await getNetworkProxyProfileForMode(mode)
-    await setChromeProxyConfig(buildNetworkProxyConfig(mode, profile, ruleList))
+    await setChromeProxyConfig(buildNetworkProxyConfig(mode, profile, ruleList, scenario))
     return getNetworkStatus()
   } catch (error) {
     return getNetworkStatus(error)
@@ -247,6 +274,36 @@ export async function downloadNetworkRuleList(url: string): Promise<NetworkRuleL
   }
 }
 
+/** 已启用的规则列表超过有效期时重新下载；失败保留旧规则，下次定时再试 */
+async function refreshRuleListIfStale(): Promise<void> {
+  const ruleList = await networkRuleList.getValue()
+  if (!ruleList.enabled || !ruleList.url.trim()) return
+
+  const updatedAt = Date.parse(ruleList.lastUpdate)
+  if (Number.isFinite(updatedAt) && Date.now() - updatedAt < RULE_LIST_MAX_AGE_MS) return
+
+  const result = await downloadNetworkRuleList(ruleList.url)
+  if (!result.ok) console.warn('[DevGo] refresh rule list failed:', result.error)
+}
+
+function refreshRuleListSafely() {
+  refreshRuleListIfStale().catch((error) => {
+    console.warn('[DevGo] refresh rule list failed:', error)
+  })
+}
+
+/** 定时检查规则列表：闹钟已存在时不重建，否则 SW 每次被唤醒都会重置计时 */
+function scheduleRuleListRefresh() {
+  if (!chrome.alarms) return
+  chrome.alarms.get(RULE_LIST_REFRESH_ALARM, (alarm) => {
+    if (alarm) return
+    chrome.alarms.create(RULE_LIST_REFRESH_ALARM, {
+      delayInMinutes: 1,
+      periodInMinutes: RULE_LIST_REFRESH_MINUTES,
+    })
+  })
+}
+
 /** 网络相关设置变化时重新应用代理（各设置项 watcher 需在 SW 启动时同步注册） */
 export function registerProxyWatchers() {
   networkMode.watch(syncNetworkProxySafely)
@@ -255,6 +312,13 @@ export function registerProxyWatchers() {
   networkCustomProxyModeProfiles.watch(syncNetworkProxySafely)
   networkActiveCustomProxyModeId.watch(syncNetworkProxySafely)
   networkRuleList.watch(syncNetworkProxySafely)
+  networkScenarioProxyList.watch(syncNetworkProxySafely)
+  networkScenarioDefaultAction.watch(syncNetworkProxySafely)
+
+  chrome.alarms?.onAlarm.addListener((alarm) => {
+    if (alarm.name === RULE_LIST_REFRESH_ALARM) refreshRuleListSafely()
+  })
+  scheduleRuleListRefresh()
 
   chrome.proxy?.onProxyError?.addListener((details) => {
     console.warn('[DevGo] proxy error:', details)

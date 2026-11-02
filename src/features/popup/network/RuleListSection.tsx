@@ -136,7 +136,8 @@ export default function RuleListSection({ syncProxyIfActive }: RuleListSectionPr
       </div>
 
       <p className='mt-1.5 text-[10px] leading-4 text-slate-400'>
-        启用后命中规则走自动代理，未命中规则直连；未启用时自动模式保持全局代理。
+        启用后命中规则的站点走代理，每 6
+        小时自动更新。未启用规则列表、也没有自定义代理域名时，自动模式全部走代理。
       </p>
       <div className='mt-2 flex flex-wrap gap-1.5'>
         {RECOMMENDED_RULE_LISTS.map((item) => (

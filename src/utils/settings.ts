@@ -4,7 +4,7 @@
 
 import type { TranslateTargetSetting } from '@/features/translate/languages'
 import { DEFAULT_LLM_CONFIG, type LlmConfig } from '@/features/translate/llm-config'
-import { normalizeBypassList } from '@/utils/network'
+import { normalizeBypassList, type NetworkScenarioDefaultAction } from '@/utils/network'
 
 /** 翻译引擎：微软 / Google 免费接口，或用户自配的 AI 大模型（OpenAI 兼容） */
 export type TranslateProvider = 'microsoft' | 'google' | 'llm'
@@ -188,6 +188,18 @@ export const networkScenarioProxyProfile = storage.defineItem<NetworkProxyProfil
 export const networkRuleList = storage.defineItem<NetworkRuleListConfig>('local:networkRuleList', {
   fallback: DEFAULT_NETWORK_RULE_LIST,
 })
+
+/** 自动模式：始终走代理的域名（优先于规则列表，补上规则列表未收录的站点） */
+export const networkScenarioProxyList = storage.defineItem<string[]>(
+  'local:networkScenarioProxyList',
+  { fallback: [] },
+)
+
+/** 自动模式：未命中任何规则时直连（默认）还是走代理 */
+export const networkScenarioDefaultAction = storage.defineItem<NetworkScenarioDefaultAction>(
+  'local:networkScenarioDefaultAction',
+  { fallback: 'direct' },
+)
 
 /** 自定义代理模式列表（本机代理配置，不跨设备同步） */
 export const networkCustomProxyModeProfiles = storage.defineItem<NetworkCustomProxyModeProfile[]>(

@@ -10,6 +10,7 @@ import {
   networkActiveCustomProxyModeId,
   networkCustomProxyModeProfiles,
   networkMode,
+  networkScenarioProxyList,
   setNetworkProxyProfile,
   type NetworkCustomProxyModeProfile,
   type NetworkMode,
@@ -35,6 +36,7 @@ import {
 import ModeSelector from './network/ModeSelector'
 import ProxyServerFields from './network/ProxyServerFields'
 import RuleListSection from './network/RuleListSection'
+import ScenarioRulesSection from './network/ScenarioRulesSection'
 
 /** 网络面板：网络模式切换、代理配置（含自定义模式、规则列表、绕过列表）与 CORS 调试 */
 export default function NetworkPage() {
@@ -341,6 +343,14 @@ export default function NetworkPage() {
     setBusy(true)
 
     try {
+      // 加入直连时同步移出自定义代理域名，避免两边规则互相矛盾
+      if (!currentHostBypassed && mode === 'scenario') {
+        const proxyList = await networkScenarioProxyList.getValue()
+        if (proxyList.includes(currentHost)) {
+          await networkScenarioProxyList.setValue(proxyList.filter((item) => item !== currentHost))
+        }
+      }
+
       const nextBypassList = currentHostBypassed
         ? bypassList.filter((item) => item !== currentHost)
         : [...bypassList, currentHost]
@@ -674,6 +684,15 @@ export default function NetworkPage() {
             {showRuleListSettings && (
               <div className='border-t border-slate-100 pt-3'>
                 <RuleListSection syncProxyIfActive={syncProxyIfActive} />
+                <ScenarioRulesSection
+                  currentHost={currentHost}
+                  disabled={busy}
+                  onHostProxied={() => {
+                    // 绕过列表优先级更高，站点改为走代理时需移出绕过列表
+                    if (currentHostBypassed) void toggleCurrentHostBypass()
+                  }}
+                  syncProxyIfActive={syncProxyIfActive}
+                />
               </div>
             )}
 

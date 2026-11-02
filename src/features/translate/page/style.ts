@@ -87,16 +87,59 @@ ${RETRY_TAG}:hover {
 }
 `
 
+let currentCss = ''
+/** 已注入样式的 shadow root → 注入方式（共享样式表或 <style> 元素），停止翻译时逐一撤销 */
+const shadowStyles = new Map<ShadowRoot, CSSStyleSheet | HTMLStyleElement>()
+
+/**
+ * shadow root 内的样式：页面级 html 上的状态 class 无法跨 shadow 边界匹配，
+ * 改用 :host-context() 向上查找（Firefox 不支持时只影响下划线与仅译文的细节样式）。
+ */
+function toShadowCss(css: string): string {
+  return css.replace(/html\.([\w-]+)/g, ':host-context(html.$1)')
+}
+
 export function injectTranslateStyle(siteStyles: string) {
+  currentCss = `${BASE_STYLES}\n${siteStyles}`
   let style = document.getElementById(STYLE_ID)
   if (!style) {
     style = document.createElement('style')
     style.id = STYLE_ID
     ;(document.head || document.documentElement).appendChild(style)
   }
-  style.textContent = `${BASE_STYLES}\n${siteStyles}`
+  style.textContent = currentCss
+
+  // 站点规则变化时同步更新已注入的 shadow 样式
+  shadowStyles.forEach((injected) => {
+    if (injected instanceof HTMLStyleElement) injected.textContent = toShadowCss(currentCss)
+    else injected.replaceSync(toShadowCss(currentCss))
+  })
+}
+
+/** 在 shadow root 内插入译文前调用：样式只注入一次 */
+export function ensureShadowStyle(root: ShadowRoot) {
+  if (shadowStyles.has(root) || !currentCss) return
+  const css = toShadowCss(currentCss)
+  try {
+    const sheet = new CSSStyleSheet()
+    sheet.replaceSync(css)
+    root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet]
+    shadowStyles.set(root, sheet)
+  } catch {
+    // 不支持可构造样式表时退回 <style> 元素
+    const style = document.createElement('style')
+    style.textContent = css
+    root.appendChild(style)
+    shadowStyles.set(root, style)
+  }
 }
 
 export function removeTranslateStyle() {
   document.getElementById(STYLE_ID)?.remove()
+  shadowStyles.forEach((injected, root) => {
+    if (injected instanceof HTMLStyleElement) injected.remove()
+    else root.adoptedStyleSheets = root.adoptedStyleSheets.filter((sheet) => sheet !== injected)
+  })
+  shadowStyles.clear()
+  currentCss = ''
 }

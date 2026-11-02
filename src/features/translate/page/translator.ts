@@ -5,6 +5,9 @@
  *      → 合批翻译（queue → 端口 → Background，按段流式返回）→ 解码并注入译文。
  * MutationObserver 负责增量：新增内容按「最近的未遍历祖先」切分，已翻译段落内容变化则重新切分宿主。
  *
+ * 支持 Web Components：切分沿渲染树进入开放的 shadow root，同一个 MutationObserver 同时监听
+ * 文档与遍历到的每个 shadow root，译文插入 shadow 内时把样式注入该 shadow root。
+ *
  * 所有 DOM 写操作都包在 mute() 里：先收下页面自身的变更记录，再丢弃引擎自己产生的记录，
  * 避免「插入译文 → 触发监听 → 再次翻译」的循环。
  */
@@ -27,6 +30,7 @@ import {
   WRAPPER_TAG,
 } from './constants'
 import {
+  composedParentElement,
   findLineClampAncestor,
   getVisibleText,
   isEditable,
@@ -40,7 +44,7 @@ import {
 import { TranslationQueue } from './queue'
 import { TranslateRules } from './rules'
 import { segmentChildren, segmentNode, type ParagraphGroup, type SegmentContext } from './segmenter'
-import { injectTranslateStyle, removeTranslateStyle } from './style'
+import { ensureShadowStyle, injectTranslateStyle, removeTranslateStyle } from './style'
 import { TranslatePortClient } from './transport'
 
 type RecordState = 'idle' | 'loading' | 'done' | 'same' | 'error'
@@ -73,6 +77,11 @@ const MUTATION_DELAY = 500
 /** 同一宿主被页面反复改写（计时器、轮播等）超过该次数后不再跟随重译 */
 const MAX_HOST_RETRANSLATIONS = 8
 const INTERSECTION_MARGIN = '400px 0px 800px 0px'
+const MUTATION_OPTIONS: MutationObserverInit = {
+  childList: true,
+  subtree: true,
+  characterData: true,
+}
 
 /** 段落是否值得翻译：有足够文字、不是纯数字 / 符号 / 链接 */
 function isTranslatableText(text: string): boolean {
@@ -99,6 +108,8 @@ export class PageTranslator {
   private hostChurn = new WeakMap<Element, number>()
   private intersection: IntersectionObserver | null = null
   private mutation: MutationObserver | null = null
+  /** 已被 MutationObserver 监听的 shadow root（observer disconnect 后需要重建） */
+  private observedRoots = new WeakSet<ShadowRoot>()
   private readonly pendingMutations = new Set<Node>()
   private mutationTimer: number | null = null
   private target: TranslateLangCode = 'zh-CN'
@@ -132,13 +143,14 @@ export class PageTranslator {
       rootMargin: INTERSECTION_MARGIN,
     })
 
+    // 先建好监听，切分过程中遇到的 shadow root 即可随时加入
+    this.mutation = new MutationObserver((list) => this.collectMutations(list))
+    this.mutation.observe(document.body, MUTATION_OPTIONS)
+
     const ctx = this.segmentContext()
     for (const root of this.resolveRoots()) {
       segmentChildren(root, ctx).forEach((group) => this.register(group, 'page'))
     }
-
-    this.mutation = new MutationObserver((list) => this.collectMutations(list))
-    this.mutation.observe(document.body, { childList: true, subtree: true, characterData: true })
   }
 
   /** 停止整页 / 悬停翻译，恢复页面原貌 */
@@ -150,6 +162,7 @@ export class PageTranslator {
     this.intersection = null
     this.mutation?.disconnect()
     this.mutation = null
+    this.observedRoots = new WeakSet()
     this.pendingMutations.clear()
     if (this.mutationTimer) window.clearTimeout(this.mutationTimer)
     this.mutationTimer = null
@@ -257,7 +270,19 @@ export class PageTranslator {
   }
 
   private segmentContext(): SegmentContext {
-    return { rules: this.rules, probe: this.probe, traversed: this.traversed }
+    return {
+      rules: this.rules,
+      probe: this.probe,
+      traversed: this.traversed,
+      onShadowRoot: (root) => this.observeShadowRoot(root),
+    }
+  }
+
+  /** shadow 内的变化不会冒泡到文档的 MutationObserver，需要逐个 shadow root 监听 */
+  private observeShadowRoot(root: ShadowRoot) {
+    if (!this.mutation || this.observedRoots.has(root)) return
+    this.observedRoots.add(root)
+    this.mutation.observe(root, MUTATION_OPTIONS)
   }
 
   private resolveRoots(): Element[] {
@@ -358,6 +383,8 @@ export class PageTranslator {
     wrapper.setAttribute('translate', 'no')
     wrapper.classList.add('notranslate')
     last.parentNode.insertBefore(wrapper, last.nextSibling)
+    const root = wrapper.getRootNode()
+    if (root instanceof ShadowRoot) ensureShadowStyle(root)
     record.wrapper = wrapper
     return wrapper
   }
@@ -519,7 +546,8 @@ export class PageTranslator {
     for (let current: Node | null = node; current && current !== document.body;) {
       const record = this.memberRecords.get(current)
       if (record && this.records.has(record)) return record
-      current = current.parentNode
+      // 走到 shadow root 顶层时跳到宿主，继续向外查找
+      current = composedParentElement(current)
     }
     return undefined
   }

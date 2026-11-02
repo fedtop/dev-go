@@ -8,10 +8,20 @@
  *
  * 相比豆包的改进：
  * - 行内装饰元素（图标、无文字 span）和标签之间的空白文本不再打断段落；
- * - 被排除的行内元素（行内 code、时间、@提及）作为原子留在段落中，而不是把句子切成两半。
+ * - 被排除的行内元素（行内 code、时间、@提及）作为原子留在段落中，而不是把句子切成两半；
+ * - 按渲染树遍历：进入开放的 shadow root、展开 slot 分配的节点（Web Components 页面的正文都在里面）。
+ *   同一段落的成员必须是同一父节点下的兄弟，shadow 内外的节点不会合成一段。
  */
 
-import { isBlankText, isOwnUi, hasText, type LayoutProbe } from './dom'
+import {
+  composedChildNodes,
+  composedParentElement,
+  getOpenShadowRoot,
+  hasText,
+  isBlankText,
+  isOwnUi,
+  type LayoutProbe,
+} from './dom'
 import type { TranslateRules } from './rules'
 
 export interface ParagraphGroup {
@@ -26,6 +36,8 @@ export interface SegmentContext {
   probe: LayoutProbe
   /** 已遍历过的元素（供增量切分判断「新内容」） */
   traversed: WeakSet<Element>
+  /** 遍历进入开放 shadow root 时回调（整页翻译据此监听 shadow 内的变化、注入样式） */
+  onShadowRoot?: (root: ShadowRoot) => void
 }
 
 class GroupCollector {
@@ -34,12 +46,16 @@ class GroupCollector {
   constructor(private readonly output: ParagraphGroup[]) {}
 
   push(node: Node) {
+    // 渲染树上相邻、但 DOM 父节点不同（slot 分配的节点与 shadow 内容）时不能合成一段
+    if (this.pending.length && this.pending[0].parentNode !== node.parentNode) this.flush()
     this.pending.push(node)
   }
 
   pushWhitespace(node: Node) {
     // 段落中间的空白保留（单词间距），开头的空白丢弃
-    if (this.pending.length) this.pending.push(node)
+    if (this.pending.length && this.pending[0].parentNode === node.parentNode) {
+      this.pending.push(node)
+    }
   }
 
   flush() {
@@ -55,7 +71,7 @@ function isBlankTextNode(node: Node): boolean {
 }
 
 function addGroup(output: ParagraphGroup[], nodes: Node[]) {
-  const host = nodes[0]?.parentElement
+  const host = nodes[0] ? composedParentElement(nodes[0]) : null
   if (!host || !nodes.some(hasText)) return
   output.push({ nodes, host })
 }
@@ -111,7 +127,18 @@ function visit(
     return
   }
 
-  if (!hasText(node)) {
+  // shadow 宿主与 slot 对文字流透明：沿渲染树继续，块级宿主才构成段落边界
+  const shadowRoot = getOpenShadowRoot(node)
+  if (shadowRoot || node instanceof HTMLSlotElement) {
+    if (shadowRoot) ctx.onShadowRoot?.(shadowRoot)
+    const boundary = Boolean(shadowRoot) && ctx.probe.isBlockLevel(node)
+    if (boundary) collector.flush()
+    for (const child of composedChildNodes(node)) visit(child, collector, output, ctx)
+    if (boundary) collector.flush()
+    return
+  }
+
+  if (!ctx.probe.hasRenderedText(node)) {
     // 无文字的行内元素（图标、空 span）对文字流透明；块级空元素作为边界
     if (!ctx.probe.isInline(node)) collector.flush()
     return
@@ -145,7 +172,9 @@ function visit(
 
 function collectChildren(parent: Node, output: ParagraphGroup[], ctx: SegmentContext) {
   const collector = new GroupCollector(output)
-  for (const child of Array.from(parent.childNodes)) visit(child, collector, output, ctx)
+  const shadowRoot = getOpenShadowRoot(parent)
+  if (shadowRoot) ctx.onShadowRoot?.(shadowRoot)
+  for (const child of composedChildNodes(parent)) visit(child, collector, output, ctx)
   collector.flush()
 }
 

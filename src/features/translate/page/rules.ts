@@ -42,7 +42,7 @@ const NEVER_TRANSLATE_SELECTORS = [
   'style',
   'noscript',
   'template',
-  'slot',
+  // slot 不在此列：切分沿渲染树经 slot 展开分配到的节点（见 segmenter）
   'iframe',
   'embed',
   'object',

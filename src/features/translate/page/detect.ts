@@ -8,24 +8,26 @@ import {
   type TranslateTargetSetting,
 } from '@/features/translate/languages'
 
+import { composedChildNodes } from './dom'
+
 const SAMPLE_LIMIT = 2000
 const SKIP_SELECTOR = 'script,style,noscript,template,pre,code,textarea,devgo-trans'
 
+/** 沿渲染树采样文字（进入开放的 shadow root），Web Components 页面的正文都在 shadow 里 */
 export function samplePageText(root: Element = document.body, limit = SAMPLE_LIMIT): string {
   let text = `${document.title} `
   if (!root) return text
 
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-    acceptNode(node) {
-      const parent = node.parentElement
-      if (!parent || parent.closest(SKIP_SELECTOR) || !node.textContent?.trim()) {
-        return NodeFilter.FILTER_REJECT
-      }
-      return NodeFilter.FILTER_ACCEPT
-    },
-  })
-
-  while (text.length < limit && walker.nextNode()) text += `${walker.currentNode.textContent} `
+  const visit = (node: Node) => {
+    if (text.length >= limit) return
+    if (node.nodeType === Node.TEXT_NODE) {
+      if (node.textContent?.trim()) text += `${node.textContent} `
+      return
+    }
+    if (node instanceof Element && node.matches(SKIP_SELECTOR)) return
+    composedChildNodes(node).forEach(visit)
+  }
+  visit(root)
   return text
 }
 

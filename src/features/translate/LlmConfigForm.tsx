@@ -41,7 +41,7 @@ interface LlmConfigFormProps {
   onSaved?: () => void
   /**
    * 配置用途：translate 为 AI 翻译（保存时可设为翻译引擎）；
-   * assistant 为 WebMCP 助手（独立存储，未保存过时用翻译配置预填，测试会校验工具调用能力）
+   * assistant 为对话模型（划词 AI、侧边栏助手；独立存储，未保存过时用翻译配置预填，测试会校验工具调用能力）
    */
   target?: 'translate' | 'assistant'
 }

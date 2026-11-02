@@ -218,3 +218,8 @@ export function isLlmConfig(value: unknown): value is LlmConfig {
     typeof config.prompt === 'string'
   )
 }
+
+/** 配置可以直接使用：地址、模型已填；非本地服务还需要 API Key */
+export function isLlmUsable(config: LlmConfig, apiKey: string): boolean {
+  return isLlmConfigReady(config) && (Boolean(apiKey.trim()) || !requiresApiKey(config.baseUrl))
+}

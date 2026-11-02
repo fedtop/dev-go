@@ -1,0 +1,63 @@
+/* Markdown 渲染样式（src/ui/Markdown.tsx）：颜色取自 currentColor，深浅背景通用 */
+.md {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45em;
+  overflow-wrap: anywhere;
+}
+.md p,
+.md ul,
+.md ol,
+.md pre,
+.md blockquote {
+  margin: 0;
+}
+.md-heading {
+  font-weight: 600;
+}
+.md-h1 {
+  font-size: 1.12em;
+}
+.md-h2 {
+  font-size: 1.06em;
+}
+.md-list {
+  padding-left: 1.3em;
+  list-style: disc;
+}
+.md-ordered {
+  list-style: decimal;
+}
+.md-list li + li {
+  margin-top: 0.15em;
+}
+.md-quote {
+  border-left: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+  padding-left: 0.6em;
+  opacity: 0.85;
+}
+.md-code-inline {
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  padding: 0.05em 0.3em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
+.md-code {
+  overflow-x: auto;
+  border-radius: 6px;
+  background: color-mix(in srgb, currentColor 9%, transparent);
+  padding: 0.5em 0.65em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  line-height: 1.5;
+  white-space: pre;
+}
+.md-link {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.md-rule {
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}

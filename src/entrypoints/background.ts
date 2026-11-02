@@ -4,7 +4,11 @@
  * MV3 的 Service Worker 随时可能被回收后重启，所有事件监听都必须在这里同步注册，
  * 否则唤醒 SW 的那个事件会丢失。
  */
-import { testAssistant } from '@/background/assistant'
+import {
+  handleSelectionAiPort,
+  registerOpenAssistantListener,
+  testAssistant,
+} from '@/background/ai'
 import { createContextMenus, registerCommands } from '@/background/commands'
 import {
   proxyCorsRequest,
@@ -29,6 +33,13 @@ import {
 } from '@/background/proxy'
 import { registerMessageRouter } from '@/background/router'
 import {
+  getWebrtcStatus,
+  registerWebrtcWatchers,
+  syncWebrtcSafely,
+  testWebrtcLeak,
+} from '@/background/webrtc'
+import {
+  aiLookup,
   listLlmModels,
   lookupWord,
   testTranslate,
@@ -37,7 +48,7 @@ import {
 import { handleTranslatePort } from '@/features/translate/port-server'
 import { updateNetworkActionIconSafely } from '@/utils/actionIcon'
 import { restoreDevBackupIfNeeded } from '@/utils/dev-backup'
-import { TRANSLATE_PORT_NAME } from '@/utils/messaging'
+import { SELECTION_AI_PORT_NAME, TRANSLATE_PORT_NAME } from '@/utils/messaging'
 import { enableCorsBypass, networkMode, networkProxyManaged } from '@/utils/settings'
 import { startSyncMirror, syncNow } from '@/utils/sync-mirror'
 
@@ -53,10 +64,14 @@ export default defineBackground(() => {
     console.warn('[DevGo] failed to import devgo-backup.json:', error)
   })
 
+  // 划词「问 AI」打开侧边栏：需要同步处理以保留用户手势，先于异步路由注册
+  registerOpenAssistantListener()
+
   // 来自内容脚本 / Popup / 选项页的请求
   registerMessageRouter({
     translate: (message) => translateSelectionText(message.text),
     lookup: (message) => lookupWord(message.word),
+    'ai-lookup': (message) => aiLookup(message.text),
     'test-translate': (message) => testTranslate(message),
     'list-llm-models': (message) => listLlmModels(message.baseUrl, message.apiKey),
     'test-assistant': (message) => testAssistant(message.llm, message.apiKey),
@@ -67,6 +82,8 @@ export default defineBackground(() => {
         () => ({ ok: false }),
       ),
     'sync-cors-bypass': () => syncCorsBypassRules(),
+    'get-webrtc-status': () => getWebrtcStatus(),
+    'test-webrtc-leak': () => testWebrtcLeak(),
     'cors-proxy-fetch': (message) => proxyCorsRequest(message.request),
     'apply-network-mode': (message) => applyNetworkMode(message.mode),
     'sync-network-proxy': () => syncNetworkProxy(),
@@ -78,26 +95,30 @@ export default defineBackground(() => {
       downloadMediaResource(message.url, message.fileName, message.mime, message.saveAs),
   })
 
-  // 整页翻译长连接：每个内容脚本一条，按段流式回传译文
+  // 长连接：整页翻译（每个内容脚本一条，按段流式回传）与划词 AI 动作（每次动作一条）
   browser.runtime.onConnect.addListener((port) => {
     if (port.name === TRANSLATE_PORT_NAME) handleTranslatePort(port)
+    else if (port.name === SELECTION_AI_PORT_NAME) handleSelectionAiPort(port)
   })
 
   registerMediaSniffer()
   registerCommands()
   registerProxyWatchers()
+  registerWebrtcWatchers()
 
   // 安装 / 更新时初始化（右键菜单需在此创建，避免 SW 重启时重复创建报错）
   browser.runtime.onInstalled.addListener(() => {
     createContextMenus()
     syncCorsBypassRulesSafely()
     syncMicrosoftRequestRulesSafely()
+    syncWebrtcSafely()
   })
 
   browser.runtime.onStartup.addListener(() => {
     syncCorsBypassRulesSafely()
     syncMicrosoftRequestRulesSafely()
     syncNetworkProxySafely()
+    syncWebrtcSafely()
   })
 
   enableCorsBypass.watch(syncCorsBypassRulesSafely)

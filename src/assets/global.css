@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import '../ui/markdown.css';
 
 /* 暗色变体：由 <html class="dark"> 控制（见 src/utils/theme.ts） */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -96,7 +97,7 @@ html.popup-page #root {
   overflow: hidden;
 }
 
-/* 侧边栏（WebMCP 助手）：铺满面板高度，内部各区域自行滚动 */
+/* 侧边栏（AI 助手）：铺满面板高度，内部各区域自行滚动 */
 html.sidepanel-page,
 html.sidepanel-page body,
 html.sidepanel-page #root {
@@ -287,6 +288,7 @@ body.quiet-page {
 }
 .popup-brand-mark,
 .popup-tabs,
+.popup-settings-button,
 .popup-kbd {
   background: rgba(255, 255, 255, 0.68);
   box-shadow:

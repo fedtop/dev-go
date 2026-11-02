@@ -5,6 +5,7 @@
 import type { TranslateTargetSetting } from '@/features/translate/languages'
 import { DEFAULT_LLM_CONFIG, type LlmConfig } from '@/features/translate/llm-config'
 import { normalizeBypassList, type NetworkScenarioDefaultAction } from '@/utils/network'
+import type { AssistantHandoff } from '@/utils/messaging'
 
 /** 翻译引擎：微软 / Google 免费接口，或用户自配的 AI 大模型（OpenAI 兼容） */
 export type TranslateProvider = 'microsoft' | 'google' | 'llm'
@@ -14,7 +15,8 @@ export function isTranslateProvider(value: unknown): value is TranslateProvider 
 }
 
 /** 查词引擎（popup 顶部查词框用，含有道） */
-export type LookupProvider = 'youdao' | 'microsoft' | 'google'
+/** 查词引擎；ai 使用翻译模型（需已配置） */
+export type LookupProvider = 'youdao' | 'microsoft' | 'google' | 'ai'
 
 /** 网页翻译引擎：默认微软（国内可直连、免费、无需翻墙） */
 export const translateProvider = storage.defineItem<TranslateProvider>('local:translateProvider', {
@@ -75,17 +77,17 @@ export const translateLlmApiKey = storage.defineItem<string>('local:translateLlm
   fallback: '',
 })
 
-/* ------------------------------- WebMCP 助手 ------------------------------- */
+/* ------------------------------ 对话模型与 AI 助手 ------------------------------ */
 
 /**
- * WebMCP 助手的 AI 配置（与翻译分开：翻译适合快而便宜的模型，助手需要支持工具调用的强模型）。
- * 从未保存过时为 null，界面用翻译的配置预填。
+ * 对话模型（划词解释 / 总结 / 润色、侧边栏 AI 助手共用）。与翻译模型分开：翻译要快，
+ * 对话要强（需要思考与工具调用）。从未保存过时为 null，沿用翻译模型。
  */
 export const assistantLlmConfig = storage.defineItem<LlmConfig | null>('local:assistantLlmConfig', {
   fallback: null,
 })
 
-/** WebMCP 助手 API Key：仅存本机，不参与备份导出 */
+/** 对话模型 API Key：仅存本机，不参与备份导出 */
 export const assistantLlmApiKey = storage.defineItem<string>('local:assistantLlmApiKey', {
   fallback: '',
 })
@@ -93,6 +95,58 @@ export const assistantLlmApiKey = storage.defineItem<string>('local:assistantLlm
 /** 执行未标注只读的网页工具前先让用户确认（默认开启：工具可能提交表单、下单等） */
 export const assistantConfirmTools = storage.defineItem<boolean>('local:assistantConfirmTools', {
   fallback: true,
+})
+
+/**
+ * 待侧边栏接手的划词内容（「问 AI」/「继续追问」）：后台打开侧边栏时写入，侧边栏读取后清空。
+ * 存在 session 区：只在本次浏览器会话内有效，不落盘。
+ */
+export const assistantHandoff = storage.defineItem<AssistantHandoff | null>(
+  'session:assistantHandoff',
+  { fallback: null },
+)
+
+/** 划词工具条显示 AI 动作（解释、总结、问 AI、润色等；需要配置可用的 AI 模型） */
+export const selectionAiEnabled = storage.defineItem<boolean>('local:selectionAiEnabled', {
+  fallback: true,
+})
+
+/* ------------------------------ WebRTC 防泄露 ------------------------------ */
+
+/**
+ * WebRTC IP 处理策略（对应 chrome.privacy.network.webRTCIPHandlingPolicy）：
+ * - default：浏览器默认，不干预
+ * - default_public_and_private_interfaces：只用默认路由的网卡（公网 + 内网地址），隐藏 VPN 等其他网卡
+ * - default_public_interface_only：只用默认路由的公网地址，隐藏内网 IP
+ * - disable_non_proxied_udp：WebRTC 只能走代理（TCP），开着代理时防止泄露真实 IP
+ */
+export type WebrtcPolicy =
+  | 'default'
+  | 'default_public_and_private_interfaces'
+  | 'default_public_interface_only'
+  | 'disable_non_proxied_udp'
+
+export function isWebrtcPolicy(value: unknown): value is WebrtcPolicy {
+  return (
+    value === 'default' ||
+    value === 'default_public_and_private_interfaces' ||
+    value === 'default_public_interface_only' ||
+    value === 'disable_non_proxied_udp'
+  )
+}
+
+export const webrtcPolicy = storage.defineItem<WebrtcPolicy>('local:webrtcPolicy', {
+  fallback: 'default',
+})
+
+/** 屏蔽网页的 WebRTC 连接接口（RTCPeerConnection 等）：最彻底，但网页音视频通话会不可用 */
+export const webrtcBlockApis = storage.defineItem<boolean>('local:webrtcBlockApis', {
+  fallback: false,
+})
+
+/** 隐藏摄像头 / 麦克风设备列表（navigator.mediaDevices），防止被用于设备指纹 */
+export const webrtcHideMediaDevices = storage.defineItem<boolean>('local:webrtcHideMediaDevices', {
+  fallback: false,
 })
 
 /** 查词引擎：默认有道（含音标、释义最全） */
@@ -371,14 +425,14 @@ export const popupLastActiveTab = storage.defineItem<PopupShortcutTab>('local:po
   fallback: 'translate',
 })
 
-/** 点击工具栏图标或 Alt+1 打开 popup 时默认定位的 Tab（在「功能」页可配置，默认翻译）。 */
+/** 点击工具栏图标或 Alt+1 打开 popup 时默认定位的 Tab（在设置页「通用」配置，默认翻译；已移除的 Tab 视为默认）。 */
 export const defaultPopupTab = storage.defineItem<string>('local:defaultPopupTab', {
   fallback: 'translate',
 })
 
 /* -------------------------------- 跨设备同步 -------------------------------- */
 
-/** 同步镜像的运行状态（后台写入，「功能」页展示） */
+/** 同步镜像的运行状态（后台写入，设置页「通用」展示） */
 export interface SyncStatus {
   state: 'idle' | 'syncing' | 'ok' | 'error'
   /** 失败原因（中文，可直接展示） */

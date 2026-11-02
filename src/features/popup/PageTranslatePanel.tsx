@@ -1,26 +1,15 @@
 import { useEffect, useState } from 'react'
 
-import LlmConfigForm from '@/features/translate/LlmConfigForm'
-import { isLlmConfigReady, requiresApiKey, type LlmConfig } from '@/features/translate/llm-config'
+import { isLlmUsable } from '@/features/translate/llm-config'
 import { TARGET_LANGUAGE_OPTIONS } from '@/features/translate/languages'
-import {
-  describeHoverMode,
-  DISPLAY_MODE_OPTIONS,
-  HOVER_MODE_OPTIONS,
-  PROVIDER_OPTIONS,
-} from '@/features/translate/ui-options'
+import { PROVIDER_OPTIONS } from '@/features/translate/ui-options'
 import { sendTabRequest } from '@/utils/messaging'
 import {
-  hoverTranslateMode,
   translateAutoHosts,
-  translateDisplayMode,
   translateLlmApiKey,
   translateLlmConfig,
   translateProvider,
   translateTargetLang,
-  translateUnderline,
-  type HoverTranslateMode,
-  type TranslateDisplayMode,
   type TranslateProvider,
 } from '@/utils/settings'
 import type { TranslateTargetSetting } from '@/features/translate/languages'
@@ -28,71 +17,20 @@ import { useStorageItem } from '@/utils/useStorageItem'
 import Button from '@/ui/Button'
 import Select from '@/ui/Select'
 import Switch from '@/ui/Switch'
-import Tabs from '@/ui/Tabs'
 import { getActiveHostname } from '@/utils/tabs'
 
-function openOptionsPage() {
-  void browser.runtime.openOptionsPage()
-  window.close()
-}
-
-/** AI 配置是否可用：地址、模型已填；非本地服务还需要 API Key */
-function isLlmUsable(config: LlmConfig, apiKey: string): boolean {
-  return isLlmConfigReady(config) && (Boolean(apiKey.trim()) || !requiresApiKey(config.baseUrl))
-}
-
-function describeLlmService(config: LlmConfig): string {
-  try {
-    return `${config.model} · ${new URL(config.baseUrl).hostname}`
-  } catch {
-    return config.model
-  }
-}
-
-/** 引擎为 AI 大模型时的内联配置区：未配置时直接展开表单，已配置时折叠为摘要 */
-function LlmPanel({ needsSetup }: { needsSetup: boolean }) {
-  const [config] = useStorageItem(translateLlmConfig)
-  const [editing, setEditing] = useState(false)
-  const expanded = needsSetup || editing
-
-  return (
-    <div className='rounded-lg border border-indigo-100 bg-indigo-50/40 p-2.5'>
-      <div className='flex items-center justify-between gap-2'>
-        <div className='flex min-w-0 flex-col'>
-          <span className='text-xs font-medium text-slate-700'>AI 模型配置</span>
-          <span
-            className={`truncate text-[11px] ${needsSetup ? 'text-amber-600' : 'text-slate-400'}`}
-          >
-            {needsSetup ? '填写接口地址、模型和 API Key 后即可使用' : describeLlmService(config)}
-          </span>
-        </div>
-        {!needsSetup && (
-          <button
-            type='button'
-            onClick={() => setEditing((value) => !value)}
-            className='shrink-0 text-xs text-indigo-500 transition-colors hover:text-indigo-700'
-          >
-            {editing ? '收起' : '修改'}
-          </button>
-        )}
-      </div>
-      {expanded && (
-        <div className='mt-2.5 border-t border-indigo-100 pt-2.5'>
-          <LlmConfigForm compact onSaved={() => setEditing(false)} />
-        </div>
-      )}
-    </div>
-  )
+/** 打开设置页的指定分区（如 #translate、#models），并关闭 popup */
+function openOptionsSection(section: string) {
+  void browser.tabs
+    .create({ url: browser.runtime.getURL(`/options.html#${section}`) })
+    .finally(() => window.close())
 }
 
 /** popup「翻译」页的整页翻译面板 */
 export default function PageTranslatePanel() {
   const [provider, setProvider] = useStorageItem(translateProvider)
   const [target, setTarget] = useStorageItem(translateTargetLang)
-  const [displayMode, setDisplayMode] = useStorageItem(translateDisplayMode)
-  const [hoverMode, setHoverMode] = useStorageItem(hoverTranslateMode)
   const [autoHosts, setAutoHosts] = useStorageItem(translateAutoHosts)
-  const [underline, setUnderline] = useStorageItem(translateUnderline)
   const [llmConfig] = useStorageItem(translateLlmConfig)
   const [llmApiKey] = useStorageItem(translateLlmApiKey)
 
@@ -136,7 +74,7 @@ export default function PageTranslatePanel() {
         <span className='text-sm font-medium text-slate-800'>网页翻译</span>
         <button
           type='button'
-          onClick={openOptionsPage}
+          onClick={() => openOptionsSection('translate')}
           className='text-xs text-slate-400 transition-colors hover:text-indigo-600'
         >
           更多设置 ↗
@@ -162,40 +100,22 @@ export default function PageTranslatePanel() {
         </label>
       </div>
 
-      {provider === 'llm' && <LlmPanel needsSetup={llmMissing} />}
-
-      <div className='flex items-center justify-between gap-2'>
-        <span className='text-xs text-slate-500'>展示方式</span>
-        <Tabs
-          value={displayMode}
-          tabs={DISPLAY_MODE_OPTIONS}
-          onChange={(value) => setDisplayMode(value as TranslateDisplayMode)}
-        />
-      </div>
-
-      <div className='flex items-center justify-between gap-2'>
-        <div className='flex min-w-0 flex-col'>
-          <span className='text-xs text-slate-500'>译文下划线</span>
-          <span className='truncate text-[11px] text-slate-400'>用虚线标出译文，方便区分原文</span>
-        </div>
-        <Switch checked={underline} onChange={setUnderline} />
-      </div>
-
-      <div className='flex items-center justify-between gap-2'>
-        <div className='flex min-w-0 flex-col'>
-          <span className='text-xs text-slate-500'>悬停翻译</span>
-          <span className='truncate text-[11px] text-slate-400'>
-            {describeHoverMode(hoverMode)}
+      {provider === 'llm' && (
+        <button
+          type='button'
+          onClick={() => openOptionsSection('models')}
+          className={`flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors ${
+            llmMissing
+              ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+              : 'bg-indigo-50/60 text-slate-500 hover:bg-indigo-50'
+          }`}
+        >
+          <span className='truncate'>
+            {llmMissing ? '还没有配置翻译模型，AI 翻译暂不可用' : `翻译模型：${llmConfig.model}`}
           </span>
-        </div>
-        <Select
-          value={hoverMode}
-          options={HOVER_MODE_OPTIONS}
-          placement='top'
-          onChange={(value) => setHoverMode(value as HoverTranslateMode)}
-          className='w-[132px] shrink-0'
-        />
-      </div>
+          <span className='shrink-0 text-indigo-600'>{llmMissing ? '去配置 ↗' : '修改 ↗'}</span>
+        </button>
+      )}
 
       <div className='flex items-center justify-between gap-2'>
         <div className='flex min-w-0 flex-col'>

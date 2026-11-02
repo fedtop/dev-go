@@ -26,7 +26,38 @@ const DEFAULT_ACTION_OPTIONS: Array<{ value: NetworkScenarioDefaultAction; label
   { value: 'proxy', label: '走代理' },
 ]
 
+/**
+ * 自动模式下「当前站点走代理」的开关：已被代理域名（含父域名、通配）覆盖时为已开启，
+ * 关闭时移除所有覆盖条目。popup 与设置页共用。
+ */
+export function useScenarioHostProxy(
+  currentHost: string,
+  syncProxyIfActive: () => Promise<void>,
+  onHostProxied?: (host: string) => void,
+) {
+  const [proxyList, setProxyList] = useStorageItem(networkScenarioProxyList)
+  const coveringEntries = currentHost ? findCoveringEntries(proxyList, currentHost) : []
+  const proxied = coveringEntries.length > 0
+
+  /** 返回给用户看的结果说明 */
+  const toggle = async (): Promise<string> => {
+    if (!currentHost) return ''
+    if (proxied) {
+      setProxyList(proxyList.filter((item) => !coveringEntries.includes(item)))
+      await syncProxyIfActive().catch(() => undefined)
+      return `已移除 ${coveringEntries.join('、')}`
+    }
+    setProxyList([...proxyList, currentHost])
+    onHostProxied?.(currentHost)
+    await syncProxyIfActive().catch(() => undefined)
+    return `${currentHost} 及其子域名将走代理`
+  }
+
+  return { proxied, toggle }
+}
+
 interface ScenarioRulesSectionProps {
+  /** 当前站点（为空时不显示「当前站点走代理」按钮，如设置页） */
   currentHost: string
   disabled: boolean
   /** 当前站点加入代理列表后回调（父级据此把它移出绕过列表，绕过列表优先级更高） */
@@ -56,8 +87,7 @@ export default function ScenarioRulesSection({
     if (!editing) setText(proxyList.join('\n'))
   }, [proxyList, editing])
 
-  const coveringEntries = currentHost ? findCoveringEntries(proxyList, currentHost) : []
-  const currentHostProxied = coveringEntries.length > 0
+  const hostProxy = useScenarioHostProxy(currentHost, syncProxyIfActive, onHostProxied)
 
   const saveList = async (next: string[], message: string) => {
     setProxyList(next)
@@ -77,16 +107,7 @@ export default function ScenarioRulesSection({
   }
 
   const toggleCurrentHost = () => {
-    if (!currentHost) return
-    if (currentHostProxied) {
-      void saveList(
-        proxyList.filter((item) => !coveringEntries.includes(item)),
-        `已移除 ${coveringEntries.join('、')}`,
-      )
-      return
-    }
-    void saveList([...proxyList, currentHost], `${currentHost} 及其子域名将走代理`)
-    onHostProxied(currentHost)
+    void hostProxy.toggle().then(setStatus)
   }
 
   const changeDefaultAction = (value: string) => {
@@ -106,13 +127,15 @@ export default function ScenarioRulesSection({
             规则列表没收录、但需要走代理的站点
           </p>
         </div>
-        <Button
-          disabled={!currentHost || disabled}
-          onClick={toggleCurrentHost}
-          className='shrink-0 !px-2 !py-1 text-xs'
-        >
-          {currentHostProxied ? '取消代理' : '当前站点走代理'}
-        </Button>
+        {currentHost && (
+          <Button
+            disabled={disabled}
+            onClick={toggleCurrentHost}
+            className='shrink-0 !px-2 !py-1 text-xs'
+          >
+            {hostProxy.proxied ? '取消代理' : '当前站点走代理'}
+          </Button>
+        )}
       </div>
       <textarea
         value={text}

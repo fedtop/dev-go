@@ -1,99 +1,30 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
-import { buildBackup, restoreBackup } from '@/utils/backup'
-import { sendRuntimeMessage } from '@/utils/messaging'
-import {
-  defaultPopupTab,
-  enableGithubEnhance,
-  enableSelectionTranslate,
-  syncStatus,
-  unlockHosts,
-} from '@/utils/settings'
+import { useActiveTabId, useWebmcpTools } from '@/features/assistant/webmcp-client'
+import Button from '@/ui/Button'
+import Switch from '@/ui/Switch'
+import { unlockHosts } from '@/utils/settings'
 import { formatShortcut } from '@/utils/shortcut'
 import { getActiveHostname } from '@/utils/tabs'
 import { useStorageItem } from '@/utils/useStorageItem'
-import { POPUP_PAGES } from '@/features/popup/pages'
-import Button from '@/ui/Button'
-import Select from '@/ui/Select'
-import Switch from '@/ui/Switch'
 
-// 命令 name -> 展示名
-const COMMAND_LABELS: Record<string, string> = {
-  'open-default': '打开默认面板',
-  'open-assistant': '打开 WebMCP 助手',
-  'open-network': '打开网络面板',
-  'open-tools': '打开资源面板',
-  'inline-translate': '整页行间翻译',
-}
-
-/** chrome.storage.sync 总配额 */
-const SYNC_QUOTA_BYTES = 102_400
-
-function formatSyncTime(timestamp: number): string {
-  const date = new Date(timestamp)
-  const sameDay = date.toDateString() === new Date().toDateString()
-  return sameDay
-    ? date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-    : date.toLocaleString('zh-CN', {
-        month: 'numeric',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-}
-
-/** 跨设备同步：同步范围说明 + 状态 + 手动同步 */
-function SyncCard() {
-  const [status] = useStorageItem(syncStatus)
-  const [running, setRunning] = useState(false)
-
-  const syncing = running || status.state === 'syncing'
-  const usage =
-    status.bytesInUse !== undefined
-      ? `已用 ${(status.bytesInUse / 1024).toFixed(1)}KB / ${SYNC_QUOTA_BYTES / 1024}KB`
-      : ''
-
-  let summary = '尚未同步'
-  if (syncing) summary = '同步中…'
-  else if (status.state === 'error') summary = status.message || '同步失败'
-  else if (status.lastSyncedAt) summary = `上次同步 ${formatSyncTime(status.lastSyncedAt)}`
-
-  const syncNow = async () => {
-    setRunning(true)
-    try {
-      await sendRuntimeMessage({ type: 'sync-now' })
-    } finally {
-      setRunning(false)
-    }
-  }
-
+function Row({ title, desc, children }: { title: string; desc: ReactNode; children: ReactNode }) {
   return (
-    <div className='rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
-      <div className='flex items-center justify-between gap-3'>
-        <div className='flex min-w-0 flex-col'>
-          <span className='text-sm font-medium text-slate-800'>跨设备同步</span>
-          <span className='text-xs text-slate-400'>快捷导航、代理配置随浏览器账号同步</span>
-        </div>
-        <Button onClick={syncNow} disabled={syncing} className='shrink-0 !px-2 !py-1 text-xs'>
-          立即同步
-        </Button>
+    <div className='flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
+      <div className='flex min-w-0 flex-col'>
+        <span className='text-sm font-medium text-slate-800'>{title}</span>
+        <span className='truncate text-xs text-slate-400'>{desc}</span>
       </div>
-      <div className='mt-1.5 flex items-center justify-between gap-2 text-xs'>
-        <span
-          className={`truncate ${
-            status.state === 'error' && !syncing ? 'text-rose-500' : 'text-slate-500'
-          }`}
-        >
-          {summary}
-        </span>
-        {usage && <span className='shrink-0 text-slate-400'>{usage}</span>}
-      </div>
+      <div className='shrink-0'>{children}</div>
     </div>
   )
 }
 
-/** WebMCP 助手：在侧边栏里让 AI 调用网页通过 WebMCP 注册的工具（仅 Chrome 支持侧边栏） */
-function AssistantRow() {
+/**
+ * 打开侧边栏的按钮（仅 Chrome 支持侧边栏）。
+ * sidePanel.open 必须在点击的同步调用栈里执行，所以提前取好 windowId
+ */
+function OpenSidePanelButton() {
   const [windowId, setWindowId] = useState<number | null>(null)
 
   useEffect(() => {
@@ -101,26 +32,63 @@ function AssistantRow() {
     void browser.windows.getCurrent().then((win) => setWindowId(win.id ?? null))
   }, [])
 
-  if (!chrome.sidePanel) return null
-
-  // sidePanel.open 必须在点击的同步调用栈里执行，所以提前取好 windowId
   const open = () => {
-    if (windowId == null) return
-    void chrome.sidePanel.open({ windowId }).then(() => window.close())
+    if (windowId != null) void chrome.sidePanel.open({ windowId }).then(() => window.close())
   }
 
   return (
-    <div className='flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
-      <div className='flex min-w-0 flex-col'>
-        <span className='text-sm font-medium text-slate-800'>WebMCP 助手</span>
-        <span className='text-xs text-slate-400'>
-          在侧边栏让 AI 调用网页提供的工具，支持各家 Coding Plan
-        </span>
-      </div>
-      <Button onClick={open} disabled={windowId == null} className='shrink-0 !px-2 !py-1 text-xs'>
-        打开
-      </Button>
-    </div>
+    <Button
+      variant='primary'
+      onClick={open}
+      disabled={windowId == null}
+      className='!px-3 !py-1 text-xs'
+    >
+      打开
+    </Button>
+  )
+}
+
+function AssistantRow() {
+  const [shortcut, setShortcut] = useState('')
+
+  useEffect(() => {
+    void browser.commands
+      ?.getAll()
+      .then((commands) =>
+        setShortcut(commands.find((command) => command.name === 'open-assistant')?.shortcut ?? ''),
+      )
+  }, [])
+
+  return (
+    <Row
+      title='AI 助手'
+      desc={`侧边栏里总结网页、就网页内容提问${shortcut ? ` · ${formatShortcut(shortcut)}` : ''}`}
+    >
+      <OpenSidePanelButton />
+    </Row>
+  )
+}
+
+/** 当前网页的 WebMCP 工具：显示数量，AI 助手里可以调用或手动执行 */
+function WebmcpRow() {
+  const tabId = useActiveTabId()
+  const { tools, status } = useWebmcpTools(tabId)
+
+  const desc =
+    status === 'loading'
+      ? '正在检测当前网页…'
+      : status === 'unsupported'
+        ? '浏览器未开启 WebMCP（chrome://flags 启用 WebMCP for testing）'
+        : status === 'unavailable'
+          ? '当前页面不支持'
+          : tools.length
+            ? `当前网页提供 ${tools.length} 个工具，可让 AI 调用或手动执行`
+            : '当前网页没有提供工具'
+
+  return (
+    <Row title='网页工具（WebMCP）' desc={desc}>
+      <OpenSidePanelButton />
+    </Row>
   )
 }
 
@@ -130,7 +98,7 @@ function UnlockSiteRow() {
   const [hostname, setHostname] = useState('')
 
   useEffect(() => {
-    getActiveHostname().then(setHostname)
+    void getActiveHostname().then(setHostname)
   }, [])
 
   const enabled = Boolean(hostname) && hosts.includes(hostname)
@@ -140,200 +108,43 @@ function UnlockSiteRow() {
   }
 
   return (
-    <div className='flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
-      <div className='flex min-w-0 flex-col'>
-        <span className='text-sm font-medium text-slate-800'>解除本站复制限制</span>
-        <span className='truncate text-xs text-slate-400'>
-          {hostname
-            ? `${hostname}：放开复制、选择与右键${hosts.length > 1 ? `（共 ${hosts.length} 个站点已开启）` : ''}`
-            : '当前页面不支持'}
-        </span>
-      </div>
+    <Row
+      title='解除本站复制限制'
+      desc={
+        hostname
+          ? `${hostname}：放开复制、选择与右键${hosts.length > 1 ? `（共 ${hosts.length} 个站点已开启）` : ''}`
+          : '当前页面不支持'
+      }
+    >
       <Switch checked={enabled} onChange={toggle} disabled={!hostname} />
-    </div>
+    </Row>
   )
 }
 
-interface ShortcutItem {
-  name: string
-  label: string
-  shortcut: string
-}
-
+/** popup「功能」页：侧边栏入口与针对当前网站的开关，全局设置在设置页 */
 export default function FunctionPage() {
-  const [selectionOn, setSelectionOn] = useState(true)
-  const [githubOn, setGithubOn] = useState(true)
-  const [shortcuts, setShortcuts] = useState<ShortcutItem[]>([])
-  const [defaultTab, setDefaultTab] = useState('translate')
-  const [backupMsg, setBackupMsg] = useState('')
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const loadSettings = () => {
-    enableSelectionTranslate.getValue().then(setSelectionOn)
-    enableGithubEnhance.getValue().then(setGithubOn)
-    defaultPopupTab.getValue().then(setDefaultTab)
-  }
-
-  useEffect(() => {
-    loadSettings()
-
-    // 读取当前已注册的命令快捷键（按 COMMAND_LABELS 的声明顺序展示）
-    browser.commands?.getAll().then((cmds) => {
-      const byName = new Map(cmds.map((c) => [c.name, c]))
-      setShortcuts(
-        Object.keys(COMMAND_LABELS)
-          .filter((name) => byName.has(name))
-          .map((name) => ({
-            name,
-            label: COMMAND_LABELS[name],
-            shortcut: byName.get(name)!.shortcut || '',
-          })),
-      )
-    })
-  }, [])
-
-  const changeDefaultTab = (value: string) => {
-    setDefaultTab(value)
-    defaultPopupTab.setValue(value)
-  }
-
-  const toggleSelection = (checked: boolean) => {
-    setSelectionOn(checked)
-    enableSelectionTranslate.setValue(checked)
-  }
-
-  const toggleGithub = (checked: boolean) => {
-    setGithubOn(checked)
-    enableGithubEnhance.setValue(checked)
-  }
-
-  // Chrome 命令快捷键无法用代码修改，只能跳转到系统设置页让用户自定义
-  const openShortcutsPage = () => {
-    browser.tabs.create({ url: 'chrome://extensions/shortcuts' })
-  }
-
-  // 导出全部配置（含快捷导航、网络配置等）为 JSON 文件
-  const exportBackup = async () => {
-    try {
-      const backup = await buildBackup()
-      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `devgo-backup-${backup.exportedAt.slice(0, 10)}.json`
-      a.click()
-      URL.revokeObjectURL(url)
-      setBackupMsg('已导出')
-    } catch {
-      setBackupMsg('导出失败')
-    }
-  }
-
-  const importBackup = async (file: File) => {
-    try {
-      const { imported, skipped } = await restoreBackup(await file.text())
-      loadSettings()
-      setBackupMsg(
-        skipped.length > 0
-          ? `已导入 ${imported} 项（跳过 ${skipped.length} 项无效数据）`
-          : `已导入 ${imported} 项，立即生效`,
-      )
-    } catch (err) {
-      setBackupMsg(`导入失败：${err instanceof Error ? err.message : '未知错误'}`)
-    }
+  const openEnhanceSettings = () => {
+    void browser.tabs
+      .create({ url: browser.runtime.getURL('/options.html#enhance') })
+      .finally(() => window.close())
   }
 
   return (
     <div className='flex flex-col gap-2.5'>
-      <div className='flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
-        <div className='flex flex-col'>
-          <span className='text-sm font-medium text-slate-800'>默认打开 Tab</span>
-          <span className='text-xs text-slate-400'>点击工具栏图标 / Alt+1 时定位的页面</span>
-        </div>
-        <Select
-          value={defaultTab}
-          options={POPUP_PAGES}
-          onChange={changeDefaultTab}
-          className='w-24'
-        />
-      </div>
-
-      <div className='flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
-        <div className='flex flex-col'>
-          <span className='text-sm font-medium text-slate-800'>划词翻译</span>
-          <span className='text-xs text-slate-400'>选中文本后显示翻译按钮</span>
-        </div>
-        <Switch checked={selectionOn} onChange={toggleSelection} />
-      </div>
-
-      <div className='flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
-        <div className='flex flex-col'>
-          <span className='text-sm font-medium text-slate-800'>GitHub 快捷在线编辑</span>
-          <span className='text-xs text-slate-400'>代码页快捷键 , 打开 github1s</span>
-        </div>
-        <Switch checked={githubOn} onChange={toggleGithub} />
-      </div>
-
-      <AssistantRow />
-
+      {chrome.sidePanel && (
+        <>
+          <AssistantRow />
+          <WebmcpRow />
+        </>
+      )}
       <UnlockSiteRow />
-
-      {/* 快捷键 */}
-      <div className='rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
-        <div className='mb-2 flex items-center justify-between'>
-          <span className='text-sm font-medium text-slate-800'>快捷键</span>
-          <Button onClick={openShortcutsPage} className='!px-2 !py-1 text-xs'>
-            自定义 ↗
-          </Button>
-        </div>
-        <div className='flex flex-col gap-1.5'>
-          {shortcuts.map((s) => (
-            <div key={s.name} className='flex items-center justify-between text-xs'>
-              <span className='text-slate-500'>{s.label}</span>
-              {s.shortcut ? (
-                <kbd className='rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600'>
-                  {formatShortcut(s.shortcut)}
-                </kbd>
-              ) : (
-                <span className='text-[10px] text-slate-400'>未设置</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <SyncCard />
-
-      {/* 数据备份：导出 / 导入全部配置 */}
-      <div className='rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
-        <div className='flex items-center justify-between gap-3'>
-          <div className='flex flex-col'>
-            <span className='text-sm font-medium text-slate-800'>数据备份</span>
-            <span className='text-xs text-slate-400'>导出 / 导入全部配置</span>
-          </div>
-          <div className='flex items-center gap-1.5'>
-            <Button onClick={exportBackup} className='!px-2 !py-1 text-xs'>
-              导出
-            </Button>
-            <Button onClick={() => fileInputRef.current?.click()} className='!px-2 !py-1 text-xs'>
-              导入
-            </Button>
-          </div>
-        </div>
-        {backupMsg && <div className='mt-1.5 text-xs text-slate-500'>{backupMsg}</div>}
-        <input
-          ref={fileInputRef}
-          type='file'
-          accept='.json,application/json'
-          className='hidden'
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            if (file) importBackup(file)
-            // 清空选择，同一文件可重复导入
-            e.target.value = ''
-          }}
-        />
-      </div>
+      <button
+        type='button'
+        onClick={openEnhanceSettings}
+        className='self-end text-xs text-slate-400 transition-colors hover:text-indigo-600'
+      >
+        管理全部网站与更多功能 ↗
+      </button>
     </div>
   )
 }

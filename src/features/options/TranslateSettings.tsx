@@ -1,6 +1,5 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 
-import LlmConfigForm from '@/features/translate/LlmConfigForm'
 import { TARGET_LANGUAGE_OPTIONS } from '@/features/translate/languages'
 import type { TranslateTargetSetting } from '@/features/translate/languages'
 import {
@@ -9,8 +8,10 @@ import {
   HOVER_MODE_OPTIONS,
   PROVIDER_OPTIONS,
 } from '@/features/translate/ui-options'
+import { isLlmConfigReady } from '@/features/translate/llm-config'
 import {
   hoverTranslateMode,
+  translateLlmConfig,
   translateAutoHosts,
   translateDisplayMode,
   translateProvider,
@@ -26,28 +27,14 @@ import Select from '@/ui/Select'
 import Switch from '@/ui/Switch'
 import Tabs from '@/ui/Tabs'
 
-const INPUT_CLASS =
-  'popup-field w-full rounded-lg border px-3 py-2 text-sm text-slate-700 outline-none transition-colors placeholder:text-slate-400'
+import { Card, INPUT_CLASS, Row, SectionHeader } from './layout'
 
-function Card({ title, desc, children }: { title: string; desc?: string; children: ReactNode }) {
+/** 跳到「AI 模型」分区 */
+function ModelLink({ label }: { label: string }) {
   return (
-    <section className='rounded-xl border border-slate-200 bg-white/90 p-5 shadow-sm'>
-      <h2 className='text-base font-semibold text-slate-800'>{title}</h2>
-      {desc && <p className='mt-1 text-xs leading-relaxed text-slate-400'>{desc}</p>}
-      <div className='mt-4 flex flex-col gap-4'>{children}</div>
-    </section>
-  )
-}
-
-function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
-  return (
-    <div className='flex items-center justify-between gap-6'>
-      <div className='flex min-w-0 flex-col'>
-        <span className='text-sm text-slate-700'>{label}</span>
-        {hint && <span className='text-xs text-slate-400'>{hint}</span>}
-      </div>
-      <div className='shrink-0'>{children}</div>
-    </div>
+    <a href='#models' className='ml-1.5 text-indigo-600 hover:underline'>
+      {label} →
+    </a>
   )
 }
 
@@ -57,10 +44,31 @@ function GeneralSettings() {
   const [displayMode, setDisplayMode] = useStorageItem(translateDisplayMode)
   const [underline, setUnderline] = useStorageItem(translateUnderline)
   const [hoverMode, setHoverMode] = useStorageItem(hoverTranslateMode)
+  const [llmConfig] = useStorageItem(translateLlmConfig)
+  const llmReady = isLlmConfigReady(llmConfig)
 
   return (
     <Card title='网页翻译' desc='整页双语对照翻译：译文插在原文段落之后，随页面滚动按需翻译。'>
-      <Row label='翻译引擎' hint='AI 大模型需在下方配置接口'>
+      <Row
+        label='翻译引擎'
+        hint={
+          provider === 'llm' ? (
+            <>
+              {llmReady ? (
+                <>使用翻译模型 {llmConfig.model}</>
+              ) : (
+                <span className='text-amber-600'>还没有配置翻译模型，AI 翻译暂时不可用</span>
+              )}
+              <ModelLink label={llmReady ? '修改' : '去配置'} />
+            </>
+          ) : (
+            <>
+              谷歌、微软免费可用；想用大模型翻译可配置自己的模型
+              <ModelLink label='配置 AI 模型' />
+            </>
+          )
+        }
+      >
         <Select
           value={provider}
           options={PROVIDER_OPTIONS}
@@ -94,17 +102,6 @@ function GeneralSettings() {
           className='w-44'
         />
       </Row>
-    </Card>
-  )
-}
-
-function LlmSettings() {
-  return (
-    <Card
-      title='AI 大模型翻译'
-      desc='支持任意 OpenAI 兼容接口（POST /chat/completions，流式输出）。也可以直接在弹窗的翻译面板里配置。'
-    >
-      <LlmConfigForm />
     </Card>
   )
 }
@@ -166,12 +163,12 @@ function AutoHostsSettings() {
   )
 }
 
-/** 选项页：翻译设置 */
+/** 设置页：翻译 */
 export default function TranslateSettings() {
   return (
     <div className='flex flex-col gap-5'>
+      <SectionHeader title='翻译' desc='整页双语翻译、悬停翻译与总是翻译的网站' />
       <GeneralSettings />
-      <LlmSettings />
       <AutoHostsSettings />
     </div>
   )

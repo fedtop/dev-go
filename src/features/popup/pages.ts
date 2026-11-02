@@ -1,4 +1,4 @@
-/** popup 面板的 Tab 元数据（App 渲染与「功能」页默认 Tab 配置共用） */
+/** popup 面板的 Tab 元数据（App 渲染与设置页「默认打开的页」共用） */
 
 export interface PopupPage {
   value: string

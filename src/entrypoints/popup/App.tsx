@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { SHIP_NAME, SITE_URL } from '@/utils/constants'
+import { sendRuntimeMessage } from '@/utils/messaging'
 import FunctionPage from '@/features/popup/FunctionPage'
 import NetworkPage from '@/features/popup/NetworkPage'
 import ToolsPage from '@/features/popup/ToolsPage'
@@ -128,7 +129,10 @@ export default function App() {
           </span>
           <span className='text-sm font-semibold tracking-tight text-slate-800'>{SHIP_NAME}</span>
         </div>
-        <Tabs value={active} tabs={POPUP_PAGES} onChange={handleTabChange} />
+        <div className='flex items-center gap-2'>
+          <Tabs value={active} tabs={POPUP_PAGES} onChange={handleTabChange} />
+          <SettingsButton />
+        </div>
       </header>
 
       {/* 内容区 */}
@@ -141,26 +145,76 @@ export default function App() {
 
       {/* 底部栏 */}
       <footer className='popup-footer flex shrink-0 items-center justify-between px-4 py-2 text-xs text-slate-400'>
-        <span>
-          快捷键{' '}
+        <button
+          type='button'
+          title='修改快捷键'
+          onClick={openShortcutSettings}
+          className='group flex items-center gap-1 transition-colors hover:text-indigo-600'
+        >
+          快捷键
           {activeShortcut ? (
-            <kbd className='popup-kbd rounded px-1.5 py-0.5 text-[10px] text-slate-500'>
+            <kbd className='popup-kbd rounded px-1.5 py-0.5 text-[10px] text-slate-500 group-hover:text-indigo-600'>
               {formatShortcut(activeShortcut)}
             </kbd>
           ) : (
-            <span className='text-[10px] text-slate-400'>未设置</span>
+            <span className='text-[10px] text-slate-400 group-hover:text-indigo-600'>去设置</span>
           )}
-        </span>
-        <a
-          href={SITE_URL}
-          target='_blank'
-          rel='noreferrer'
-          className='transition-colors hover:text-indigo-600'
-        >
-          GitHub ↗
-        </a>
+          <span className='text-[10px] opacity-0 transition-opacity group-hover:opacity-100'>
+            ↗
+          </span>
+        </button>
+        <div className='flex items-center gap-3'>
+          <a
+            href={SITE_URL}
+            target='_blank'
+            rel='noreferrer'
+            className='transition-colors hover:text-indigo-600'
+          >
+            GitHub ↗
+          </a>
+        </div>
       </footer>
     </div>
+  )
+}
+
+/**
+ * 打开快捷键设置：Chrome 有专门的快捷键页（扩展无权自行修改快捷键）；
+ * Firefox 没有可直接打开的地址，退回设置页的快捷键说明。
+ */
+function openShortcutSettings() {
+  const opening = import.meta.env.FIREFOX
+    ? browser.tabs.create({ url: browser.runtime.getURL('/options.html#general') })
+    : browser.tabs.create({ url: 'chrome://extensions/shortcuts' })
+  void opening.finally(() => window.close())
+}
+
+/** 打开设置页（全局设置都在设置页，弹窗只放当前页面相关的操作） */
+function SettingsButton() {
+  return (
+    <button
+      type='button'
+      title='设置'
+      aria-label='打开设置'
+      onClick={() => {
+        void sendRuntimeMessage({ type: 'open-options-page' }).finally(() => window.close())
+      }}
+      className='popup-settings-button group flex h-8 w-8 items-center justify-center rounded-xl text-indigo-600 transition-colors hover:!bg-indigo-600 hover:text-white'
+    >
+      <svg
+        viewBox='0 0 24 24'
+        fill='none'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
+        strokeLinejoin='round'
+        className='h-[18px] w-[18px] transition-transform duration-500 group-hover:rotate-90'
+        aria-hidden='true'
+      >
+        <path d='M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z' />
+        <circle cx='12' cy='12' r='3' />
+      </svg>
+    </button>
   )
 }
 

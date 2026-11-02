@@ -4,6 +4,7 @@
  * MV3 的 Service Worker 随时可能被回收后重启，所有事件监听都必须在这里同步注册，
  * 否则唤醒 SW 的那个事件会丢失。
  */
+import { testAssistant } from '@/background/assistant'
 import { createContextMenus, registerCommands } from '@/background/commands'
 import {
   proxyCorsRequest,
@@ -58,6 +59,7 @@ export default defineBackground(() => {
     lookup: (message) => lookupWord(message.word),
     'test-translate': (message) => testTranslate(message),
     'list-llm-models': (message) => listLlmModels(message.baseUrl, message.apiKey),
+    'test-assistant': (message) => testAssistant(message.llm, message.apiKey),
     'sync-now': () => syncNow(),
     'open-options-page': () =>
       browser.runtime.openOptionsPage().then(

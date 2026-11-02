@@ -14,7 +14,13 @@ import {
   type LlmModelListResult,
   type TranslateTestResult,
 } from '@/utils/messaging'
-import { translateLlmApiKey, translateLlmConfig, translateProvider } from '@/utils/settings'
+import {
+  assistantLlmApiKey,
+  assistantLlmConfig,
+  translateLlmApiKey,
+  translateLlmConfig,
+  translateProvider,
+} from '@/utils/settings'
 import { useStorageItem } from '@/utils/useStorageItem'
 import Button from '@/ui/Button'
 import Combobox, { type ComboboxOption } from '@/ui/Combobox'
@@ -33,6 +39,11 @@ interface LlmConfigFormProps {
   compact?: boolean
   /** 保存成功后回调（popup 用来收起表单） */
   onSaved?: () => void
+  /**
+   * 配置用途：translate 为 AI 翻译（保存时可设为翻译引擎）；
+   * assistant 为 WebMCP 助手（独立存储，未保存过时用翻译配置预填，测试会校验工具调用能力）
+   */
+  target?: 'translate' | 'assistant'
 }
 
 function Field({
@@ -65,10 +76,28 @@ function Field({
  * AI 翻译（OpenAI 兼容接口）配置表单：popup 翻译面板与选项页共用。
  * 编辑的是本地草稿，点击保存才写入存储 —— 避免每次按键都让已打开的页面重启翻译。
  */
-export default function LlmConfigForm({ compact = false, onSaved }: LlmConfigFormProps) {
-  const [savedConfig, setSavedConfig, configLoaded] = useStorageItem(translateLlmConfig)
-  const [savedKey, setSavedKey, keyLoaded] = useStorageItem(translateLlmApiKey)
+export default function LlmConfigForm({
+  compact = false,
+  onSaved,
+  target = 'translate',
+}: LlmConfigFormProps) {
+  const forAssistant = target === 'assistant'
+  const [translateConfig, setTranslateConfig, translateConfigLoaded] =
+    useStorageItem(translateLlmConfig)
+  const [translateKey, setTranslateKey, translateKeyLoaded] = useStorageItem(translateLlmApiKey)
+  const [assistantConfig, setAssistantConfig, assistantConfigLoaded] =
+    useStorageItem(assistantLlmConfig)
+  const [assistantKey, setAssistantKey, assistantKeyLoaded] = useStorageItem(assistantLlmApiKey)
   const [provider, setProvider] = useStorageItem(translateProvider)
+
+  /** 助手从未保存过配置时，用翻译的 AI 配置预填（同一个服务商通常两边都能用） */
+  const assistantPrefilled = forAssistant && assistantConfigLoaded && assistantConfig === null
+  const savedConfig = forAssistant ? (assistantConfig ?? translateConfig) : translateConfig
+  const savedKey = forAssistant ? (assistantPrefilled ? translateKey : assistantKey) : translateKey
+  const configLoaded = forAssistant
+    ? assistantConfigLoaded && translateConfigLoaded
+    : translateConfigLoaded
+  const keyLoaded = forAssistant ? assistantKeyLoaded && translateKeyLoaded : translateKeyLoaded
 
   const [draft, setDraft] = useState<LlmConfig>(savedConfig)
   const [apiKey, setApiKey] = useState('')
@@ -150,8 +179,12 @@ export default function LlmConfigForm({ compact = false, onSaved }: LlmConfigFor
     }
     return remote.models.length ? `共 ${remote.models.length} 个可用模型，可输入筛选` : undefined
   })()
-  const dirty = JSON.stringify(draft) !== JSON.stringify(savedConfig) || apiKey !== savedKey
-  const isActiveEngine = provider === 'llm'
+  const dirty =
+    assistantPrefilled ||
+    JSON.stringify(draft) !== JSON.stringify(savedConfig) ||
+    apiKey !== savedKey
+  // 助手配置与翻译引擎无关，视作「已生效」，按钮只显示「保存」
+  const isActiveEngine = forAssistant || provider === 'llm'
 
   const resetFeedback = () => {
     setTestResult(null)
@@ -172,8 +205,16 @@ export default function LlmConfigForm({ compact = false, onSaved }: LlmConfigFor
   }
 
   const save = () => {
-    setSavedConfig({ ...draft, baseUrl: draft.baseUrl.trim(), model: draft.model.trim() })
-    setSavedKey(apiKey.trim())
+    const nextConfig = { ...draft, baseUrl: draft.baseUrl.trim(), model: draft.model.trim() }
+    if (forAssistant) {
+      setAssistantConfig(nextConfig)
+      setAssistantKey(apiKey.trim())
+      setSavedTip('已保存')
+      onSaved?.()
+      return
+    }
+    setTranslateConfig(nextConfig)
+    setTranslateKey(apiKey.trim())
     if (!isActiveEngine) setProvider('llm')
     setSavedTip(isActiveEngine ? '已保存' : '已保存，并设为当前翻译引擎')
     onSaved?.()
@@ -182,12 +223,14 @@ export default function LlmConfigForm({ compact = false, onSaved }: LlmConfigFor
   const test = async () => {
     setTesting(true)
     setTestResult(null)
-    const result = await sendRuntimeMessage({
-      type: 'test-translate',
-      provider: 'llm',
-      llm: draft,
-      apiKey: apiKey.trim(),
-    })
+    const result = forAssistant
+      ? await sendRuntimeMessage({ type: 'test-assistant', llm: draft, apiKey: apiKey.trim() })
+      : await sendRuntimeMessage({
+          type: 'test-translate',
+          provider: 'llm',
+          llm: draft,
+          apiKey: apiKey.trim(),
+        })
     setTestResult(result)
     setTesting(false)
   }
@@ -265,11 +308,22 @@ export default function LlmConfigForm({ compact = false, onSaved }: LlmConfigFor
         </div>
       </Field>
 
+      {assistantPrefilled && (
+        <p className={`leading-relaxed text-slate-400 ${compact ? 'text-[11px]' : 'text-xs'}`}>
+          已用翻译的 AI 配置预填。助手需要模型支持工具调用，可改用 Coding Plan
+          等更强的模型，保存后生效。
+        </p>
+      )}
+
       {showPrompt ? (
         <Field
           label='自定义要求（可选）'
           compact={compact}
-          hint='追加到系统提示词末尾，例如术语表、语气风格：「技术文档风格；Token 不翻译」'
+          hint={
+            forAssistant
+              ? '追加到助手的系统提示词末尾，例如「回答尽量简短」「操作前先列出步骤」'
+              : '追加到系统提示词末尾，例如术语表、语气风格：「技术文档风格；Token 不翻译」'
+          }
         >
           <textarea
             className={`${inputClass} resize-y ${compact ? 'min-h-14' : 'min-h-20'}`}
@@ -283,7 +337,7 @@ export default function LlmConfigForm({ compact = false, onSaved }: LlmConfigFor
           onClick={() => setShowPrompt(true)}
           className='self-start text-[11px] text-slate-400 transition-colors hover:text-indigo-600'
         >
-          + 自定义要求（术语表、语气风格）
+          {forAssistant ? '+ 自定义要求' : '+ 自定义要求（术语表、语气风格）'}
         </button>
       )}
 
@@ -310,11 +364,19 @@ export default function LlmConfigForm({ compact = false, onSaved }: LlmConfigFor
       {testResult && (
         <div
           className={`rounded-lg px-2.5 py-1.5 text-xs leading-relaxed ${
-            testResult.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+            !testResult.ok
+              ? 'bg-rose-50 text-rose-700'
+              : testResult.warning
+                ? 'bg-amber-50 text-amber-700'
+                : 'bg-emerald-50 text-emerald-700'
           }`}
         >
           {testResult.ok ? (
-            `连接成功：Hello, world! → ${testResult.sample}`
+            forAssistant ? (
+              testResult.sample
+            ) : (
+              `连接成功：Hello, world! → ${testResult.sample}`
+            )
           ) : (
             <span title={testResult.error?.message}>
               连接失败：

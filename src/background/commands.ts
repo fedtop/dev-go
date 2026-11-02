@@ -21,6 +21,7 @@ const COMMAND_TO_TAB: Record<string, PopupShortcutTab> = {
   'open-tools': 'tools',
 }
 const INLINE_TRANSLATE_ID = 'inline-translate'
+const OPEN_ASSISTANT_COMMAND = 'open-assistant'
 
 function isPopupShortcutResponse(value: unknown): value is PopupShortcutResponse {
   return (
@@ -90,7 +91,17 @@ export function registerCommands() {
     }
   })
 
-  browser.commands.onCommand.addListener((command) => {
+  browser.commands.onCommand.addListener((command, tab) => {
+    if (command === OPEN_ASSISTANT_COMMAND) {
+      // sidePanel.open 必须在用户手势（快捷键）的同步调用栈里执行，不能先 await
+      if (tab?.windowId != null) {
+        chrome.sidePanel?.open({ windowId: tab.windowId }).catch((error: unknown) => {
+          console.warn('[DevGo] open side panel failed:', error)
+        })
+      }
+      return
+    }
+
     if (command === INLINE_TRANSLATE_ID) {
       void sendTabMessage({ type: 'translate-page' })
       return

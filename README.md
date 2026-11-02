@@ -21,6 +21,10 @@ DevGo 是一个面向开发者的浏览器效率扩展，聚焦翻译、GitHub �
 - 开发调试能力
   - 可开关的 CORS 调试辅助（针对网页 XHR/fetch 响应补充 CORS 头）
   - 网络面板：直连 / 系统代理 / 自动模式 / 代理模式快速切换，自动模式、代理模式与自定义代理模式分别保存代理服务器和绕过列表，自动模式支持 AutoProxy 规则列表（定时自动更新）、自定义代理域名，以及未命中规则时直连或走代理
+- WebMCP 助手（侧边栏，Alt+2）
+  - 自动列出网页通过 WebMCP 注册的工具（含 iframe），可手动填参数执行
+  - 让 AI 自动调用网页工具完成任务，支持各家 OpenAI 兼容服务与 Coding Plan；未声明只读的工具执行前确认
+  - 需要 Chrome 150+ 并在 chrome://flags 开启「WebMCP for testing」
 - 新标签页
   - 搜索引擎切换 + bang 语法
   - 快捷导航增删改拖拽排序
@@ -82,6 +86,8 @@ src/
 │  ├─ selection.content.tsx# 划词翻译 UI
 │  ├─ github.content.tsx   # GitHub 增强 UI
 │  ├─ unlock.content.ts    # 按站点解除复制/选择限制
+│  ├─ webmcp.content.ts    # WebMCP 桥：读取 / 执行网页注册的工具
+│  ├─ sidepanel/           # 侧边栏：WebMCP 助手
 │  ├─ cors-bridge.content.ts
 │  ├─ cors-proxy.ts
 │  ├─ popup/

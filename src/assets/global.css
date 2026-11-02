@@ -96,6 +96,21 @@ html.popup-page #root {
   overflow: hidden;
 }
 
+/* 侧边栏（WebMCP 助手）：铺满面板高度，内部各区域自行滚动 */
+html.sidepanel-page,
+html.sidepanel-page body,
+html.sidepanel-page #root {
+  height: 100% !important;
+  overflow: hidden;
+}
+
+.sidepanel-shell {
+  background:
+    radial-gradient(circle at 12% -8%, rgba(59, 130, 246, 0.12), transparent 34%),
+    radial-gradient(circle at 92% 8%, rgba(236, 72, 153, 0.08), transparent 30%),
+    linear-gradient(180deg, #f8fbff 0%, #eef3fb 100%);
+}
+
 /* 细滚动条 */
 *::-webkit-scrollbar {
   width: 6px;

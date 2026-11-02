@@ -128,6 +128,8 @@ export interface TranslateTestRequest {
 
 export interface TranslateTestResult {
   ok: boolean
+  /** 连通但有隐患（如助手模型未调用工具），界面以警告色展示 sample */
+  warning?: boolean
   /** 测试句的译文 */
   sample?: string
   /** 失败原因：code 用于界面给出友好提示，message 为原始信息（仅供排查） */
@@ -184,6 +186,8 @@ export type RuntimeMessage =
   | { type: 'lookup'; word: string }
   | ({ type: 'test-translate' } & TranslateTestRequest)
   | { type: 'list-llm-models'; baseUrl: string; apiKey: string }
+  /** 测试 WebMCP 助手的模型配置（连通性 + 是否支持工具调用） */
+  | { type: 'test-assistant'; llm: LlmConfig; apiKey: string }
   /** 立即执行一次跨设备同步对账 */
   | { type: 'sync-now' }
   | { type: 'open-options-page' }
@@ -209,6 +213,7 @@ export interface RuntimeResponseMap {
   lookup: DictResult | null
   'test-translate': TranslateTestResult
   'list-llm-models': LlmModelListResult
+  'test-assistant': TranslateTestResult
   'sync-now': SyncStatus
   'open-options-page': { ok: boolean }
   'sync-cors-bypass': boolean
@@ -230,6 +235,12 @@ export type TabMessage =
   | { type: 'get-page-translation-state' }
   | { type: 'tip'; msg: string }
   | { type: 'collect-media-resources' }
+  /** 请求各 frame 上报 WebMCP 工具（不指定 frameId 时广播到所有 frame，结果以 WebmcpFrameReport 回传） */
+  | { type: 'webmcp-list' }
+  /** 在指定 frame 执行 WebMCP 工具 */
+  | { type: 'webmcp-execute'; name: string; args: unknown }
+  /** 读取跨文档工具（表单提交跳转后）写在结果页 JSON-LD 里的结果 */
+  | { type: 'webmcp-read-result' }
 
 /** 内容脚本对 TabMessage 的响应（无响应的消息不在此列） */
 export interface TabResponseMap {
@@ -237,6 +248,48 @@ export interface TabResponseMap {
   'set-page-translation': PageTranslationState
   'get-page-translation-state': PageTranslationState
   'collect-media-resources': MediaResourceCandidate[]
+  'webmcp-execute': WebmcpExecuteResult
+  'webmcp-read-result': string | null
+}
+
+/* -------------------------------- WebMCP -------------------------------- */
+
+/** 网页通过 WebMCP 注册的工具（已序列化，可跨上下文传递） */
+export interface WebmcpTool {
+  name: string
+  description: string
+  /** 参数 JSON Schema；网页未声明时为 null */
+  inputSchema: unknown
+  /** 网页声明为只读（readOnlyHint）的工具执行前无需确认 */
+  readOnly: boolean
+  /** 网页声明的其他注解名（展示用） */
+  annotations: string[]
+}
+
+/** 内容脚本 → 扩展页面：某个 frame 当前的工具列表（frameId 取自 sender） */
+export interface WebmcpFrameReport {
+  type: 'webmcp-tools'
+  /** 浏览器是否开启了 WebMCP（chrome://flags 的「WebMCP for testing」） */
+  supported: boolean
+  url: string
+  title: string
+  tools: WebmcpTool[]
+}
+
+export function isWebmcpFrameReport(value: unknown): value is WebmcpFrameReport {
+  return (
+    typeof value === 'object' &&
+    value != null &&
+    (value as WebmcpFrameReport).type === 'webmcp-tools' &&
+    Array.isArray((value as WebmcpFrameReport).tools)
+  )
+}
+
+export interface WebmcpExecuteResult {
+  ok: boolean
+  /** 工具返回值（非字符串已 JSON 序列化）；null 表示没有返回值，可能触发了页面跳转 */
+  result?: string | null
+  error?: string
 }
 
 /** Background 处理消息时抛错的统一响应；sendRuntimeMessage 收到后还原为异常抛给调用方 */

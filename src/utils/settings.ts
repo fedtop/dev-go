@@ -75,6 +75,26 @@ export const translateLlmApiKey = storage.defineItem<string>('local:translateLlm
   fallback: '',
 })
 
+/* ------------------------------- WebMCP 助手 ------------------------------- */
+
+/**
+ * WebMCP 助手的 AI 配置（与翻译分开：翻译适合快而便宜的模型，助手需要支持工具调用的强模型）。
+ * 从未保存过时为 null，界面用翻译的配置预填。
+ */
+export const assistantLlmConfig = storage.defineItem<LlmConfig | null>('local:assistantLlmConfig', {
+  fallback: null,
+})
+
+/** WebMCP 助手 API Key：仅存本机，不参与备份导出 */
+export const assistantLlmApiKey = storage.defineItem<string>('local:assistantLlmApiKey', {
+  fallback: '',
+})
+
+/** 执行未标注只读的网页工具前先让用户确认（默认开启：工具可能提交表单、下单等） */
+export const assistantConfirmTools = storage.defineItem<boolean>('local:assistantConfirmTools', {
+  fallback: true,
+})
+
 /** 查词引擎：默认有道（含音标、释义最全） */
 export const lookupProvider = storage.defineItem<LookupProvider>('local:lookupProvider', {
   fallback: 'youdao',

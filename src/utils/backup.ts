@@ -30,6 +30,8 @@ import {
   translateAutoHosts,
   translateDisplayMode,
   translateLlmConfig,
+  assistantLlmConfig,
+  assistantConfirmTools,
   translateProvider,
   translateTargetLang,
   translateUnderline,
@@ -54,7 +56,7 @@ interface BackupItem {
 /**
  * 参与备份的全部存储项（key 即备份文件里的字段名，保持稳定，勿随意改名）。
  * 不含 popupInitialTab（一次性运行时信号）、networkProxyManaged（本机代理接管标记，
- * 导入后是否接管浏览器代理应由用户在网络面板重新确认）和 translateLlmApiKey（密钥不落盘到备份文件）。
+ * 导入后是否接管浏览器代理应由用户在网络面板重新确认）和 translateLlmApiKey / assistantLlmApiKey（密钥不落盘到备份文件）。
  */
 const BACKUP_ITEMS: Record<string, BackupItem> = {
   translateProvider,
@@ -64,6 +66,8 @@ const BACKUP_ITEMS: Record<string, BackupItem> = {
   translateAutoHosts,
   hoverTranslateMode,
   translateLlmConfig,
+  assistantLlmConfig,
+  assistantConfirmTools,
   lookupProvider,
   enableSelectionTranslate,
   enableGithubEnhance,
@@ -89,6 +93,10 @@ const BACKUP_ITEMS: Record<string, BackupItem> = {
 
 /** 值与该项默认值的「形状」一致才允许导入（数组对数组、对象对对象、原始类型同 typeof） */
 function matchesShape(value: unknown, fallback: unknown): boolean {
+  // 可空对象项（如 assistantLlmConfig）：允许 null 或普通对象
+  if (fallback === null) {
+    return value === null || (typeof value === 'object' && !Array.isArray(value))
+  }
   if (Array.isArray(fallback)) return Array.isArray(value)
   if (fallback !== null && typeof fallback === 'object') {
     return value !== null && typeof value === 'object' && !Array.isArray(value)

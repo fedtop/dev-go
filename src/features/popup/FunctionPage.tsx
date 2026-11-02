@@ -20,6 +20,7 @@ import Switch from '@/ui/Switch'
 // 命令 name -> 展示名
 const COMMAND_LABELS: Record<string, string> = {
   'open-default': '打开默认面板',
+  'open-assistant': '打开 WebMCP 助手',
   'open-network': '打开网络面板',
   'open-tools': '打开资源面板',
   'inline-translate': '整页行间翻译',
@@ -87,6 +88,38 @@ function SyncCard() {
         </span>
         {usage && <span className='shrink-0 text-slate-400'>{usage}</span>}
       </div>
+    </div>
+  )
+}
+
+/** WebMCP 助手：在侧边栏里让 AI 调用网页通过 WebMCP 注册的工具（仅 Chrome 支持侧边栏） */
+function AssistantRow() {
+  const [windowId, setWindowId] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!chrome.sidePanel) return
+    void browser.windows.getCurrent().then((win) => setWindowId(win.id ?? null))
+  }, [])
+
+  if (!chrome.sidePanel) return null
+
+  // sidePanel.open 必须在点击的同步调用栈里执行，所以提前取好 windowId
+  const open = () => {
+    if (windowId == null) return
+    void chrome.sidePanel.open({ windowId }).then(() => window.close())
+  }
+
+  return (
+    <div className='flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
+      <div className='flex min-w-0 flex-col'>
+        <span className='text-sm font-medium text-slate-800'>WebMCP 助手</span>
+        <span className='text-xs text-slate-400'>
+          在侧边栏让 AI 调用网页提供的工具，支持各家 Coding Plan
+        </span>
+      </div>
+      <Button onClick={open} disabled={windowId == null} className='shrink-0 !px-2 !py-1 text-xs'>
+        打开
+      </Button>
     </div>
   )
 }
@@ -240,6 +273,8 @@ export default function FunctionPage() {
         </div>
         <Switch checked={githubOn} onChange={toggleGithub} />
       </div>
+
+      <AssistantRow />
 
       <UnlockSiteRow />
 

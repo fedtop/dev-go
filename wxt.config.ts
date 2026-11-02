@@ -71,6 +71,11 @@ export default defineConfig({
         suggested_key: { default: 'Alt+1' },
         description: '打开默认面板',
       },
+      // 在侧边栏打开 WebMCP 助手（Chrome 专有；Firefox 侧边栏由浏览器自身控制）
+      'open-assistant': {
+        suggested_key: { default: 'Alt+2' },
+        description: '打开 WebMCP 助手（侧边栏）',
+      },
       // 打开 popup 并定位到「网络」Tab
       'open-network': {
         suggested_key: { default: 'Alt+3' },

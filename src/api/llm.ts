@@ -183,3 +183,151 @@ export async function listModels(baseUrl: string, apiKey: string): Promise<strin
 
   return [...new Set(ids)].sort((a, b) => a.localeCompare(b))
 }
+
+/* ------------------------------ 工具调用（Function Calling） ------------------------------ */
+
+export interface ToolDefinition {
+  type: 'function'
+  function: {
+    name: string
+    description?: string
+    parameters: unknown
+  }
+}
+
+export interface ToolCall {
+  id: string
+  type: 'function'
+  function: { name: string; arguments: string }
+}
+
+/** 支持工具调用的对话消息（OpenAI Chat Completions 格式） */
+export type AgentMessage =
+  | { role: 'system' | 'user'; content: string }
+  | { role: 'assistant'; content: string; tool_calls?: ToolCall[] }
+  | { role: 'tool'; tool_call_id: string; content: string }
+
+export interface ToolChatRequest {
+  config: LlmConfig
+  apiKey: string
+  messages: AgentMessage[]
+  tools: ToolDefinition[]
+  signal?: AbortSignal
+  /** 回答正文的增量 */
+  onText?: (delta: string) => void
+  /** 思考过程的增量（GLM / DeepSeek / Kimi 等以 reasoning_content 返回） */
+  onReasoning?: (delta: string) => void
+}
+
+export interface ToolChatResult {
+  content: string
+  toolCalls: ToolCall[]
+}
+
+interface ToolCallDelta {
+  index?: number
+  id?: string
+  type?: string
+  function?: { name?: string; arguments?: string }
+}
+
+interface ToolChatChunk {
+  choices?: Array<{
+    delta?: {
+      content?: string | null
+      reasoning_content?: string | null
+      tool_calls?: ToolCallDelta[]
+    }
+    message?: {
+      content?: string | null
+      reasoning_content?: string | null
+      tool_calls?: ToolCallDelta[]
+    }
+  }>
+  error?: { message?: string } | string
+}
+
+/**
+ * 流式调用 Chat Completions 并支持工具调用：正文 / 思考增量通过回调实时推送，
+ * 分片到达的 tool_calls 按 index 拼装，结束后一并返回。服务端忽略 stream 时也能解析整段 JSON。
+ */
+export async function chatWithTools(request: ToolChatRequest): Promise<ToolChatResult> {
+  const { config, apiKey, messages, tools, signal, onText, onReasoning } = request
+  if (!isLlmConfigReady(config)) {
+    throw new TranslateError('config', 'AI 未配置：请填写接口地址和模型')
+  }
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'text/event-stream, application/json',
+  }
+  if (apiKey.trim()) headers.Authorization = `Bearer ${apiKey.trim()}`
+
+  const res = await fetch(resolveChatCompletionsUrl(config.baseUrl), {
+    method: 'POST',
+    headers,
+    // 空工具数组会被部分服务判为参数错误，没有工具时不传
+    body: JSON.stringify({
+      model: config.model.trim(),
+      messages,
+      stream: true,
+      ...(tools.length ? { tools } : {}),
+    }),
+    signal,
+  })
+  if (!res.ok) throw httpStatusToError(res.status, await readResponseError(res))
+
+  let content = ''
+  const calls: Array<{ id: string; name: string; arguments: string }> = []
+
+  const consume = (data: string) => {
+    let chunk: ToolChatChunk
+    try {
+      chunk = JSON.parse(data) as ToolChatChunk
+    } catch {
+      return
+    }
+    const errorMessage = readErrorMessage(chunk.error)
+    if (errorMessage) throw new TranslateError('server', errorMessage)
+
+    const choice = chunk.choices?.[0]
+    const part = choice?.delta ?? choice?.message
+    if (!part) return
+
+    if (part.reasoning_content) onReasoning?.(part.reasoning_content)
+    if (part.content) {
+      content += part.content
+      onText?.(part.content)
+    }
+    part.tool_calls?.forEach((delta, position) => {
+      const index = delta.index ?? position
+      const call = (calls[index] ??= { id: '', name: '', arguments: '' })
+      if (delta.id) call.id = delta.id
+      const name = delta.function?.name
+      // 多数服务只在首个分片给出完整函数名，少数实现每个分片都重复完整名称
+      if (name) call.name = call.name && name.startsWith(call.name) ? name : call.name + name
+      if (delta.function?.arguments) call.arguments += delta.function.arguments
+    })
+  }
+
+  const contentType = res.headers.get('content-type') ?? ''
+  if (!res.body || contentType.includes('application/json')) {
+    consume(await res.text())
+  } else {
+    for await (const data of readSseData(res.body)) {
+      if (data.trim() === '[DONE]') break
+      consume(data)
+    }
+  }
+
+  return {
+    content,
+    toolCalls: calls
+      .filter((call) => call?.name)
+      .map((call, index) => ({
+        id: call.id || `call_${index}`,
+        type: 'function' as const,
+        function: { name: call.name, arguments: call.arguments || '{}' },
+      })),
+  }
+}

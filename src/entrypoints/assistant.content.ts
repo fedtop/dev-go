@@ -1,10 +1,13 @@
 /**
- * WebMCP 桥：读取网页通过 WebMCP 注册的工具，并代侧边栏执行。
+ * 侧边栏助手在网页里的桥：
+ * - 读取网页正文（总结 / 问答用，只由顶层 frame 响应）；
+ * - WebMCP：读取网页通过 WebMCP 注册的工具，并代侧边栏执行。
  *
  * 依赖 Chrome 实验接口 document.modelContext（需在 chrome://flags 开启「WebMCP for testing」）。
  * 在每个 frame 中运行，只上报本 frame 自己注册的工具；侧边栏按 frameId 汇总、按 frameId 执行。
  * 未被侧边栏请求过的页面不做任何事，也不监听工具变化。
  */
+import { readPageContent } from '@/features/assistant/page-reader'
 import { hasExtensionRuntime } from '@/utils/content-settings'
 import type {
   TabMessage,
@@ -151,6 +154,9 @@ export default defineContentScript({
           return true
         case 'webmcp-read-result':
           if (isTop) sendResponse(readDocumentResult())
+          return undefined
+        case 'read-page':
+          if (isTop) sendResponse(readPageContent(message.maxChars))
           return undefined
         default:
           return undefined

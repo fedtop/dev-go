@@ -1,13 +1,17 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 
 import type { AgentMessage } from '@/api/llm'
+import { resolveChatModel } from '@/features/ai/model'
+import { describeServiceError, toTranslateError } from '@/features/translate/errors'
 import { isLlmConfigReady } from '@/features/translate/llm-config'
 import LlmConfigForm from '@/features/translate/LlmConfigForm'
-import { describeServiceError, toTranslateError } from '@/features/translate/errors'
 import Button from '@/ui/Button'
+import Markdown from '@/ui/Markdown'
 import Switch from '@/ui/Switch'
+import { sendRuntimeMessage, type AssistantHandoff } from '@/utils/messaging'
 import {
   assistantConfirmTools,
+  assistantHandoff,
   assistantLlmApiKey,
   assistantLlmConfig,
   translateLlmApiKey,
@@ -16,19 +20,14 @@ import {
 import { useStorageItem } from '@/utils/useStorageItem'
 
 import { buildSystemPrompt, repairHistory, runAgent, type AgentEvent } from './agent'
+import { formatPageContent, isBuiltinTool, readPage, READ_PAGE_TOOL } from './page-tools'
 import ToolsPanel from './ToolsPanel'
-import {
-  executeFrameTool,
-  useActiveTabId,
-  useWebmcpTools,
-  type FrameTool,
-  type ToolsStatus,
-} from './webmcp-client'
+import { executeFrameTool, useActiveTabId, useWebmcpTools, type FrameTool } from './webmcp-client'
 
 type ToolStatus = 'running' | 'awaiting' | 'done' | 'error' | 'rejected'
 
 type ChatItem =
-  | { kind: 'user'; id: string; text: string }
+  | { kind: 'user'; id: string; text: string; quote?: string; withPage?: boolean }
   | { kind: 'assistant'; id: string; text: string; reasoning: string; done: boolean }
   | {
       kind: 'tool'
@@ -40,11 +39,31 @@ type ChatItem =
     }
   | { kind: 'error'; id: string; text: string }
 
-const STATUS_HINTS: Record<Exclude<ToolsStatus, 'ready'>, string> = {
-  loading: '正在读取网页工具…',
-  unsupported: '浏览器还没开启 WebMCP。',
-  unavailable: '当前页面无法使用：浏览器内置页面不支持；如果是安装扩展前打开的页面，刷新后再试。',
+/** 发给模型的一条用户输入 */
+interface Prompt {
+  /** 界面上展示的文字 */
+  text: string
+  /** 引用的选中内容 */
+  quote?: string
+  /** 附带当前网页正文（快捷指令） */
+  withPage?: boolean
 }
+
+const QUICK_ACTIONS: Array<{ label: string; prompt: string }> = [
+  {
+    label: '总结本页',
+    prompt: '总结这个网页的主要内容：先用一两句话概括，再分点列出关键信息。',
+  },
+  {
+    label: '提取要点',
+    prompt:
+      '提取这个网页里的关键信息（结论、数据、步骤、注意事项等），用列表列出，不要遗漏重要细节。',
+  },
+  {
+    label: '用中文讲讲',
+    prompt: '用简体中文介绍这个网页讲了什么、适合谁看，以及最值得关注的部分。',
+  },
+]
 
 const TOOL_STATUS_LABELS: Record<ToolStatus, string> = {
   running: '执行中',
@@ -65,10 +84,14 @@ function hostOf(url: string): string {
   }
 }
 
-/** WebMCP 助手：列出网页注册的工具，让 AI 通过工具读取 / 操作网页 */
+function quoteBlock(quote: string): string {
+  return `"""\n${quote}\n"""`
+}
+
+/** 侧边栏 AI 助手：读取网页内容回答问题、总结网页，并可调用网页通过 WebMCP 提供的工具 */
 export default function AssistantApp() {
   const tabId = useActiveTabId()
-  const { tools, status, page, refresh } = useWebmcpTools(tabId)
+  const { tools: webTools, status, page, refresh } = useWebmcpTools(tabId)
 
   const [assistantConfig, , assistantLoaded] = useStorageItem(assistantLlmConfig)
   const [assistantKey] = useStorageItem(assistantLlmApiKey)
@@ -76,15 +99,19 @@ export default function AssistantApp() {
   const [translateKey] = useStorageItem(translateLlmApiKey)
   const [confirmTools, setConfirmTools] = useStorageItem(assistantConfirmTools)
 
-  // 助手没单独保存过配置时沿用翻译的 AI 配置
-  const config = assistantConfig ?? translateConfig
-  const apiKey = assistantConfig ? assistantKey : translateKey
+  const { config, apiKey, inherited } = resolveChatModel(
+    assistantConfig,
+    assistantKey,
+    translateConfig,
+    translateKey,
+  )
   const configReady = isLlmConfigReady(config)
   const loaded = assistantLoaded && translateLoaded
 
   const [view, setView] = useState<'chat' | 'settings'>('chat')
   const [items, setItems] = useState<ChatItem[]>([])
   const [input, setInput] = useState('')
+  const [quote, setQuote] = useState('')
   const [running, setRunning] = useState(false)
 
   const historyRef = useRef<AgentMessage[]>([])
@@ -92,11 +119,13 @@ export default function AssistantApp() {
   const confirmsRef = useRef(new Map<string, (allowed: boolean) => void>())
   /** 模型给的调用 id 不保证全局唯一（未返回 id 时每步都是 call_0），界面另行分配 id */
   const toolItemIdsRef = useRef(new Map<string, string>())
-  const toolsRef = useRef<FrameTool[]>(tools)
+  const toolsRef = useRef<FrameTool[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const stickToBottomRef = useRef(true)
 
-  toolsRef.current = tools
+  // 内置工具在前：网页工具同名时由 bindTools 追加序号区分
+  toolsRef.current = [READ_PAGE_TOOL, ...webTools]
 
   // 只在首次加载完成时判断一次：未配置就先进设置页，之后不再自动切换视图
   const viewDecidedRef = useRef(false)
@@ -157,13 +186,7 @@ export default function AssistantApp() {
         toolItemIdsRef.current.set(event.callId, id)
         setItems((current) => [
           ...current,
-          {
-            kind: 'tool',
-            id,
-            name: event.name,
-            args: event.args,
-            status: 'running',
-          },
+          { kind: 'tool', id, name: event.name, args: event.args, status: 'running' },
         ])
         break
       }
@@ -189,14 +212,29 @@ export default function AssistantApp() {
     })
   }
 
-  const send = async () => {
-    const text = input.trim()
-    if (!text || running || tabId == null || !configReady) return
+  const execute = async (targetTab: number, tool: FrameTool, args: unknown) => {
+    if (!isBuiltinTool(tool)) return executeFrameTool(targetTab, tool.frameId, tool.name, args)
+    try {
+      return { ok: true, result: formatPageContent(await readPage(targetTab)) }
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  }
 
-    setInput('')
+  const send = async (prompt: Prompt) => {
+    if (!prompt.text.trim() || running || tabId == null || !configReady) return
+
     stickToBottomRef.current = true
-    setItems((current) => [...current, { kind: 'user', id: nextId(), text }])
-    historyRef.current.push({ role: 'user', content: text })
+    setItems((current) => [
+      ...current,
+      {
+        kind: 'user',
+        id: nextId(),
+        text: prompt.text,
+        quote: prompt.quote,
+        withPage: prompt.withPage,
+      },
+    ])
 
     const controller = new AbortController()
     abortRef.current = controller
@@ -205,13 +243,22 @@ export default function AssistantApp() {
     const targetTab = tabId
 
     try {
+      let content = prompt.quote
+        ? `关于下面这段选中的内容：\n${quoteBlock(prompt.quote)}\n\n${prompt.text}`
+        : prompt.text
+      // 快捷指令直接附带网页正文，省去一次工具调用，工具调用能力弱的模型也能用
+      if (prompt.withPage) {
+        content = `${content}\n\n${formatPageContent(await readPage(targetTab))}`
+      }
+      historyRef.current.push({ role: 'user', content })
+
       await runAgent({
         config,
         apiKey,
         history: historyRef.current,
-        systemPrompt: buildSystemPrompt(page, toolsRef.current.length, config.prompt),
+        systemPrompt: buildSystemPrompt(page, webTools.length, config.prompt),
         getTools: () => toolsRef.current,
-        execute: (tool, args) => executeFrameTool(targetTab, tool.frameId, tool.name, args),
+        execute: (tool, args) => execute(targetTab, tool, args),
         confirm,
         onEvent: handleEvent,
         signal: controller.signal,
@@ -222,11 +269,7 @@ export default function AssistantApp() {
         ...current.map((item) =>
           item.kind === 'assistant' && !item.done ? { ...item, done: true } : item,
         ),
-        {
-          kind: 'error',
-          id: nextId(),
-          text: aborted ? '已停止' : describeError(error),
-        },
+        { kind: 'error', id: nextId(), text: aborted ? '已停止' : describeError(error) },
       ])
     } finally {
       repairHistory(historyRef.current)
@@ -236,30 +279,82 @@ export default function AssistantApp() {
     }
   }
 
+  const submit = () => {
+    const text = input.trim()
+    if (!text || running) return
+    setInput('')
+    setQuote('')
+    void send({ text, quote: quote || undefined })
+  }
+
   const stop = () => {
     abortRef.current?.abort()
     confirmsRef.current.forEach((resolve) => resolve(false))
   }
 
-  const clear = () => {
-    stop()
+  const clear = useCallback(() => {
+    abortRef.current?.abort()
+    confirmsRef.current.forEach((resolve) => resolve(false))
     historyRef.current = []
     setItems([])
-  }
+  }, [])
+
+  /** 接手划词内容：带着已有问答时开启新对话，否则把选中文字作为引用放进输入框 */
+  const acceptHandoff = useCallback(
+    (handoff: AssistantHandoff) => {
+      setView('chat')
+      if (handoff.exchange) {
+        clear()
+        const question = `${handoff.exchange.question}：\n${quoteBlock(handoff.quote)}`
+        historyRef.current = [
+          { role: 'user', content: question },
+          { role: 'assistant', content: handoff.exchange.answer },
+        ]
+        setItems([
+          { kind: 'user', id: nextId(), text: handoff.exchange.question, quote: handoff.quote },
+          {
+            kind: 'assistant',
+            id: nextId(),
+            text: handoff.exchange.answer,
+            reasoning: '',
+            done: true,
+          },
+        ])
+        setQuote('')
+      } else {
+        setQuote(handoff.quote)
+      }
+      window.setTimeout(() => inputRef.current?.focus(), 50)
+    },
+    [clear],
+  )
+
+  // 划词「问 AI」：侧边栏打开时或已打开时都会收到交接内容，读取后清空，避免重复处理
+  useEffect(() => {
+    const consume = (handoff: AssistantHandoff | null) => {
+      if (!handoff) return
+      void assistantHandoff.setValue(null)
+      acceptHandoff(handoff)
+    }
+    void assistantHandoff.getValue().then(consume)
+    return assistantHandoff.watch(consume)
+  }, [acceptHandoff])
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault()
-      void send()
+      submit()
     }
   }
 
   const host = hostOf(page.url)
-  const statusHint = status === 'ready' ? '' : STATUS_HINTS[status]
   const placeholder = useMemo(() => {
-    if (!configReady) return '先在设置里配置 AI 服务'
-    return tools.length ? '让 AI 用网页工具帮你做点什么…' : '当前网页没有工具，也可以直接提问'
-  }, [configReady, tools.length])
+    if (!configReady) return '先在设置里配置对话模型'
+    if (quote) return '就选中的内容提问…'
+    return webTools.length
+      ? '问问这个网页，或让 AI 用网页工具帮你做点什么…'
+      : '问问这个网页，比如「这篇文章的结论是什么」'
+  }, [configReady, quote, webTools.length])
 
   return (
     <div className='sidepanel-shell flex h-full flex-col text-slate-800'>
@@ -267,11 +362,11 @@ export default function AssistantApp() {
         <div className='min-w-0'>
           <div className='flex items-center gap-1.5'>
             <img src='/icons/48.png' alt='' className='h-5 w-5' />
-            <h1 className='text-sm font-semibold'>WebMCP 助手</h1>
+            <h1 className='text-sm font-semibold'>AI 助手</h1>
           </div>
           <p className='truncate text-[11px] text-slate-400' title={page.url}>
             {host || '当前页面'}
-            {status === 'ready' && ` · ${tools.length} 个工具`}
+            {webTools.length > 0 && ` · ${webTools.length} 个网页工具`}
           </p>
         </div>
         <div className='flex shrink-0 items-center gap-1.5'>
@@ -291,38 +386,27 @@ export default function AssistantApp() {
       </header>
 
       {view === 'settings' ? (
-        <div className='popup-main min-h-0 flex-1 overflow-y-auto px-3 py-3'>
-          <section className='flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm'>
-            <div>
-              <h2 className='text-sm font-semibold'>AI 服务</h2>
-              <p className='text-[11px] leading-relaxed text-slate-400'>
-                兼容 OpenAI 接口的服务都可以用，包括各家 Coding Plan；模型需要支持工具调用。
-              </p>
-            </div>
-            <LlmConfigForm compact target='assistant' onSaved={() => setView('chat')} />
-          </section>
-          <section className='mt-2.5 flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
-            <div className='min-w-0'>
-              <p className='text-sm font-medium'>执行前确认</p>
-              <p className='text-[11px] leading-relaxed text-slate-400'>
-                网页未声明为只读的工具（可能提交表单、下单等），执行前先让你确认
-              </p>
-            </div>
-            <Switch checked={confirmTools} onChange={setConfirmTools} />
-          </section>
-        </div>
+        <SettingsView
+          inherited={inherited}
+          confirmTools={confirmTools}
+          setConfirmTools={setConfirmTools}
+          webmcpSupported={status !== 'unsupported'}
+          onSaved={() => setView('chat')}
+        />
       ) : (
         <>
-          <ToolsPanel
-            tools={tools}
-            status={status}
-            onRefresh={refresh}
-            execute={(tool, args) =>
-              tabId == null
-                ? Promise.resolve({ ok: false, error: '没有可用的标签页' })
-                : executeFrameTool(tabId, tool.frameId, tool.name, args)
-            }
-          />
+          {webTools.length > 0 && (
+            <ToolsPanel
+              tools={webTools}
+              status={status}
+              onRefresh={refresh}
+              execute={(tool, args) =>
+                tabId == null
+                  ? Promise.resolve({ ok: false, error: '没有可用的标签页' })
+                  : executeFrameTool(tabId, tool.frameId, tool.name, args)
+              }
+            />
+          )}
 
           <div
             ref={scrollRef}
@@ -333,7 +417,11 @@ export default function AssistantApp() {
             className='min-h-0 flex-1 overflow-y-auto px-3 py-3'
           >
             {items.length === 0 ? (
-              <EmptyState statusHint={statusHint} status={status} toolCount={tools.length} />
+              <EmptyState
+                disabled={!configReady || running || tabId == null}
+                webToolCount={webTools.length}
+                onQuickAction={(prompt) => void send({ text: prompt, withPage: true })}
+              />
             ) : (
               <div className='flex flex-col gap-2.5'>
                 {items.map((item) => (
@@ -351,30 +439,63 @@ export default function AssistantApp() {
           </div>
 
           <footer className='shrink-0 border-t border-slate-200/70 p-2.5'>
-            <div className='popup-field flex items-end gap-2 rounded-xl border bg-white px-2.5 py-2'>
-              <textarea
-                value={input}
-                rows={2}
-                disabled={!configReady}
-                placeholder={placeholder}
-                onChange={(event) => setInput(event.target.value)}
-                onKeyDown={onKeyDown}
-                className='max-h-40 min-h-10 flex-1 resize-none bg-transparent text-sm leading-relaxed outline-none placeholder:text-slate-400 disabled:cursor-not-allowed'
-              />
-              {running ? (
-                <Button onClick={stop} className='shrink-0 !px-2.5 !py-1 text-xs'>
-                  停止
-                </Button>
-              ) : (
-                <Button
-                  variant='primary'
-                  onClick={() => void send()}
-                  disabled={!input.trim() || !configReady || tabId == null}
-                  className='shrink-0 !px-2.5 !py-1 text-xs'
-                >
-                  发送
-                </Button>
+            {items.length > 0 && !running && (
+              <div className='mb-2 flex flex-wrap gap-1.5'>
+                {QUICK_ACTIONS.map((action) => (
+                  <button
+                    key={action.label}
+                    type='button'
+                    disabled={!configReady}
+                    onClick={() => void send({ text: action.prompt, withPage: true })}
+                    className='rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11px] text-slate-500 transition-colors hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-50'
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className='popup-field flex flex-col gap-1.5 rounded-xl border bg-white px-2.5 py-2'>
+              {quote && (
+                <div className='flex items-start gap-1.5 rounded-md bg-slate-50 px-2 py-1 text-[11px] text-slate-500'>
+                  <span className='line-clamp-3 flex-1 border-l-2 border-indigo-300 pl-1.5 whitespace-pre-wrap'>
+                    {quote}
+                  </span>
+                  <button
+                    type='button'
+                    title='移除引用'
+                    onClick={() => setQuote('')}
+                    className='shrink-0 text-slate-400 hover:text-slate-600'
+                  >
+                    ✕
+                  </button>
+                </div>
               )}
+              <div className='flex items-end gap-2'>
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  rows={2}
+                  disabled={!configReady}
+                  placeholder={placeholder}
+                  onChange={(event) => setInput(event.target.value)}
+                  onKeyDown={onKeyDown}
+                  className='max-h-40 min-h-10 flex-1 resize-none bg-transparent text-sm leading-relaxed outline-none placeholder:text-slate-400 disabled:cursor-not-allowed'
+                />
+                {running ? (
+                  <Button onClick={stop} className='shrink-0 !px-2.5 !py-1 text-xs'>
+                    停止
+                  </Button>
+                ) : (
+                  <Button
+                    variant='primary'
+                    onClick={submit}
+                    disabled={!input.trim() || !configReady || tabId == null}
+                    className='shrink-0 !px-2.5 !py-1 text-xs'
+                  >
+                    发送
+                  </Button>
+                )}
+              </div>
             </div>
             <p className='mt-1 px-1 text-[10px] text-slate-400'>
               {config.model ? `${config.model} · ` : ''}Enter 发送，Shift + Enter 换行
@@ -387,6 +508,7 @@ export default function AssistantApp() {
 }
 
 function describeError(error: unknown): string {
+  if (error instanceof Error && error.message.startsWith('无法读取当前网页')) return error.message
   const translateError = toTranslateError(error)
   const friendly = describeServiceError(translateError.code)
   return translateError.message && translateError.message !== friendly
@@ -394,42 +516,106 @@ function describeError(error: unknown): string {
     : friendly
 }
 
-function EmptyState({
-  status,
-  statusHint,
-  toolCount,
+function SettingsView({
+  inherited,
+  confirmTools,
+  setConfirmTools,
+  webmcpSupported,
+  onSaved,
 }: {
-  status: ToolsStatus
-  statusHint: string
-  toolCount: number
+  inherited: boolean
+  confirmTools: boolean
+  setConfirmTools: (value: boolean) => void
+  webmcpSupported: boolean
+  onSaved: () => void
 }) {
   return (
-    <div className='flex flex-col gap-2 pt-6 text-center text-xs leading-relaxed text-slate-400'>
-      {status === 'unsupported' ? (
-        <>
-          <p>{statusHint}</p>
-          <p>
-            在地址栏打开{' '}
-            <code className='rounded bg-slate-100 px-1'>chrome://flags/#enable-webmcp-testing</code>
-            ，启用「WebMCP for testing」后重启浏览器（需要 Chrome 150 及以上）。
+    <div className='popup-main min-h-0 flex-1 overflow-y-auto px-3 py-3'>
+      <section className='flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm'>
+        <div>
+          <h2 className='text-sm font-semibold'>对话模型</h2>
+          <p className='text-[11px] leading-relaxed text-slate-400'>
+            用于侧边栏助手和划词的解释、总结、润色，建议选能力强、支持工具调用的模型。
+            翻译模型在设置页单独配置，可以选更快的模型。
+            {inherited && '当前沿用翻译模型，保存后单独生效。'}
           </p>
-        </>
-      ) : statusHint ? (
-        <p>{statusHint}</p>
-      ) : toolCount ? (
-        <p>当前网页提供了 {toolCount} 个工具，直接告诉 AI 你想做什么，它会自己选用工具。</p>
-      ) : (
-        <p>当前网页没有注册 WebMCP 工具。打开支持 WebMCP 的网站后，这里会自动列出可用工具。</p>
-      )}
+        </div>
+        <LlmConfigForm compact target='assistant' onSaved={onSaved} />
+      </section>
+      <section className='mt-2.5 flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
+        <div className='min-w-0'>
+          <p className='text-sm font-medium'>执行网页工具前确认</p>
+          <p className='text-[11px] leading-relaxed text-slate-400'>
+            网页通过 WebMCP 提供、且未声明为只读的工具（可能提交表单、下单等），执行前先让你确认
+            {!webmcpSupported &&
+              '。浏览器尚未开启 WebMCP：在 chrome://flags 启用「WebMCP for testing」后可用'}
+          </p>
+        </div>
+        <Switch checked={confirmTools} onChange={setConfirmTools} />
+      </section>
+      <button
+        type='button'
+        onClick={() =>
+          void sendRuntimeMessage({ type: 'open-options-page' }).catch(() => undefined)
+        }
+        className='mt-3 w-full text-center text-[11px] text-slate-400 hover:text-indigo-600'
+      >
+        打开完整设置页 ↗
+      </button>
+    </div>
+  )
+}
+
+function EmptyState({
+  disabled,
+  webToolCount,
+  onQuickAction,
+}: {
+  disabled: boolean
+  webToolCount: number
+  onQuickAction: (prompt: string) => void
+}) {
+  return (
+    <div className='flex flex-col items-center gap-4 pt-8 text-center'>
+      <div className='flex flex-col gap-1'>
+        <p className='text-sm font-medium text-slate-600'>有什么可以帮你？</p>
+        <p className='text-xs leading-relaxed text-slate-400'>
+          可以总结网页、就网页内容提问；在网页上选中文字后点「问 AI」，会带着选中内容来这里。
+          {webToolCount > 0 && `当前网页还提供了 ${webToolCount} 个工具，AI 可以替你在网页上操作。`}
+        </p>
+      </div>
+      <div className='flex w-full flex-col gap-1.5'>
+        {QUICK_ACTIONS.map((action) => (
+          <button
+            key={action.label}
+            type='button'
+            disabled={disabled}
+            onClick={() => onQuickAction(action.prompt)}
+            className='rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs text-slate-600 shadow-sm transition-colors hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-50'
+          >
+            <span className='font-medium'>{action.label}</span>
+            <span className='ml-2 text-slate-400'>{action.prompt}</span>
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
 
 function ChatRow({ item, onDecide }: { item: ChatItem; onDecide: (allowed: boolean) => void }) {
   if (item.kind === 'user') {
+    const label = QUICK_ACTIONS.find((action) => action.prompt === item.text)?.label
     return (
-      <div className='ml-8 self-end rounded-2xl rounded-br-md bg-indigo-600 px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words text-white'>
-        {item.text}
+      <div className='ml-8 flex flex-col items-end gap-1 self-end'>
+        {item.quote && (
+          <p className='line-clamp-4 max-w-full rounded-lg border-l-2 border-indigo-300 bg-white/70 px-2 py-1 text-[11px] whitespace-pre-wrap text-slate-500'>
+            {item.quote}
+          </p>
+        )}
+        <div className='rounded-2xl rounded-br-md bg-indigo-600 px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words text-white'>
+          {label ?? item.text}
+        </div>
+        {item.withPage && <span className='text-[10px] text-slate-400'>📄 已附带网页内容</span>}
       </div>
     )
   }
@@ -454,8 +640,8 @@ function ChatRow({ item, onDecide }: { item: ChatItem; onDecide: (allowed: boole
           </details>
         )}
         {item.text && (
-          <div className='rounded-2xl rounded-bl-md border border-slate-200 bg-white px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words shadow-sm'>
-            {item.text}
+          <div className='rounded-2xl rounded-bl-md border border-slate-200 bg-white px-3 py-2 text-sm leading-relaxed shadow-sm'>
+            <Markdown text={item.text} />
           </div>
         )}
       </div>
@@ -470,11 +656,12 @@ function ChatRow({ item, onDecide }: { item: ChatItem; onDecide: (allowed: boole
         : item.status === 'done'
           ? 'text-emerald-600'
           : 'text-slate-400'
+  const displayName = item.name === READ_PAGE_TOOL.name ? '读取网页内容' : item.name
 
   return (
     <div className='mr-4 rounded-lg border border-slate-200 bg-white/80 px-2.5 py-2 text-xs shadow-sm'>
       <div className='flex items-center justify-between gap-2'>
-        <span className='truncate font-mono font-medium text-slate-700'>🔧 {item.name}</span>
+        <span className='truncate font-mono font-medium text-slate-700'>🔧 {displayName}</span>
         <span className={`shrink-0 ${tone}`}>{TOOL_STATUS_LABELS[item.status]}</span>
       </div>
       <details className='mt-1' open={item.status === 'awaiting'}>

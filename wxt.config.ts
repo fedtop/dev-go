@@ -53,9 +53,13 @@ export default defineConfig({
       'proxy',
       'webRequest',
       'downloads',
+      // WebRTC 防护：按设置注册 MAIN world 脚本，屏蔽网页的 WebRTC 接口
+      'scripting',
       // Chrome 本地 favicon 数据库（newtab 图标零网络加载）；Firefox 无此 API
       ...(browser === 'firefox' ? [] : ['favicon']),
     ],
+    // WebRTC IP 防泄露（chrome.privacy）：开启时才申请，避免更新扩展时因新增权限被浏览器停用
+    optional_permissions: ['privacy'],
     // 内容脚本、CORS 动态规则和后台代理都需要全站访问能力。
     host_permissions: ['<all_urls>'],
     web_accessible_resources: [
@@ -71,10 +75,10 @@ export default defineConfig({
         suggested_key: { default: 'Alt+1' },
         description: '打开默认面板',
       },
-      // 在侧边栏打开 WebMCP 助手（Chrome 专有；Firefox 侧边栏由浏览器自身控制）
+      // 在侧边栏打开 AI 助手（Chrome 专有；Firefox 侧边栏由浏览器自身控制）
       'open-assistant': {
         suggested_key: { default: 'Alt+2' },
-        description: '打开 WebMCP 助手（侧边栏）',
+        description: '打开 AI 助手（侧边栏）',
       },
       // 打开 popup 并定位到「网络」Tab
       'open-network': {

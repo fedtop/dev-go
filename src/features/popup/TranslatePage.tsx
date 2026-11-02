@@ -3,7 +3,15 @@ import { useEffect, useRef, useState } from 'react'
 import CopyIcon from '@/assets/copy.svg'
 import { lookupWord } from '@/api/lookup'
 import PageTranslatePanel from '@/features/popup/PageTranslatePanel'
-import { lookupProvider, type LookupProvider } from '@/utils/settings'
+import { isLlmUsable } from '@/features/translate/llm-config'
+import { sendRuntimeMessage } from '@/utils/messaging'
+import {
+  lookupProvider,
+  translateLlmApiKey,
+  translateLlmConfig,
+  type LookupProvider,
+} from '@/utils/settings'
+import { useStorageItem } from '@/utils/useStorageItem'
 import type { WordResult } from '@/types/word'
 import Button from '@/ui/Button'
 import Select from '@/ui/Select'
@@ -13,7 +21,13 @@ export default function TranslatePage() {
   const [result, setResult] = useState<WordResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [lookupEngine, setLookupEngine] = useState<LookupProvider>('youdao')
+  const [error, setError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const [llmConfig] = useStorageItem(translateLlmConfig)
+  const [llmApiKey] = useStorageItem(translateLlmApiKey)
+  // 配置了翻译模型才提供 AI 查词；之前选了 AI、后来删掉配置时回落到有道
+  const aiAvailable = isLlmUsable(llmConfig, llmApiKey)
+  const engine: LookupProvider = lookupEngine === 'ai' && !aiAvailable ? 'youdao' : lookupEngine
 
   useEffect(() => {
     lookupProvider.getValue().then(setLookupEngine)
@@ -30,8 +44,19 @@ export default function TranslatePage() {
   const translate = async () => {
     if (!text.trim()) return
     setLoading(true)
-    const res = await lookupWord(text.trim(), lookupEngine)
-    setResult(res)
+    setError('')
+    if (engine === 'ai') {
+      const res = await sendRuntimeMessage({ type: 'ai-lookup', text: text.trim() }).catch(
+        (err: unknown) => ({
+          result: null,
+          error: { code: 'unknown' as const, message: String(err) },
+        }),
+      )
+      setResult(res.result)
+      if (res.error) setError(`AI 查询失败：${res.error.message}`)
+    } else {
+      setResult(await lookupWord(text.trim(), engine))
+    }
     setLoading(false)
   }
 
@@ -54,13 +79,14 @@ export default function TranslatePage() {
       <section className='flex flex-col gap-2'>
         <div className='flex items-center gap-2'>
           <Select
-            value={lookupEngine}
+            value={engine}
             onChange={changeLookupEngine}
             className='w-[72px] shrink-0'
             options={[
               { value: 'youdao', label: '有道' },
               { value: 'microsoft', label: '微软' },
               { value: 'google', label: '谷歌' },
+              ...(aiAvailable ? [{ value: 'ai', label: 'AI' }] : []),
             ]}
           />
           <input
@@ -75,6 +101,10 @@ export default function TranslatePage() {
             查询
           </Button>
         </div>
+
+        {error && (
+          <p className='rounded-lg bg-rose-50 px-2.5 py-1.5 text-xs text-rose-700'>{error}</p>
+        )}
 
         {/* 查词结果卡片 */}
         {result && (

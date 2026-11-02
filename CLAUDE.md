@@ -32,9 +32,11 @@ pnpm exec prettier --check <改动的文件>
 
 这是一个**多上下文扩展**。代码运行在三个相互隔离的环境中，它们只能通过消息层通信——切勿假设它们之间共享内存状态：
 
-1. **后台 Service Worker**——唯一的中枢，所有特权 Chrome API 都在这里。入口 `src/entrypoints/background.ts` 只负责同步注册监听（MV3 SW 会被回收重启，监听必须在入口同步注册）；具体逻辑按职责放在 `src/background/`：`router.ts`（runtime 消息路由）、`translate.ts`（划词翻译/查词/测试）、`proxy.ts`（代理模式与规则列表）、`cors.ts`（CORS 动态规则与跨域代理）、`media.ts`（`webRequest` 媒体嗅探与下载）、`commands.ts`（快捷键与右键菜单）、`migration.ts`（存储迁移）。跨设备同步镜像在 `src/utils/sync-mirror.ts`。
-2. **内容脚本**（`src/entrypoints/*.content.ts(x)`）——注入到页面：`translate.content.ts`（整页行间翻译）、`selection.content.tsx`（划词气泡 UI）、`github.content.tsx`、`media.content.ts`（媒体资源 DOM 采集）、`unlock.content.ts`（按站点解除复制/选择限制，只在用户开启的站点生效）、`webmcp.content.ts`（WebMCP 桥：各 frame 上报 `document.modelContext` 注册的工具并代为执行）、`cors-bridge.content.ts`。
-3. **扩展 UI 页面**——`popup/`、`newtab/`、`options/`、`sidepanel/`，各自是标准 React 应用（`index.html` + `main.tsx`）。popup 是主控制面板（Tab：翻译 / 网络 / 资源 / 功能）。`sidepanel/` 是 WebMCP 助手（`src/features/assistant/`）：Agent 循环在侧边栏页面内运行（OpenAI 兼容 Function Calling，见 `src/api/llm.ts` 的 `chatWithTools`），模型配置与翻译分开存储。
+1. **后台 Service Worker**——唯一的中枢，所有特权 Chrome API 都在这里。入口 `src/entrypoints/background.ts` 只负责同步注册监听（MV3 SW 会被回收重启，监听必须在入口同步注册）；具体逻辑按职责放在 `src/background/`：`router.ts`（runtime 消息路由）、`ai.ts`（划词 AI 动作流式长连接、打开侧边栏交接划词内容、测试对话模型）、`translate.ts`（划词翻译/查词/测试）、`proxy.ts`（代理模式与规则列表）、`cors.ts`（CORS 动态规则与跨域代理）、`media.ts`（`webRequest` 媒体嗅探与下载）、`webrtc.ts`（WebRTC 防泄露：`chrome.privacy` 策略 + 按开关动态注册 MAIN world 脚本 `webrtc-*.ts`）、`commands.ts`（快捷键与右键菜单）、`migration.ts`（存储迁移）。跨设备同步镜像在 `src/utils/sync-mirror.ts`。
+2. **内容脚本**（`src/entrypoints/*.content.ts(x)`）——注入到页面：`translate.content.ts`（整页行间翻译）、`selection.content.tsx`（划词工具条：翻译 + AI 动作，AI 请求经 `SELECTION_AI_PORT_NAME` 长连接由后台 `src/background/ai.ts` 发出）、`github.content.tsx`、`media.content.ts`（媒体资源 DOM 采集）、`unlock.content.ts`（按站点解除复制/选择限制，只在用户开启的站点生效）、`assistant.content.ts`（助手桥：顶层 frame 读取网页正文；各 frame 上报 `document.modelContext` 注册的 WebMCP 工具并代为执行）、`cors-bridge.content.ts`。
+3. **扩展 UI 页面**——`popup/`、`newtab/`、`options/`、`sidepanel/`，各自是标准 React 应用（`index.html` + `main.tsx`）。popup 只放高频快捷操作（Tab：翻译 / 网络 / 资源 / 功能（侧边栏 AI 助手、WebMCP 入口与当前网站的开关）；右上角齿轮进设置页）；网络代理的完整配置在设置页「网络代理」（`src/features/network/`，状态与操作由 `useNetworkController` 供 popup 和设置页共用）；全局设置统一放在设置页。`sidepanel/` 是 AI 助手（`src/features/assistant/`）：Agent 循环在侧边栏页面内运行（OpenAI 兼容 Function Calling，见 `src/api/llm.ts` 的 `chatWithTools`），内置 `read_page` 工具，另可调用网页的 WebMCP 工具。`options/` 是独立标签页的设置页（分区组件在 `src/features/options/`）。
+
+**两套模型**：翻译模型（`translateLlmConfig`，整页 / 划词翻译，追求速度）与对话模型（`assistantLlmConfig`，划词 AI 动作与侧边栏助手，追求能力；为 null 时沿用翻译模型，统一经 `src/features/ai/model.ts` 读取）。
 
 ### 跨上下文通信——`src/utils/messaging.ts`
 

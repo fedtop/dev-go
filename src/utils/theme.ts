@@ -3,7 +3,7 @@
  * 三态：auto（按本地时间）/ light / dark。
  */
 
-import type { StoredThemeMode, ThemeMode } from '@/utils/settings'
+import { themeMode, type StoredThemeMode, type ThemeMode } from '@/utils/settings'
 
 const AUTO_DARK_START_HOUR = 18
 const AUTO_DARK_END_HOUR = 6
@@ -68,4 +68,19 @@ export function watchAutoTheme(onChange: () => void): () => void {
   return () => {
     if (timer !== undefined) window.clearTimeout(timer)
   }
+}
+
+/**
+ * 扩展页面（popup / 设置页 / 侧边栏）接入主题：读取存储里的主题模式并应用，
+ * 之后跟随设置变化与自动模式的时间分界点切换。先 await 再渲染，避免先闪一下浅色。
+ */
+export async function initDocumentTheme(): Promise<void> {
+  document.documentElement.classList.add('ui-page')
+  let mode: StoredThemeMode = await themeMode.getValue().catch(() => 'auto' as const)
+  applyTheme(mode)
+  themeMode.watch((next) => {
+    mode = next ?? 'auto'
+    applyTheme(mode)
+  })
+  watchAutoTheme(() => applyTheme(mode))
 }

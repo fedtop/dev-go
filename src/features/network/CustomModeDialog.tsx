@@ -31,7 +31,7 @@ export default function CustomModeDialog({
 }: CustomModeDialogProps) {
   return (
     <div
-      className='fixed inset-0 z-40 flex items-center justify-center bg-neutral-950/20 p-3 backdrop-blur-sm'
+      className='fixed inset-0 z-40 flex items-center justify-center bg-[var(--ui-scrim)] p-3 backdrop-blur-sm'
       onClick={onClose}
     >
       <div

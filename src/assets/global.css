@@ -30,6 +30,89 @@
   --ui-primary-text: #ffffff;
   --ui-primary-hover: #2f2f2f;
   --ui-shadow-popover: 0 0 0 1px rgb(0 0 0 / 0.06), 0 12px 32px rgb(0 0 0 / 0.12);
+  --ui-scrim: rgb(0 0 0 / 0.32);
+  --ui-shadow-composer: 0 0 0 1px rgb(0 0 0 / 0.08), 0 6px 20px rgb(0 0 0 / 0.06);
+  --ui-shadow-composer-focus: 0 0 0 1px rgb(0 0 0 / 0.15), 0 6px 20px rgb(0 0 0 / 0.08);
+}
+
+/*
+ * 暗色（与 ai-hive 深色主题一致）：只作用于扩展页面（<html class="ui-page dark">，见 initDocumentTheme）。
+ * 除语义变量外，还把 Tailwind 的 neutral 灰阶、white/black 与几组状态色在暗色下整体翻转，
+ * 组件里的 bg-white / text-neutral-900 / border-black/10 等类名无需逐个加 dark: 变体。
+ */
+.ui-page.dark {
+  color-scheme: dark;
+  --ui-bg: #212121;
+  --ui-bg-sidebar: #181818;
+  --ui-bg-elevated: #2f2f2f;
+  --ui-bg-subtle: #2a2a2a;
+  --ui-bg-hover: rgb(255 255 255 / 0.07);
+  --ui-bg-active: rgb(255 255 255 / 0.11);
+  --ui-text: #ececec;
+  --ui-text-secondary: #b4b4b4;
+  --ui-text-tertiary: #8e8e8e;
+  --ui-border: rgb(255 255 255 / 0.12);
+  --ui-border-light: rgb(255 255 255 / 0.06);
+  --ui-border-heavy: rgb(255 255 255 / 0.2);
+  --ui-focus-ring: rgb(72 170 255 / 0.55);
+  --ui-accent: #48aaff;
+  --ui-accent-hover: #6cbaff;
+  --ui-accent-soft: rgb(72 170 255 / 0.14);
+  --ui-primary-bg: #ececec;
+  --ui-primary-text: #0d0d0d;
+  --ui-primary-hover: #ffffff;
+  --ui-scrim: rgb(0 0 0 / 0.55);
+  --ui-shadow-popover: 0 0 0 1px rgb(255 255 255 / 0.08), 0 16px 40px rgb(0 0 0 / 0.5);
+  --ui-shadow-composer: 0 0 0 1px rgb(255 255 255 / 0.1), 0 8px 24px rgb(0 0 0 / 0.35);
+  --ui-shadow-composer-focus: 0 0 0 1px rgb(255 255 255 / 0.2), 0 8px 24px rgb(0 0 0 / 0.4);
+
+  --color-white: #212121;
+  --color-black: #ffffff;
+  --color-neutral-50: #2a2a2a;
+  --color-neutral-100: #303030;
+  --color-neutral-200: #3a3a3a;
+  --color-neutral-300: #4a4a4a;
+  --color-neutral-400: #6b6b6b;
+  --color-neutral-500: #8e8e8e;
+  --color-neutral-600: #a8a8a8;
+  --color-neutral-700: #c4c4c4;
+  --color-neutral-800: #dcdcdc;
+  --color-neutral-900: #ececec;
+  --color-neutral-950: #f5f5f5;
+
+  --color-accent-50: rgb(72 170 255 / 0.12);
+  --color-accent-100: rgb(72 170 255 / 0.18);
+  --color-accent-200: rgb(72 170 255 / 0.3);
+  --color-accent-300: rgb(72 170 255 / 0.45);
+  --color-accent-400: #6cbaff;
+  --color-accent-500: #5bb2ff;
+  --color-accent-600: #48aaff;
+  --color-accent-700: #6cbaff;
+  --color-accent-800: #9ccfff;
+  --color-accent-900: #cfe7ff;
+
+  --color-emerald-50: rgb(63 207 142 / 0.12);
+  --color-emerald-100: rgb(63 207 142 / 0.18);
+  --color-emerald-200: rgb(63 207 142 / 0.3);
+  --color-emerald-500: #3fcf8e;
+  --color-emerald-600: #3fcf8e;
+  --color-emerald-700: #6ee0a9;
+
+  --color-rose-50: rgb(255 122 115 / 0.12);
+  --color-rose-100: rgb(255 122 115 / 0.18);
+  --color-rose-200: rgb(255 122 115 / 0.3);
+  --color-rose-500: #ff7a73;
+  --color-rose-600: #ff7a73;
+  --color-rose-700: #ff9b95;
+
+  --color-amber-50: rgb(240 180 91 / 0.12);
+  --color-amber-100: rgb(240 180 91 / 0.2);
+  --color-amber-300: rgb(240 180 91 / 0.45);
+  --color-amber-600: #f0b45b;
+  --color-amber-700: #f6c97f;
+}
+.ui-page.dark body {
+  background: var(--ui-bg);
 }
 
 @theme {
@@ -325,6 +408,10 @@ body.quiet-page {
   background: var(--ui-bg);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
 }
+.ui-page.dark .popup-tabs .is-active {
+  background: var(--ui-bg-elevated);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+}
 
 /* 卡片：细边框，不用阴影堆层次 */
 .popup-main :is(section, div).rounded-lg.border.border-neutral-200.bg-white {
@@ -413,6 +500,15 @@ body.quiet-page {
 .sidepanel-shell {
   background: var(--ui-bg);
   color: var(--ui-text);
+}
+
+/* 侧边栏输入框：浮起的圆角输入区 */
+.ui-composer {
+  background: var(--ui-bg-elevated);
+  box-shadow: var(--ui-shadow-composer);
+}
+.ui-composer:focus-within {
+  box-shadow: var(--ui-shadow-composer-focus);
 }
 
 /* ---------- 极光流动渐变（主标题 / 搜索按钮共用） ---------- */

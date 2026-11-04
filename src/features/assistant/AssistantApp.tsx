@@ -474,7 +474,7 @@ export default function AssistantApp() {
                 ))}
               </div>
             )}
-            <div className='flex flex-col gap-1.5 rounded-2xl bg-white px-3 py-2 shadow-[0_0_0_1px_rgb(0_0_0/0.08),0_6px_20px_rgb(0_0_0/0.06)] transition-shadow focus-within:shadow-[0_0_0_1px_rgb(0_0_0/0.15),0_6px_20px_rgb(0_0_0/0.08)]'>
+            <div className='flex flex-col gap-1.5 ui-composer rounded-2xl px-3 py-2 transition-shadow'>
               {quote && (
                 <div className='flex items-start gap-1.5 rounded-md bg-neutral-50 px-2 py-1 text-[11px] text-neutral-500'>
                   <span className='line-clamp-3 flex-1 border-l-2 border-accent-300 pl-1.5 whitespace-pre-wrap'>
@@ -651,7 +651,7 @@ function ChatRow({ item, onDecide }: { item: ChatItem; onDecide: (allowed: boole
             {item.quote}
           </p>
         )}
-        <div className='rounded-2xl rounded-br-md bg-[#f4f4f4] px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words text-neutral-900'>
+        <div className='rounded-2xl rounded-br-md bg-neutral-100 px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words text-neutral-900'>
           {label ?? item.text}
         </div>
         {item.withPage && (

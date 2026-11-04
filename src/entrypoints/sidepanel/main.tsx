@@ -5,6 +5,7 @@ import ReactDOM from 'react-dom/client'
 
 import AssistantApp from '@/features/assistant/AssistantApp'
 import { OPEN_ASSISTANT_COMMAND } from '@/utils/shortcut'
+import { initDocumentTheme } from '@/utils/theme'
 
 document.documentElement.classList.add('sidepanel-page')
 
@@ -21,8 +22,12 @@ if (!import.meta.env.FIREFOX) {
   })
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <AssistantApp />
-  </React.StrictMode>,
-)
+void initDocumentTheme()
+  .catch(() => undefined)
+  .finally(() =>
+    ReactDOM.createRoot(document.getElementById('root')!).render(
+      <React.StrictMode>
+        <AssistantApp />
+      </React.StrictMode>,
+    ),
+  )

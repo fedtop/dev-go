@@ -4,6 +4,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 
 import { migrateStorage } from '@/utils/settings'
+import { initDocumentTheme } from '@/utils/theme'
 import App from './App'
 
 document.documentElement.classList.add('popup-page')
@@ -16,6 +17,7 @@ const render = () =>
   )
 
 // 先完成存储迁移（旧版 sync 数据搬回本机）再渲染，避免读到空数据；迁移失败也不阻塞渲染。
-migrateStorage()
-  .catch(() => undefined)
-  .finally(render)
+Promise.all([
+  migrateStorage().catch(() => undefined),
+  initDocumentTheme().catch(() => undefined),
+]).finally(render)

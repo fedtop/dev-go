@@ -2,12 +2,14 @@ import { useRef, useState } from 'react'
 
 import { POPUP_PAGES } from '@/features/popup/pages'
 import Button from '@/ui/Button'
+import Tabs from '@/ui/Tabs'
 import Select from '@/ui/Select'
 import { buildBackup, restoreBackup } from '@/utils/backup'
 import { sendRuntimeMessage } from '@/utils/messaging'
-import { defaultPopupTab, syncStatus } from '@/utils/settings'
+import { defaultPopupTab, syncStatus, themeMode, type ThemeMode } from '@/utils/settings'
 import { formatShortcut, openShortcutSettings } from '@/utils/shortcut'
 import { useCommandShortcuts } from '@/utils/useCommandShortcuts'
+import { normalizeThemeMode } from '@/utils/theme'
 import { useStorageItem } from '@/utils/useStorageItem'
 
 import { Card, Row, SectionHeader } from './layout'
@@ -36,6 +38,29 @@ function formatSyncTime(timestamp: number): string {
         hour: '2-digit',
         minute: '2-digit',
       })
+}
+
+const THEME_OPTIONS: Array<{ value: ThemeMode; label: string }> = [
+  { value: 'auto', label: '自动' },
+  { value: 'light', label: '浅色' },
+  { value: 'dark', label: '深色' },
+]
+
+/** 外观：与新标签页共用同一个主题设置 */
+function AppearanceCard() {
+  const [mode, setMode] = useStorageItem(themeMode)
+
+  return (
+    <Card title='外观'>
+      <Row label='主题' hint='自动：18:00 – 6:00 使用深色。弹窗、设置页、侧边栏与新标签页统一生效'>
+        <Tabs
+          value={normalizeThemeMode(mode)}
+          tabs={THEME_OPTIONS}
+          onChange={(value) => setMode(value as ThemeMode)}
+        />
+      </Row>
+    </Card>
+  )
 }
 
 function ShortcutsCard() {
@@ -196,7 +221,9 @@ export default function GeneralSettings() {
 
   return (
     <div className='flex flex-col gap-5'>
-      <SectionHeader title='通用' desc='弹窗、快捷键、同步与备份' />
+      <SectionHeader title='通用' desc='外观、弹窗、快捷键、同步与备份' />
+
+      <AppearanceCard />
 
       <Card title='弹窗'>
         <Row label='默认打开的页' hint='点击工具栏图标或按快捷键打开弹窗时定位的页面'>

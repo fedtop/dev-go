@@ -138,10 +138,30 @@ function trimAutoProxySeparator(value: string): string {
 }
 
 function normalizeHostRule(value: string): string {
-  return trimAutoProxySeparator(value)
-    .replace(/^\*+\./, '')
-    .replace(/^\.+/, '')
-    .toLowerCase()
+  return toAsciiHost(
+    trimAutoProxySeparator(value)
+      .replace(/^\*+\./, '')
+      .replace(/^\.+/, '')
+      .toLowerCase(),
+  )
+}
+
+/** 中文等国际化域名转成 Punycode：PAC 拿到的 host 是 Punycode，规则也要同样形态才能命中 */
+function toAsciiHost(host: string): string {
+  if (/^[\x20-\x7e]*$/.test(host)) return host
+  try {
+    return new URL(`http://${host}`).hostname || host
+  } catch {
+    return host
+  }
+}
+
+/** Chrome 只接受纯 ASCII 的 PAC 脚本：非 ASCII 字符（规则、注释）一律转义成 `\uXXXX`，在 JS 字符串与注释里语义不变 */
+function escapeNonAscii(source: string): string {
+  return source.replace(
+    /[\u0080-\uffff]/g,
+    (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`,
+  )
 }
 
 function looksLikeHostRule(value: string): boolean {
@@ -519,7 +539,7 @@ function FindProxyForURL(url, host) {
 `.trim()
 
   return {
-    data,
+    data: escapeNonAscii(data),
     proxyRuleCount: parsed.proxyRules.length,
     directRuleCount: parsed.directRules.length,
   }

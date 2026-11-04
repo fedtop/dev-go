@@ -13,6 +13,7 @@ import {
   popupInitialTab,
   type PopupShortcutTab,
 } from '@/utils/settings'
+import { OPEN_ASSISTANT_COMMAND } from '@/utils/shortcut'
 
 const DEFAULT_POPUP_COMMAND = 'open-default'
 const DEFAULT_POPUP_TAB: PopupShortcutTab = 'translate'
@@ -21,7 +22,6 @@ const COMMAND_TO_TAB: Record<string, PopupShortcutTab> = {
   'open-tools': 'tools',
 }
 const INLINE_TRANSLATE_ID = 'inline-translate'
-const OPEN_ASSISTANT_COMMAND = 'open-assistant'
 
 function isPopupShortcutResponse(value: unknown): value is PopupShortcutResponse {
   return (
@@ -93,6 +93,14 @@ export function registerCommands() {
 
   browser.commands.onCommand.addListener((command, tab) => {
     if (command === OPEN_ASSISTANT_COMMAND) {
+      // Firefox 侧边栏自带切换
+      if (import.meta.env.FIREFOX) {
+        void (browser as unknown as { sidebarAction?: { toggle(): Promise<void> } }).sidebarAction
+          ?.toggle()
+          .catch((error: unknown) => console.warn('[DevGo] toggle sidebar failed:', error))
+        return
+      }
+      // Chrome 只负责打开：侧边栏已开着时 open 什么也不做，由侧边栏页收到同一命令后自己关闭（见 sidepanel/main.tsx）。
       // sidePanel.open 必须在用户手势（快捷键）的同步调用栈里执行，不能先 await
       if (tab?.windowId != null) {
         chrome.sidePanel?.open({ windowId: tab.windowId }).catch((error: unknown) => {

@@ -1,5 +1,8 @@
 /** 平台相关的快捷键显示 */
 
+/** 打开 / 关闭侧边栏 AI 助手的命令名（后台打开，侧边栏页自己关闭） */
+export const OPEN_ASSISTANT_COMMAND = 'open-assistant'
+
 /** 是否 Mac 平台 */
 export const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)
 

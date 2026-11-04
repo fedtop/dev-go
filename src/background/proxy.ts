@@ -101,7 +101,7 @@ async function readScenarioOptions(): Promise<NetworkPacOptions> {
 
 /**
  * 自动模式：规则列表启用、有自定义代理域名或未命中默认走代理时，生成 PAC 按规则分流；
- * 三者都没有时没有任何分流依据，退化为全部走代理（与旧版「未启用规则列表」行为一致）。
+ * 三者都没有时没有任何命中代理的依据，按未命中的默认去向全部直连。
  */
 function buildNetworkProxyConfig(
   mode: NetworkMode,
@@ -134,7 +134,7 @@ function buildNetworkProxyConfig(
     }
   }
 
-  return buildScenarioProxyConfig(profile)
+  return { mode: 'direct' }
 }
 
 export async function getNetworkStatus(error?: unknown): Promise<NetworkProxyStatus> {

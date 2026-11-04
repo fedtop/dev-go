@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.1.0](https://github.com/fedtop/dev-go/compare/v0.0.9...v0.1.0) (2026-11-04)
+
+### Features
+
+- **assistant:** 侧边栏改为通用网页助手 ([fdffc7f](https://github.com/fedtop/dev-go/commit/fdffc7ff77e7ecfce275d481f7abcb5674b974d6))
+- **assistant:** 新增 WebMCP 侧边栏助手 ([e23f228](https://github.com/fedtop/dev-go/commit/e23f2282dd5f89f746bbe2ce399d745c488ef043))
+- **llm:** 新增各家 Coding Plan 与 MiniMax 预设 ([a76e2cc](https://github.com/fedtop/dev-go/commit/a76e2cc5912dc49a1a536fb0e8515c90e761f37e))
+- **network:** 代理配置保存栏吸底，有未保存修改时高亮提示并在离开前确认 ([fdc03dd](https://github.com/fedtop/dev-go/commit/fdc03ddcd275c6e7f3997d1104be0e251e5e0a7b))
+- **options:** 设置页改为独立标签页，弹窗只保留高频操作 ([ae38241](https://github.com/fedtop/dev-go/commit/ae38241349440103ad58f29bbedc3770909197bb))
+- **popup:** 整页翻译按钮显示已绑定的快捷键 ([bf6fc74](https://github.com/fedtop/dev-go/commit/bf6fc7459c33a9b4a95430478a71844594ad394d))
+- **popup:** 查词支持 AI 引擎 ([d35d1d1](https://github.com/fedtop/dev-go/commit/d35d1d100a0dc215be5c4b9fa75260f5d26a2543))
+- **privacy:** 新增 WebRTC IP 防泄露 ([856095c](https://github.com/fedtop/dev-go/commit/856095cd897297929efacffd37f587451b693af8))
+- **proxy:** 自动模式支持自定义代理域名与未命中默认去向，修复规则匹配 ([5dd3701](https://github.com/fedtop/dev-go/commit/5dd3701dfd2da6d3889cf3e3f8674a9518d71af4))
+- **selection:** 划词工具条新增 AI 动作，翻译与对话模型分开配置 ([70e75ff](https://github.com/fedtop/dev-go/commit/70e75ffaf850350783aa016f7bdead5f8d18e957))
+- **shortcut:** 统一读取命令快捷键并在回到页面时刷新，未绑定时提供设置入口 ([d6e7e63](https://github.com/fedtop/dev-go/commit/d6e7e63c0451bd9ade7d044d1149602b9db54080))
+- **translate:** 整页翻译支持 Shadow DOM / Web Components 页面 ([2f4eeac](https://github.com/fedtop/dev-go/commit/2f4eeac8f0b8396bbd6e70062fadfcdd775930f5))
+- **ui:** 弹窗、设置页与侧边栏支持暗色主题（与 ai-hive 深色配色一致），设置页「通用」新增外观切换 ([6eb16f6](https://github.com/fedtop/dev-go/commit/6eb16f6bd9e71a33516ad6591b20a40d8ebb4ec2))
+
+### Bug Fixes
+
+- **assistant:** 打开 AI 助手快捷键改为切换，再按一次关闭侧边栏 ([3c7085c](https://github.com/fedtop/dev-go/commit/3c7085c983bb195287448533f2c72366d5ae5363))
+- **proxy:** PAC 脚本转义非 ASCII 字符，中文域名规则转 Punycode ([bb3ab75](https://github.com/fedtop/dev-go/commit/bb3ab75a5c492686f7b89e33adb301b10d37fe15))
+- **proxy:** 自动模式无任何分流依据时全部直连 ([a221882](https://github.com/fedtop/dev-go/commit/a2218827c7ea9d40bf140b8376ecb4579c6668f6))
+
 ### 0.0.5 (2022-12-04)
 
 ### Features

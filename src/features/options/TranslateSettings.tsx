@@ -28,12 +28,14 @@ import Switch from '@/ui/Switch'
 import Tabs from '@/ui/Tabs'
 
 import { Card, INPUT_CLASS, Row, SectionHeader } from './layout'
+import { ArrowRight, X } from 'lucide-react'
 
 /** 跳到「AI 模型」分区 */
 function ModelLink({ label }: { label: string }) {
   return (
-    <a href='#models' className='ml-1.5 text-indigo-600 hover:underline'>
-      {label} →
+    <a href='#models' className='ml-1.5 text-accent-600 hover:underline'>
+      {label}
+      <ArrowRight className='ml-0.5 inline size-3 -translate-y-px' aria-hidden />
     </a>
   )
 }
@@ -142,22 +144,22 @@ function AutoHostsSettings() {
           {hosts.map((host) => (
             <li
               key={host}
-              className='flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 py-1 pl-3 pr-1.5 text-xs text-slate-600'
+              className='flex items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-50 py-1 pl-3 pr-1.5 text-xs text-neutral-600'
             >
               {host}
               <button
                 type='button'
                 aria-label={`移除 ${host}`}
                 onClick={() => setHosts(hosts.filter((item) => item !== host))}
-                className='flex h-4 w-4 items-center justify-center rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-600'
+                className='flex h-4 w-4 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-200 hover:text-neutral-600'
               >
-                ✕
+                <X className='size-3' aria-hidden />
               </button>
             </li>
           ))}
         </ul>
       ) : (
-        <p className='text-xs text-slate-400'>暂无</p>
+        <p className='text-xs text-neutral-500'>暂无</p>
       )}
     </Card>
   )

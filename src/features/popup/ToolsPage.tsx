@@ -151,7 +151,7 @@ function ResourceFallbackIcon({ kind }: { kind: MediaResourceKind }) {
   return kind === 'video' ? (
     <PlayIcon />
   ) : (
-    <span className='h-5 w-6 rounded border border-slate-300 bg-white shadow-inner' />
+    <span className='h-5 w-6 rounded border border-neutral-300 bg-white shadow-inner' />
   )
 }
 
@@ -179,8 +179,8 @@ function IconButton({
       onClick={onClick}
       className={`flex h-7 w-7 items-center justify-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
         active
-          ? 'border-blue-300 bg-blue-50 text-blue-700'
-          : 'border-slate-200 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600'
+          ? 'border-accent-300 bg-accent-50 text-accent-700'
+          : 'border-neutral-200 bg-white text-neutral-600 hover:border-accent-400 hover:text-accent-600'
       }`}
     >
       {children}
@@ -242,7 +242,7 @@ function ResourceThumbnail({
 
   if (!previewable) {
     return (
-      <div className='relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-slate-100 text-slate-500'>
+      <div className='relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-neutral-100 text-neutral-500'>
         {content}
       </div>
     )
@@ -254,7 +254,7 @@ function ResourceThumbnail({
       title={previewing ? '收起预览' : '预览视频'}
       aria-label={previewing ? '收起预览' : '预览视频'}
       onClick={() => onTogglePreview(resource)}
-      className='relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-slate-100 text-slate-500 outline-none transition-shadow hover:ring-2 hover:ring-blue-200'
+      className='relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-neutral-100 text-neutral-500 outline-none transition-shadow hover:ring-2 hover:ring-accent-200'
     >
       {content}
     </button>
@@ -292,7 +292,7 @@ function ResourceItem({
   }
 
   return (
-    <div className='rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm'>
+    <div className='rounded-lg border border-neutral-200 bg-white p-2.5'>
       <div className='flex gap-2'>
         <ResourceThumbnail
           resource={resource}
@@ -306,17 +306,20 @@ function ResourceItem({
               className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${
                 resource.kind === 'image'
                   ? 'bg-emerald-50 text-emerald-700'
-                  : 'bg-blue-50 text-blue-700'
+                  : 'bg-accent-50 text-accent-700'
               }`}
             >
               {KIND_LABELS[resource.kind]}
             </span>
-            <span className='truncate text-xs font-medium text-slate-800' title={resource.fileName}>
+            <span
+              className='truncate text-xs font-medium text-neutral-800'
+              title={resource.fileName}
+            >
               {resource.fileName}
             </span>
           </div>
 
-          <div className='mt-1 truncate text-[11px] text-slate-400' title={resource.url}>
+          <div className='mt-1 truncate text-[11px] text-neutral-500' title={resource.url}>
             {getHostname(resource.url)}
           </div>
 
@@ -325,7 +328,7 @@ function ResourceItem({
               {meta.map((item) => (
                 <span
                   key={item}
-                  className='max-w-[150px] truncate rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500'
+                  className='max-w-[150px] truncate rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-500'
                   title={item}
                 >
                   {item}
@@ -577,11 +580,13 @@ export default function ToolsPage() {
 
   return (
     <div className='flex flex-col gap-3'>
-      <section className='rounded-lg border border-slate-200 bg-white p-3 shadow-sm'>
+      <section className='rounded-lg border border-neutral-200 bg-white p-3'>
         <div className='flex items-start justify-between gap-3'>
           <div className='min-w-0'>
-            <div className='text-sm font-semibold text-slate-800'>资源嗅探</div>
-            <div className='mt-0.5 truncate text-xs text-slate-400'>{getPageLabel(currentTab)}</div>
+            <div className='text-sm font-semibold text-neutral-800'>资源嗅探</div>
+            <div className='mt-0.5 truncate text-xs text-neutral-500'>
+              {getPageLabel(currentTab)}
+            </div>
           </div>
           <div className='flex shrink-0 gap-1.5'>
             <Button
@@ -609,8 +614,8 @@ export default function ToolsPage() {
               onClick={() => setFilter(item.value)}
               className={`rounded-lg border px-2 py-1.5 text-left transition-colors ${
                 filter === item.value
-                  ? 'border-blue-300 bg-blue-50 text-blue-700'
-                  : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                  ? 'border-accent-300 bg-accent-50 text-accent-700'
+                  : 'border-neutral-200 bg-neutral-50 text-neutral-600 hover:border-neutral-300'
               }`}
             >
               <span className='block text-[10px]'>{item.label}</span>
@@ -624,7 +629,7 @@ export default function ToolsPage() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder='搜索名称、域名或类型'
-            className='min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-400 focus:bg-white'
+            className='min-w-0 flex-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-700 outline-none transition-colors placeholder:text-neutral-400 focus:border-accent-400 focus:bg-white'
           />
           <Button
             onClick={downloadAll}
@@ -640,21 +645,21 @@ export default function ToolsPage() {
       {status && (
         <div
           className={`rounded-lg px-3 py-2 text-xs ${
-            statusError ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'
+            statusError ? 'bg-rose-50 text-rose-600' : 'bg-neutral-100 text-neutral-500'
           }`}
         >
           {status}
         </div>
       )}
 
-      <div className='flex items-center justify-between text-xs text-slate-400'>
+      <div className='flex items-center justify-between text-xs text-neutral-500'>
         <span>{filteredResources.length} 个资源</span>
         {loading && <span>扫描中…</span>}
       </div>
 
       <div className='flex max-h-[390px] flex-col gap-2 overflow-y-auto pr-1'>
         {!loading && filteredResources.length === 0 ? (
-          <div className='rounded-lg border border-dashed border-slate-200 bg-white px-4 py-10 text-center text-xs text-slate-400'>
+          <div className='rounded-lg border border-dashed border-neutral-200 bg-white px-4 py-10 text-center text-xs text-neutral-500'>
             暂未发现图片或视频资源
           </div>
         ) : (

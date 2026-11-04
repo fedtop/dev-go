@@ -7,7 +7,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loadingDelay?: number
 }
 
-/** 轻量按钮（替代 antd Button） */
+/** 胶囊按钮：primary 黑底白字，default 描边 */
 export default function Button({
   variant = 'default',
   block = false,
@@ -20,13 +20,12 @@ export default function Button({
 }: ButtonProps) {
   const [showLoading, setShowLoading] = useState(false)
   const base =
-    'relative inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-[transform,background-color,border-color,box-shadow,filter,color] duration-150 ease-out enabled:active:translate-y-px enabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60'
-  const styles =
-    variant === 'primary'
-      ? 'popup-btn-primary text-white'
-      : 'popup-btn-default border text-slate-700 hover:text-indigo-600'
+    'relative inline-flex items-center justify-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-[transform,background-color,border-color,color] duration-150 ease-out enabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50'
+  const styles = variant === 'primary' ? 'popup-btn-primary' : 'popup-btn-default border'
   const spinnerColor =
-    variant === 'primary' ? 'border-white/40 border-t-white' : 'border-slate-300 border-t-slate-600'
+    variant === 'primary'
+      ? 'border-white/40 border-t-white'
+      : 'border-neutral-300 border-t-neutral-600'
 
   useEffect(() => {
     if (!loading) {
@@ -46,7 +45,9 @@ export default function Button({
       className={`${base} ${styles} ${block ? 'w-full' : ''} ${className}`}
       {...rest}
     >
-      <span className={showLoading ? 'opacity-0' : ''}>{children}</span>
+      <span className={`inline-flex items-center gap-1.5 ${showLoading ? 'opacity-0' : ''}`}>
+        {children}
+      </span>
       {showLoading && (
         <span
           className={`absolute h-3 w-3 animate-spin rounded-full border-2 ${spinnerColor}`}

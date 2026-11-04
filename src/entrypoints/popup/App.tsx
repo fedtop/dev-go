@@ -17,6 +17,9 @@ import {
 } from '@/utils/settings'
 import type { PopupShortcutMessage, PopupShortcutResponse } from '@/utils/messaging'
 import { formatShortcut, openShortcutSettings } from '@/utils/shortcut'
+import GithubMark from '@/ui/GithubMark'
+import IconButton from '@/ui/IconButton'
+import { ArrowUpRight, Settings } from 'lucide-react'
 import { useCommandShortcuts } from '@/utils/useCommandShortcuts'
 
 const DEFAULT_POPUP_COMMAND = 'open-default'
@@ -113,19 +116,14 @@ export default function App() {
   }
 
   return (
-    <div className='popup-shell relative flex w-[500px] flex-col overflow-hidden text-slate-800'>
-      <span aria-hidden='true' className='popup-ambient popup-ambient-a' />
-      <span aria-hidden='true' className='popup-ambient popup-ambient-b' />
-
+    <div className='popup-shell relative flex w-[500px] flex-col overflow-hidden text-neutral-800'>
       {/* 顶部栏 */}
-      <header className='popup-header z-10 flex shrink-0 items-center justify-between px-4 py-3'>
+      <header className='popup-header z-10 flex shrink-0 items-center justify-between border-b px-4 py-2.5'>
         <div className='flex items-center gap-2'>
-          <span className='popup-brand-mark flex h-7 w-7 items-center justify-center rounded-xl'>
-            <img src='/icons/48.png' alt='' className='h-5 w-5' />
-          </span>
-          <span className='text-sm font-semibold tracking-tight text-slate-800'>{SHIP_NAME}</span>
+          <img src='/icons/48.png' alt='' className='h-6 w-6' />
+          <span className='text-sm font-semibold tracking-tight text-neutral-900'>{SHIP_NAME}</span>
         </div>
-        <div className='flex items-center gap-2'>
+        <div className='flex items-center gap-1.5'>
           <Tabs value={active} tabs={POPUP_PAGES} onChange={handleTabChange} />
           <SettingsButton />
         </div>
@@ -140,33 +138,37 @@ export default function App() {
       </main>
 
       {/* 底部栏 */}
-      <footer className='popup-footer flex shrink-0 items-center justify-between px-4 py-2 text-xs text-slate-400'>
+      <footer className='popup-footer flex shrink-0 items-center justify-between border-t px-4 py-2 text-xs text-neutral-500'>
         <button
           type='button'
           title='修改快捷键'
           onClick={() => void openShortcutSettings().finally(() => window.close())}
-          className='group flex items-center gap-1 transition-colors hover:text-indigo-600'
+          className='group flex items-center gap-1.5 transition-colors hover:text-neutral-900'
         >
           快捷键
           {activeShortcut ? (
-            <kbd className='popup-kbd rounded px-1.5 py-0.5 text-[10px] text-slate-500 group-hover:text-indigo-600'>
+            <kbd className='popup-kbd rounded px-1.5 py-0.5 text-[10px] text-neutral-600'>
               {formatShortcut(activeShortcut)}
             </kbd>
           ) : (
-            <span className='text-[10px] text-slate-400 group-hover:text-indigo-600'>去设置</span>
+            <span className='text-[10px] text-neutral-500 group-hover:text-neutral-900'>
+              去设置
+            </span>
           )}
-          <span className='text-[10px] opacity-0 transition-opacity group-hover:opacity-100'>
-            ↗
-          </span>
+          <ArrowUpRight
+            className='size-3 opacity-0 transition-opacity group-hover:opacity-100'
+            aria-hidden
+          />
         </button>
         <div className='flex items-center gap-3'>
           <a
             href={SITE_URL}
             target='_blank'
             rel='noreferrer'
-            className='transition-colors hover:text-indigo-600'
+            className='flex items-center gap-1.5 transition-colors hover:text-neutral-900'
           >
-            GitHub ↗
+            <GithubMark className='size-3.5' />
+            GitHub
           </a>
         </div>
       </footer>
@@ -177,29 +179,14 @@ export default function App() {
 /** 打开设置页（全局设置都在设置页，弹窗只放当前页面相关的操作） */
 function SettingsButton() {
   return (
-    <button
-      type='button'
-      title='设置'
-      aria-label='打开设置'
+    <IconButton
+      label='打开设置'
       onClick={() => {
         void sendRuntimeMessage({ type: 'open-options-page' }).finally(() => window.close())
       }}
-      className='popup-settings-button group flex h-8 w-8 items-center justify-center rounded-xl text-indigo-600 transition-colors hover:!bg-indigo-600 hover:text-white'
     >
-      <svg
-        viewBox='0 0 24 24'
-        fill='none'
-        stroke='currentColor'
-        strokeWidth='2'
-        strokeLinecap='round'
-        strokeLinejoin='round'
-        className='h-[18px] w-[18px] transition-transform duration-500 group-hover:rotate-90'
-        aria-hidden='true'
-      >
-        <path d='M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z' />
-        <circle cx='12' cy='12' r='3' />
-      </svg>
-    </button>
+      <Settings strokeWidth={1.8} />
+    </IconButton>
   )
 }
 

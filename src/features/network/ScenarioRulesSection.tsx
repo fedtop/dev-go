@@ -119,11 +119,11 @@ export default function ScenarioRulesSection({
   }
 
   return (
-    <div className='border-t border-slate-100 pt-3'>
+    <div className='border-t border-neutral-100 pt-3'>
       <div className='mb-2 flex items-center justify-between gap-2'>
         <div className='min-w-0'>
-          <h3 className='text-xs font-semibold text-slate-700'>自定义代理域名</h3>
-          <p className='truncate text-[10px] leading-4 text-slate-400'>
+          <h3 className='text-xs font-semibold text-neutral-700'>自定义代理域名</h3>
+          <p className='truncate text-[10px] leading-4 text-neutral-500'>
             规则列表没收录、但需要走代理的站点
           </p>
         </div>
@@ -146,16 +146,16 @@ export default function ScenarioRulesSection({
         onChange={(event) => setText(event.target.value)}
         onBlur={commitText}
         placeholder={'npmjs.org\ncursor.com\n*.example.com'}
-        className='w-full resize-none rounded-lg border border-slate-300 bg-white px-2.5 py-2 font-mono text-xs leading-5 text-slate-700 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500 disabled:opacity-60'
+        className='w-full resize-none rounded-lg border border-neutral-300 bg-white px-2.5 py-2 font-mono text-xs leading-5 text-neutral-700 placeholder:text-neutral-400 outline-none transition-colors focus:border-accent-500 disabled:opacity-60'
       />
-      <p className='mt-1 text-[10px] leading-4 text-slate-400'>
+      <p className='mt-1 text-[10px] leading-4 text-neutral-500'>
         每行一个域名，自动包含子域名；优先于规则列表，失焦后自动保存。
       </p>
 
       <div className='mt-2.5 flex items-center justify-between gap-3'>
         <div className='min-w-0'>
-          <p className='text-xs font-medium text-slate-700'>未命中规则时</p>
-          <p className='text-[10px] leading-4 text-slate-400'>
+          <p className='text-xs font-medium text-neutral-700'>未命中规则时</p>
+          <p className='text-[10px] leading-4 text-neutral-500'>
             {defaultAction === 'proxy'
               ? '除绕过列表、局域网和 .cn 域名外都走代理；适合代理软件自带分流时'
               : '只有命中规则的站点走代理，其余直连'}
@@ -164,7 +164,7 @@ export default function ScenarioRulesSection({
         <Tabs value={defaultAction} tabs={DEFAULT_ACTION_OPTIONS} onChange={changeDefaultAction} />
       </div>
 
-      {status && <p className='mt-1.5 text-[10px] leading-4 text-slate-500'>{status}</p>}
+      {status && <p className='mt-1.5 text-[10px] leading-4 text-neutral-500'>{status}</p>}
     </div>
   )
 }

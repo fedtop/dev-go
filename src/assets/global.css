@@ -4,6 +4,48 @@
 /* 暗色变体：由 <html class="dark"> 控制（见 src/utils/theme.ts） */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * 扩展 UI 设计 token（popup / 设置页 / 侧边栏），配色与 ai-hive 一致：中性灰阶 + 单一蓝色强调色。
+ * 组件优先用这些语义变量；Tailwind 里用 neutral-* 灰阶与 accent-* 强调色。
+ */
+:root {
+  --ui-font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  --ui-bg: #ffffff;
+  --ui-bg-sidebar: #f9f9f9;
+  --ui-bg-elevated: #ffffff;
+  --ui-bg-subtle: #f3f3f3;
+  --ui-bg-hover: rgb(0 0 0 / 0.05);
+  --ui-bg-active: rgb(0 0 0 / 0.08);
+  --ui-text: #0d0d0d;
+  --ui-text-secondary: #5d5d5d;
+  --ui-text-tertiary: #8f8f8f;
+  --ui-border: rgb(0 0 0 / 0.1);
+  --ui-border-light: rgb(0 0 0 / 0.05);
+  --ui-border-heavy: rgb(0 0 0 / 0.15);
+  --ui-focus-ring: rgb(1 105 204 / 0.45);
+  --ui-accent: #0169cc;
+  --ui-accent-hover: #0158ad;
+  --ui-accent-soft: rgb(1 105 204 / 0.1);
+  --ui-primary-bg: #0d0d0d;
+  --ui-primary-text: #ffffff;
+  --ui-primary-hover: #2f2f2f;
+  --ui-shadow-popover: 0 0 0 1px rgb(0 0 0 / 0.06), 0 12px 32px rgb(0 0 0 / 0.12);
+}
+
+@theme {
+  /* 强调色阶：600 为 ai-hive 的 --accent */
+  --color-accent-50: #eef6ff;
+  --color-accent-100: #d9ebff;
+  --color-accent-200: #b3d6fb;
+  --color-accent-300: #80baf3;
+  --color-accent-400: #3f94e3;
+  --color-accent-500: #0f7bd8;
+  --color-accent-600: #0169cc;
+  --color-accent-700: #0158ad;
+  --color-accent-800: #0a4a8c;
+  --color-accent-900: #0d3d70;
+}
+
 @theme {
   --animate-aurora-1: aurora-1 13s ease-in-out infinite;
   --animate-aurora-2: aurora-2 17s ease-in-out infinite;
@@ -103,13 +145,6 @@ html.sidepanel-page body,
 html.sidepanel-page #root {
   height: 100% !important;
   overflow: hidden;
-}
-
-.sidepanel-shell {
-  background:
-    radial-gradient(circle at 12% -8%, rgba(59, 130, 246, 0.12), transparent 34%),
-    radial-gradient(circle at 92% 8%, rgba(236, 72, 153, 0.08), transparent 30%),
-    linear-gradient(180deg, #f8fbff 0%, #eef3fb 100%);
 }
 
 /* 细滚动条 */
@@ -246,173 +281,138 @@ body.quiet-page {
   background-color: #070a17;
 }
 
-/* ---------- Popup：克制版 newtab 视觉语言 ---------- */
+/* ---------- 扩展 UI（popup / 设置页 / 侧边栏）：中性灰 + 单一强调色，与 ai-hive 同一套视觉语言 ---------- */
 .popup-shell {
   isolation: isolate;
   max-height: 600px;
-  background:
-    radial-gradient(circle at 12% -8%, rgba(59, 130, 246, 0.16), transparent 34%),
-    radial-gradient(circle at 92% 8%, rgba(236, 72, 153, 0.1), transparent 30%),
-    linear-gradient(180deg, #f8fbff 0%, #eef3fb 100%);
-}
-.popup-ambient {
-  position: absolute;
-  z-index: -1;
-  border-radius: 999px;
-  filter: blur(18px);
-  pointer-events: none;
-}
-.popup-ambient-a {
-  top: -48px;
-  left: -54px;
-  width: 150px;
-  height: 150px;
-  background: rgba(59, 130, 246, 0.14);
-}
-.popup-ambient-b {
-  right: -62px;
-  bottom: 38px;
-  width: 170px;
-  height: 170px;
-  background: rgba(236, 72, 153, 0.09);
+  background: var(--ui-bg);
+  color: var(--ui-text);
 }
 .popup-header,
 .popup-footer {
-  border-color: rgba(203, 213, 225, 0.72);
-  background: rgba(255, 255, 255, 0.86);
-  box-shadow: inset 0 -1px 0 rgba(226, 232, 240, 0.72);
-  backdrop-filter: blur(18px) saturate(1.08);
+  border-color: var(--ui-border-light);
+  background: var(--ui-bg);
 }
-.popup-footer {
-  box-shadow: inset 0 1px 0 rgba(226, 232, 240, 0.78);
+.popup-brand-mark {
+  background: var(--ui-bg-subtle);
 }
-.popup-brand-mark,
-.popup-tabs,
-.popup-settings-button,
+.popup-settings-button {
+  color: var(--ui-text-secondary);
+}
+.popup-settings-button:hover {
+  background: var(--ui-bg-hover);
+  color: var(--ui-text);
+}
 .popup-kbd {
-  background: rgba(255, 255, 255, 0.68);
-  box-shadow:
-    inset 0 0 0 1px rgba(148, 163, 184, 0.16),
-    0 6px 16px rgba(15, 23, 42, 0.05);
+  background: var(--ui-bg-subtle);
+  box-shadow: inset 0 0 0 1px var(--ui-border-light);
+  font-family: var(--ui-font-mono);
 }
-.popup-tabs .is-active {
-  color: #4f46e5;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.82)),
-    linear-gradient(110deg, rgba(59, 130, 246, 0.1), rgba(236, 72, 153, 0.08));
+
+/* 分段控件：浅灰轨道 + 白色胶囊指示 */
+.popup-tabs {
+  background: var(--ui-bg-hover);
 }
-.popup-main :is(section, div).rounded-lg.border.border-slate-200.bg-white {
-  border-color: rgba(203, 213, 225, 0.72);
-  background: rgba(255, 255, 255, 0.84);
-  box-shadow:
-    0 8px 22px rgba(15, 23, 42, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+.popup-tabs button {
+  color: var(--ui-text-tertiary);
 }
+.popup-tabs button:hover {
+  color: var(--ui-text);
+}
+.popup-tabs .is-active,
+.popup-tabs .is-active:hover {
+  color: var(--ui-text);
+  background: var(--ui-bg);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+}
+
+/* 卡片：细边框，不用阴影堆层次 */
+.popup-main :is(section, div).rounded-lg.border.border-neutral-200.bg-white {
+  border-color: var(--ui-border);
+  background: var(--ui-bg);
+}
+
+/* 输入框 */
 .popup-main :is(input, textarea).rounded-lg,
 .popup-field {
-  border-color: rgba(203, 213, 225, 0.86);
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.84);
+  border-color: var(--ui-border-heavy);
+  background: var(--ui-bg);
 }
 .popup-main :is(input, textarea).rounded-lg:focus,
-.popup-field:hover,
 .popup-field:focus-within {
-  border-color: rgba(99, 102, 241, 0.54);
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow:
-    0 0 0 3px rgba(99, 102, 241, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  border-color: var(--ui-accent);
+  box-shadow: 0 0 0 3px var(--ui-accent-soft);
 }
+.popup-field:hover {
+  border-color: var(--ui-text-tertiary);
+}
+
+/* 按钮：主按钮黑底白字，次按钮描边 */
 .popup-btn-primary {
-  background-image: linear-gradient(110deg, #3b82f6, #6366f1 56%, #0891b2);
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.2);
+  background: var(--ui-primary-bg);
+  color: var(--ui-primary-text);
 }
-.popup-btn-primary:hover {
-  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.26);
-  filter: brightness(1.03);
+.popup-btn-primary:enabled:hover {
+  background: var(--ui-primary-hover);
 }
 .popup-btn-default {
-  border-color: rgba(203, 213, 225, 0.9);
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
+  border-color: var(--ui-border-heavy);
+  background: var(--ui-bg);
+  color: var(--ui-text);
 }
-.popup-btn-default:hover {
-  border-color: rgba(99, 102, 241, 0.5);
-  background: rgba(255, 255, 255, 0.92);
+.popup-btn-default:enabled:hover {
+  background: var(--ui-bg-hover);
 }
+:is(.popup-btn-primary, .popup-btn-default):focus-visible,
+.popup-switch:focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+
 .popup-mode-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(59, 130, 246, 0.55) rgba(226, 232, 240, 0.68);
+  scrollbar-color: var(--ui-border-heavy) transparent;
 }
 .popup-mode-scroll::-webkit-scrollbar {
-  height: 8px;
-}
-.popup-mode-scroll::-webkit-scrollbar-track {
-  margin-inline: 4px;
-  border-radius: 999px;
-  background: rgba(226, 232, 240, 0.68);
+  height: 6px;
 }
 .popup-mode-scroll::-webkit-scrollbar-thumb {
-  border: 2px solid rgba(226, 232, 240, 0.68);
   border-radius: 999px;
-  background: rgba(59, 130, 246, 0.58);
+  background: var(--ui-border-heavy);
 }
-.popup-mode-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(37, 99, 235, 0.72);
-}
+
+/* 开关：关为灰，开为强调色 */
 .popup-switch {
-  background: rgba(148, 163, 184, 0.46);
-  box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.16);
+  background: var(--ui-border-heavy);
 }
-.popup-switch.is-checked {
-  background-image: linear-gradient(110deg, #3b82f6, #6366f1 60%, #0891b2);
+.popup-switch:enabled:hover {
+  background: var(--ui-text-tertiary);
 }
+.popup-switch.is-checked,
+.popup-switch.is-checked:enabled:hover {
+  background: var(--ui-accent);
+}
+
+/* 下拉浮层 */
 .popup-select-menu {
-  border: 1px solid rgba(203, 213, 225, 0.78);
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow:
-    0 14px 34px rgba(15, 23, 42, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(16px) saturate(1.1);
+  border: 0;
+  background: var(--ui-bg-elevated);
+  box-shadow: var(--ui-shadow-popover);
 }
 .popup-select-item {
-  color: #334155;
+  color: var(--ui-text);
 }
-.popup-select-item:hover,
+.popup-select-item:hover {
+  background: var(--ui-bg-hover);
+}
 .popup-select-item.is-selected {
-  color: #4f46e5;
-  background: linear-gradient(110deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.08));
+  color: var(--ui-accent);
+  background: var(--ui-accent-soft);
 }
-.popup-main .bg-blue-600 {
-  background-color: #4f46e5;
-}
-.popup-main .hover\:bg-blue-500:hover {
-  background-color: #6366f1;
-}
-.popup-main .text-blue-600,
-.popup-main .hover\:text-blue-600:hover {
-  color: #4f46e5;
-}
-.popup-main .border-blue-500,
-.popup-main .focus\:border-blue-500:focus,
-.popup-main .focus\:border-blue-400:focus,
-.popup-main .focus-within\:border-blue-400:focus-within {
-  border-color: rgba(99, 102, 241, 0.68);
-}
-.popup-main .bg-blue-50 {
-  background-color: rgba(238, 242, 255, 0.88);
-}
-.popup-main .text-blue-700 {
-  color: #4338ca;
-}
-.popup-main .border-blue-300 {
-  border-color: rgba(129, 140, 248, 0.56);
-}
-.popup-main .text-slate-400 {
-  color: #94a3b8;
-}
-.popup-main .border-slate-100 {
-  border-color: rgba(226, 232, 240, 0.72);
+
+.sidepanel-shell {
+  background: var(--ui-bg);
+  color: var(--ui-text);
 }
 
 /* ---------- 极光流动渐变（主标题 / 搜索按钮共用） ---------- */

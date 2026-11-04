@@ -18,6 +18,7 @@ import {
 import { useStorageItem } from '@/utils/useStorageItem'
 
 import { Card, Row, SectionHeader } from './layout'
+import { ArrowUpRight } from 'lucide-react'
 
 const POLICY_OPTIONS: Array<{ value: WebrtcPolicy; label: string; hint: string }> = [
   {
@@ -85,9 +86,10 @@ function LeakTest() {
             href='https://browserleaks.com/webrtc'
             target='_blank'
             rel='noreferrer'
-            className='text-xs text-slate-400 hover:text-indigo-600'
+            className='text-xs text-neutral-500 hover:text-accent-600'
           >
-            在线检测 ↗
+            在线检测
+            <ArrowUpRight className='ml-0.5 inline size-3 -translate-y-px' aria-hidden />
           </a>
           <Button
             variant='primary'
@@ -101,12 +103,12 @@ function LeakTest() {
       }
     >
       {result === null ? (
-        <span className='text-xs text-slate-400'>点击「开始检测」，结果以网站视角为准</span>
+        <span className='text-xs text-neutral-500'>点击「开始检测」，结果以网站视角为准</span>
       ) : result.error ? (
         <span className='text-sm text-amber-600'>{result.error}</span>
       ) : (
         <div className='flex flex-col gap-2'>
-          <span className='text-xs text-slate-400'>检测网页：{result.host}</span>
+          <span className='text-xs text-neutral-500'>检测网页：{result.host}</span>
           {result.blocked ? (
             <span className='text-sm text-emerald-600'>
               网页的 WebRTC 接口已被屏蔽，拿不到任何地址
@@ -120,10 +122,10 @@ function LeakTest() {
                   key={`${candidate.type}|${candidate.address}`}
                   className='flex items-center justify-between gap-3 text-sm'
                 >
-                  <code className='rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-700'>
+                  <code className='rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-xs text-neutral-700'>
                     {candidate.address}
                   </code>
-                  <span className='text-xs text-slate-400'>
+                  <span className='text-xs text-neutral-500'>
                     {describeCandidate(candidate)} · {candidate.protocol.toUpperCase()}
                   </span>
                 </li>
@@ -199,7 +201,7 @@ export default function PrivacySettings() {
             className={`text-xs ${
               message || control?.warn || mismatch || (status && !status.permission)
                 ? 'text-amber-600'
-                : 'text-slate-400'
+                : 'text-neutral-500'
             }`}
           >
             {message ||

@@ -11,6 +11,7 @@ import { useCommandShortcuts } from '@/utils/useCommandShortcuts'
 import { useStorageItem } from '@/utils/useStorageItem'
 
 import { Card, Row, SectionHeader } from './layout'
+import { ArrowUpRight } from 'lucide-react'
 
 /** 命令 name -> 展示名（按声明顺序展示） */
 const COMMAND_LABELS: Record<string, string> = {
@@ -56,7 +57,8 @@ function ShortcutsCard() {
         // Chrome 命令快捷键只能在系统设置页修改；Firefox 的 about:addons 扩展无权打开
         !import.meta.env.FIREFOX && (
           <Button onClick={() => void openShortcutSettings()} className='!px-2.5 !py-1 text-xs'>
-            自定义 ↗
+            自定义
+            <ArrowUpRight className='size-3' aria-hidden />
           </Button>
         )
       }
@@ -64,13 +66,13 @@ function ShortcutsCard() {
       <div className='flex flex-col gap-2'>
         {shortcuts.map((item) => (
           <div key={item.name} className='flex items-center justify-between text-sm'>
-            <span className='text-slate-600'>{COMMAND_LABELS[item.name]}</span>
+            <span className='text-neutral-600'>{COMMAND_LABELS[item.name]}</span>
             {item.shortcut ? (
-              <kbd className='rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-600'>
+              <kbd className='rounded bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600'>
                 {formatShortcut(item.shortcut)}
               </kbd>
             ) : (
-              <span className='text-xs text-slate-400'>未设置</span>
+              <span className='text-xs text-neutral-500'>未设置</span>
             )}
           </div>
         ))}
@@ -117,12 +119,12 @@ function SyncCard() {
       <div className='flex items-center justify-between gap-2 text-sm'>
         <span
           className={`truncate ${
-            status.state === 'error' && !syncing ? 'text-rose-500' : 'text-slate-600'
+            status.state === 'error' && !syncing ? 'text-rose-500' : 'text-neutral-600'
           }`}
         >
           {summary}
         </span>
-        {usage && <span className='shrink-0 text-xs text-slate-400'>{usage}</span>}
+        {usage && <span className='shrink-0 text-xs text-neutral-500'>{usage}</span>}
       </div>
     </Card>
   )
@@ -170,7 +172,7 @@ function BackupCard() {
       <div className='flex items-center gap-2'>
         <Button onClick={() => void exportBackup()}>导出配置</Button>
         <Button onClick={() => fileInputRef.current?.click()}>导入配置</Button>
-        {message && <span className='ml-2 text-xs text-slate-500'>{message}</span>}
+        {message && <span className='ml-2 text-xs text-neutral-500'>{message}</span>}
       </div>
       <input
         ref={fileInputRef}

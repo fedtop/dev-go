@@ -19,7 +19,7 @@ export default function DeleteModeDialog({
 }: DeleteModeDialogProps) {
   return (
     <div
-      className='fixed inset-0 z-40 flex items-center justify-center bg-slate-950/20 p-3 backdrop-blur-sm'
+      className='fixed inset-0 z-40 flex items-center justify-center bg-neutral-950/20 p-3 backdrop-blur-sm'
       onClick={onClose}
     >
       <div
@@ -34,9 +34,9 @@ export default function DeleteModeDialog({
             !
           </div>
           <div className='min-w-0'>
-            <h3 className='text-sm font-semibold text-slate-800'>删除自定义代理</h3>
-            <p className='mt-1 truncate text-xs font-medium text-slate-700'>「{name}」</p>
-            <p className='mt-1 text-xs leading-5 text-slate-500'>
+            <h3 className='text-sm font-semibold text-neutral-800'>删除自定义代理</h3>
+            <p className='mt-1 truncate text-xs font-medium text-neutral-700'>「{name}」</p>
+            <p className='mt-1 text-xs leading-5 text-neutral-500'>
               删除后会回到内置代理配置，不影响自动模式、代理模式和其他自定义模式。
             </p>
           </div>

@@ -52,7 +52,7 @@ export default function NetworkSettings() {
           onSelectCustomMode={c.selectCustomProxyMode}
         />
         {c.statusText && (
-          <p className={`text-xs ${c.status?.ok ? 'text-slate-400' : 'text-rose-500'}`}>
+          <p className={`text-xs ${c.status?.ok ? 'text-neutral-500' : 'text-rose-500'}`}>
             {c.statusText}
           </p>
         )}
@@ -80,12 +80,12 @@ export default function NetworkSettings() {
           }
         >
           <div>
-            <h3 className='mb-1.5 text-sm font-medium text-slate-700'>代理服务器</h3>
+            <h3 className='mb-1.5 text-sm font-medium text-neutral-700'>代理服务器</h3>
             <ProxyServerFields profile={c.profile} onChange={c.setProfile} />
           </div>
 
           {c.showRuleListSettings && (
-            <div className='border-t border-slate-100 pt-3'>
+            <div className='border-t border-neutral-100 pt-3'>
               <RuleListSection syncProxyIfActive={c.syncProxyIfActive} />
               <ScenarioRulesSection
                 currentHost=''
@@ -96,8 +96,8 @@ export default function NetworkSettings() {
             </div>
           )}
 
-          <div className='border-t border-slate-100 pt-3'>
-            <h3 className='mb-1.5 text-sm font-medium text-slate-700'>
+          <div className='border-t border-neutral-100 pt-3'>
+            <h3 className='mb-1.5 text-sm font-medium text-neutral-700'>
               绕过列表（不走当前代理的域名）
             </h3>
             <textarea
@@ -106,9 +106,9 @@ export default function NetworkSettings() {
               spellCheck={false}
               onChange={(event) => c.setBypassText(event.target.value)}
               placeholder={'<local>\n127.0.0.1\n*.dev.local'}
-              className='w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-xs leading-5 text-slate-700 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500'
+              className='w-full resize-y rounded-lg border border-neutral-300 bg-white px-3 py-2 font-mono text-xs leading-5 text-neutral-700 placeholder:text-neutral-400 outline-none transition-colors focus:border-accent-500'
             />
-            <p className='mt-1.5 text-xs leading-relaxed text-slate-400'>
+            <p className='mt-1.5 text-xs leading-relaxed text-neutral-500'>
               每行一个域名或 Chrome
               代理绕过规则；代理模式、自动模式与每个自定义代理模式都会独立保存。
             </p>
@@ -119,7 +119,7 @@ export default function NetworkSettings() {
             className={`sticky bottom-3 z-10 -mx-2 flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors ${
               c.profileDirty
                 ? 'border-amber-300 bg-amber-50 shadow-md'
-                : 'border-slate-100 bg-white/95 backdrop-blur'
+                : 'border-neutral-100 bg-white/95 backdrop-blur'
             }`}
           >
             <p
@@ -128,7 +128,7 @@ export default function NetworkSettings() {
                   ? 'text-rose-500'
                   : c.profileDirty
                     ? 'font-medium text-amber-700'
-                    : 'text-slate-400'
+                    : 'text-neutral-500'
               }`}
             >
               {c.profileDirty
@@ -148,7 +148,7 @@ export default function NetworkSettings() {
           title='代理配置'
           desc='直连与系统代理模式不需要配置。切换到「自动模式」「代理模式」或自定义模式后，可在这里配置代理服务器、规则列表与绕过列表。'
         >
-          <span className='text-xs text-slate-400'>当前模式无需配置</span>
+          <span className='text-xs text-neutral-500'>当前模式无需配置</span>
         </Card>
       )}
 

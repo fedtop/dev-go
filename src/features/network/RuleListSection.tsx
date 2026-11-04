@@ -110,11 +110,11 @@ export default function RuleListSection({ syncProxyIfActive }: RuleListSectionPr
   const ruleListTime = formatRuleListTime(ruleList.lastUpdate)
 
   return (
-    <div className='border-t border-slate-100 pt-3'>
+    <div className='border-t border-neutral-100 pt-3'>
       <div className='mb-2 flex items-center justify-between gap-3'>
         <div className='min-w-0'>
-          <h3 className='text-xs font-semibold text-slate-700'>规则列表</h3>
-          <p className='truncate text-[10px] leading-4 text-slate-400'>
+          <h3 className='text-xs font-semibold text-neutral-700'>规则列表</h3>
+          <p className='truncate text-[10px] leading-4 text-neutral-500'>
             {ruleList.lastUpdate
               ? `${ruleListTime} · ${ruleList.proxyRuleCount} 条代理规则`
               : 'AutoProxy / GFWList'}
@@ -128,14 +128,14 @@ export default function RuleListSection({ syncProxyIfActive }: RuleListSectionPr
           value={ruleListUrl}
           placeholder='https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt'
           onChange={(event) => setRuleListUrl(event.target.value)}
-          className='min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500'
+          className='min-w-0 flex-1 rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-sm text-neutral-700 placeholder:text-neutral-400 outline-none transition-colors focus:border-accent-500'
         />
         <Button onClick={downloadRuleList} loading={ruleListBusy} className='shrink-0'>
           {ruleList.text ? '更新' : '下载'}
         </Button>
       </div>
 
-      <p className='mt-1.5 text-[10px] leading-4 text-slate-400'>
+      <p className='mt-1.5 text-[10px] leading-4 text-neutral-500'>
         启用后命中规则的站点走代理，每 6
         小时自动更新。未启用规则列表、也没有自定义代理域名时，自动模式全部直连。
       </p>
@@ -148,8 +148,8 @@ export default function RuleListSection({ syncProxyIfActive }: RuleListSectionPr
             onClick={() => selectRecommendedRuleList(item.url)}
             className={`rounded border px-2 py-1 text-[10px] leading-4 transition-[transform,border-color,background-color,color] duration-150 ease-out active:translate-y-px active:scale-[0.98] ${
               ruleListUrl === item.url
-                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-blue-300 hover:text-blue-600'
+                ? 'border-accent-500 bg-accent-50 text-accent-700'
+                : 'border-neutral-200 bg-neutral-50 text-neutral-500 hover:border-accent-300 hover:text-accent-600'
             }`}
           >
             {item.label}
@@ -159,7 +159,7 @@ export default function RuleListSection({ syncProxyIfActive }: RuleListSectionPr
       {(ruleListStatus || ruleList.directRuleCount > 0) && (
         <p
           className={`mt-1 text-[10px] leading-4 ${
-            ruleListError ? 'text-rose-500' : 'text-slate-500'
+            ruleListError ? 'text-rose-500' : 'text-neutral-500'
           }`}
         >
           {ruleListStatus ||

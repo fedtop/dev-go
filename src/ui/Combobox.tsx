@@ -138,7 +138,7 @@ export default function Combobox({
           setActive(-1)
           if (!open) openMenu()
         }}
-        className={`popup-field w-full rounded-lg border pr-7 text-slate-700 outline-none transition-colors placeholder:text-slate-400 ${inputClassName}`}
+        className={`popup-field w-full rounded-lg border pr-7 text-neutral-700 outline-none transition-colors placeholder:text-neutral-400 ${inputClassName}`}
       />
       <button
         type='button'
@@ -152,7 +152,7 @@ export default function Combobox({
             openMenu()
           }
         }}
-        className='absolute inset-y-0 right-0 flex w-7 items-center justify-center text-slate-400'
+        className='absolute inset-y-0 right-0 flex w-7 items-center justify-center text-neutral-500'
       >
         <svg
           width='10'
@@ -173,7 +173,7 @@ export default function Combobox({
             style={menuStyle}
             className='popup-select-menu fixed z-50 overflow-y-auto overscroll-contain rounded-xl p-1'
           >
-            {status && <div className='px-2.5 py-1.5 text-xs text-slate-400'>{status}</div>}
+            {status && <div className='px-2.5 py-1.5 text-xs text-neutral-500'>{status}</div>}
             {visible.map((option, index) => (
               <button
                 key={option.value}
@@ -190,7 +190,7 @@ export default function Combobox({
               >
                 <span className='truncate'>{option.value}</span>
                 {option.note && (
-                  <span className='shrink-0 text-[11px] font-normal text-slate-400'>
+                  <span className='shrink-0 text-[11px] font-normal text-neutral-500'>
                     {option.note}
                   </span>
                 )}

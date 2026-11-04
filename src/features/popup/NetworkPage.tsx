@@ -6,6 +6,7 @@ import { SCHEME_OPTIONS } from '@/features/network/model'
 import { useScenarioHostProxy } from '@/features/network/ScenarioRulesSection'
 import { useNetworkController } from '@/features/network/useNetworkController'
 import Button from '@/ui/Button'
+import { ArrowUpRight } from 'lucide-react'
 
 /** 打开设置页「网络代理」分区，并关闭 popup */
 function openNetworkSettings() {
@@ -31,20 +32,21 @@ export default function NetworkPage() {
 
   return (
     <div className='flex flex-col gap-2.5'>
-      <section className='rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm'>
+      <section className='rounded-lg border border-neutral-200 bg-white p-2.5'>
         <div className='mb-2 flex items-center justify-between gap-3'>
           <div className='min-w-0'>
-            <h2 className='text-sm font-semibold text-slate-800'>网络模式</h2>
-            <p className='truncate text-xs text-slate-400'>
+            <h2 className='text-sm font-semibold text-neutral-800'>网络模式</h2>
+            <p className='truncate text-xs text-neutral-500'>
               {c.currentHost ? `当前网页：${c.currentHost}` : '当前网页不可配置代理'}
             </p>
           </div>
           <button
             type='button'
             onClick={openNetworkSettings}
-            className='shrink-0 text-xs text-slate-400 transition-colors hover:text-indigo-600'
+            className='shrink-0 text-xs text-neutral-500 transition-colors hover:text-accent-600'
           >
-            代理设置 ↗
+            代理设置
+            <ArrowUpRight className='ml-0.5 inline size-3 -translate-y-px' aria-hidden />
           </button>
         </div>
 
@@ -61,7 +63,7 @@ export default function NetworkPage() {
         {c.statusText && (
           <p
             className={`mt-2 text-[10px] leading-4 ${
-              c.status?.ok ? 'text-slate-400' : 'text-rose-500'
+              c.status?.ok ? 'text-neutral-500' : 'text-rose-500'
             }`}
           >
             {c.statusText}
@@ -70,7 +72,7 @@ export default function NetworkPage() {
       </section>
 
       {c.showProxySettings && (
-        <section className='flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm'>
+        <section className='flex flex-col gap-2 rounded-lg border border-neutral-200 bg-white p-2.5'>
           <button
             type='button'
             onClick={openNetworkSettings}
@@ -78,21 +80,24 @@ export default function NetworkPage() {
             className='group flex items-center justify-between gap-2 text-left'
           >
             <span className='min-w-0'>
-              <span className='block truncate text-xs text-slate-500'>
+              <span className='block truncate text-xs text-neutral-500'>
                 {c.proxyConfigDescription}
               </span>
-              <span className='block truncate font-mono text-xs text-slate-700'>
+              <span className='block truncate font-mono text-xs text-neutral-700'>
                 {scheme} {c.profile.host}:{c.profile.port}
-                <span className='ml-2 font-sans text-slate-400'>绕过 {c.bypassList.length} 条</span>
+                <span className='ml-2 font-sans text-neutral-500'>
+                  绕过 {c.bypassList.length} 条
+                </span>
               </span>
             </span>
-            <span className='shrink-0 text-xs text-slate-400 group-hover:text-indigo-600'>
-              编辑 ↗
+            <span className='shrink-0 text-xs text-neutral-500 group-hover:text-accent-600'>
+              编辑
+              <ArrowUpRight className='ml-0.5 inline size-3 -translate-y-px' aria-hidden />
             </span>
           </button>
 
           {c.currentHost && (
-            <div className='flex flex-wrap gap-1.5 border-t border-slate-100 pt-2'>
+            <div className='flex flex-wrap gap-1.5 border-t border-neutral-100 pt-2'>
               <Button
                 disabled={c.busy}
                 onClick={() => {
@@ -118,7 +123,7 @@ export default function NetworkPage() {
           {tip && (
             <p
               className={`text-[10px] leading-4 ${
-                c.customModeError && !hostTip ? 'text-rose-500' : 'text-slate-400'
+                c.customModeError && !hostTip ? 'text-rose-500' : 'text-neutral-500'
               }`}
             >
               {tip}

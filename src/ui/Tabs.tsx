@@ -12,14 +12,15 @@ interface TabsProps {
 /** 轻量分段标签（替代 antd Segmented） */
 export default function Tabs({ value, tabs, onChange }: TabsProps) {
   return (
-    <div className='popup-tabs inline-flex rounded-xl p-0.5'>
+    <div className='popup-tabs inline-flex rounded-full p-0.5'>
       {tabs.map((tab) => (
         <button
           key={tab.value}
           type='button'
           onClick={() => onChange(tab.value)}
-          className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
-            value === tab.value ? 'is-active shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          aria-pressed={value === tab.value}
+          className={`rounded-full px-3 py-1 text-xs font-medium transition-[color,background-color,box-shadow] duration-150 ${
+            value === tab.value ? 'is-active' : ''
           }`}
         >
           {tab.label}

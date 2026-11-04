@@ -3,6 +3,7 @@ import type { NetworkProxyProfile } from '@/utils/settings'
 
 import { CUSTOM_PROXY_MODE_NAME_MAX } from './model'
 import ProxyServerFields, { INPUT_CLASS } from './ProxyServerFields'
+import { X } from 'lucide-react'
 
 interface CustomModeDialogProps {
   name: string
@@ -30,32 +31,32 @@ export default function CustomModeDialog({
 }: CustomModeDialogProps) {
   return (
     <div
-      className='fixed inset-0 z-40 flex items-center justify-center bg-slate-950/20 p-3 backdrop-blur-sm'
+      className='fixed inset-0 z-40 flex items-center justify-center bg-neutral-950/20 p-3 backdrop-blur-sm'
       onClick={onClose}
     >
       <div
         role='dialog'
         aria-modal='true'
         aria-label='新增自定义代理模式'
-        className='w-full max-w-[340px] rounded-xl border border-slate-200 bg-white p-3 shadow-[0_18px_60px_rgba(15,23,42,0.28)]'
+        className='w-full max-w-[340px] rounded-xl border border-neutral-200 bg-white p-3 shadow-[0_18px_60px_rgba(15,23,42,0.28)]'
         onClick={(event) => event.stopPropagation()}
       >
         <div className='mb-3 flex items-center justify-between gap-3'>
-          <h3 className='text-sm font-semibold text-slate-800'>新增自定义代理</h3>
+          <h3 className='text-sm font-semibold text-neutral-800'>新增自定义代理</h3>
           <button
             type='button'
             disabled={busy}
             onClick={onClose}
-            className='flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition-[transform,border-color,color] duration-150 ease-out hover:border-slate-300 hover:text-slate-600 enabled:active:translate-y-px enabled:active:scale-[0.95] disabled:cursor-not-allowed disabled:opacity-50'
+            className='flex h-7 w-7 items-center justify-center rounded-lg border border-neutral-200 text-neutral-500 transition-[transform,border-color,color] duration-150 ease-out hover:border-neutral-300 hover:text-neutral-600 enabled:active:translate-y-px enabled:active:scale-[0.95] disabled:cursor-not-allowed disabled:opacity-50'
             aria-label='关闭'
           >
-            ×
+            <X className='size-4' aria-hidden />
           </button>
         </div>
 
         <div className='flex flex-col gap-2.5'>
           <label className='flex flex-col gap-1'>
-            <span className='text-[11px] font-medium text-slate-500'>名称</span>
+            <span className='text-[11px] font-medium text-neutral-500'>名称</span>
             <input
               autoFocus
               value={name}
@@ -70,7 +71,9 @@ export default function CustomModeDialog({
         </div>
 
         {status && (
-          <p className={`mt-2 text-[10px] leading-4 ${error ? 'text-rose-500' : 'text-slate-500'}`}>
+          <p
+            className={`mt-2 text-[10px] leading-4 ${error ? 'text-rose-500' : 'text-neutral-500'}`}
+          >
             {status}
           </p>
         )}

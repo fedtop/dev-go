@@ -5,6 +5,7 @@ import type { WebmcpExecuteResult } from '@/utils/messaging'
 
 import { templateFromSchema } from './schema-template'
 import type { FrameTool, ToolsStatus } from './webmcp-client'
+import { ChevronRight } from 'lucide-react'
 
 interface ToolsPanelProps {
   tools: FrameTool[]
@@ -21,24 +22,27 @@ export default function ToolsPanel({ tools, status, onRefresh, execute }: ToolsP
   const [selected, setSelected] = useState<string | null>(null)
 
   return (
-    <section className='shrink-0 border-b border-slate-200/70'>
+    <section className='shrink-0 border-b border-neutral-200/70'>
       <div className='flex items-center justify-between px-3 py-1.5'>
         <button
           type='button'
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
-          className='flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-indigo-600'
+          className='flex items-center gap-1 text-xs font-medium text-neutral-600 hover:text-accent-600'
         >
-          <span className={`inline-block transition-transform ${open ? 'rotate-90' : ''}`}>▸</span>
+          <ChevronRight
+            className={`size-3.5 transition-transform ${open ? 'rotate-90' : ''}`}
+            aria-hidden
+          />
           网页工具
-          <span className='text-slate-400'>
+          <span className='text-neutral-500'>
             {status === 'ready' ? `（${tools.length}）` : status === 'loading' ? '（读取中）' : ''}
           </span>
         </button>
         <button
           type='button'
           onClick={onRefresh}
-          className='text-[11px] text-slate-400 hover:text-indigo-600'
+          className='text-[11px] text-neutral-500 hover:text-accent-600'
         >
           刷新
         </button>
@@ -47,7 +51,7 @@ export default function ToolsPanel({ tools, status, onRefresh, execute }: ToolsP
       {open && (
         <div className='max-h-[45vh] overflow-y-auto px-3 pb-2'>
           {tools.length === 0 ? (
-            <p className='py-2 text-xs text-slate-400'>
+            <p className='py-2 text-xs text-neutral-500'>
               {status === 'ready' ? '当前网页没有注册工具' : '暂无可用工具'}
             </p>
           ) : (
@@ -108,36 +112,36 @@ function ToolRow({
   }
 
   return (
-    <li className='rounded-lg border border-slate-200 bg-white text-xs shadow-sm'>
+    <li className='rounded-lg border border-neutral-200 bg-white text-xs'>
       <button
         type='button'
         onClick={onToggle}
         className='flex w-full flex-col gap-0.5 px-2.5 py-1.5 text-left'
       >
         <span className='flex items-center gap-1.5'>
-          <span className='truncate font-mono font-medium text-slate-700'>{tool.name}</span>
+          <span className='truncate font-mono font-medium text-neutral-700'>{tool.name}</span>
           {tool.readOnly && (
             <span className='shrink-0 rounded bg-emerald-50 px-1 text-[10px] text-emerald-600'>
               只读
             </span>
           )}
           {tool.frameId !== 0 && (
-            <span className='shrink-0 rounded bg-slate-100 px-1 text-[10px] text-slate-500'>
+            <span className='shrink-0 rounded bg-neutral-100 px-1 text-[10px] text-neutral-500'>
               iframe
             </span>
           )}
         </span>
         {tool.description && (
-          <span className='line-clamp-2 text-[11px] leading-snug text-slate-400'>
+          <span className='line-clamp-2 text-[11px] leading-snug text-neutral-500'>
             {tool.description}
           </span>
         )}
       </button>
 
       {expanded && (
-        <div className='flex flex-col gap-1.5 border-t border-slate-100 px-2.5 py-2'>
+        <div className='flex flex-col gap-1.5 border-t border-neutral-100 px-2.5 py-2'>
           <label
-            className='text-[11px] text-slate-400'
+            className='text-[11px] text-neutral-500'
             htmlFor={`args-${tool.frameId}-${tool.name}`}
           >
             参数（JSON）
@@ -148,7 +152,7 @@ function ToolRow({
             rows={Math.min(8, Math.max(2, args.split('\n').length))}
             spellCheck={false}
             onChange={(event) => setArgs(event.target.value)}
-            className='popup-field w-full resize-y rounded-md border px-2 py-1.5 font-mono text-[11px] text-slate-700 outline-none'
+            className='popup-field w-full resize-y rounded-md border px-2 py-1.5 font-mono text-[11px] text-neutral-700 outline-none'
           />
           <div className='flex items-center gap-2'>
             <Button
@@ -166,7 +170,7 @@ function ToolRow({
           {output && (
             <pre
               className={`max-h-40 overflow-auto rounded p-1.5 font-mono text-[11px] whitespace-pre-wrap break-all ${
-                output.ok ? 'bg-slate-50 text-slate-600' : 'bg-rose-50 text-rose-700'
+                output.ok ? 'bg-neutral-50 text-neutral-600' : 'bg-rose-50 text-rose-700'
               }`}
             >
               {output.text}

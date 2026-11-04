@@ -1,6 +1,15 @@
 import type { NetworkCustomProxyModeProfile, NetworkMode } from '@/utils/settings'
 
+import { Globe, MonitorCog, Plug, Route, Waypoints, type LucideIcon } from 'lucide-react'
+
 import { MODE_OPTIONS } from './model'
+
+const MODE_ICONS: Record<NetworkMode, LucideIcon> = {
+  direct: Plug,
+  system: MonitorCog,
+  scenario: Route,
+  global: Globe,
+}
 
 interface ModeSelectorProps {
   mode: NetworkMode
@@ -28,6 +37,7 @@ export default function ModeSelector({
       <div className='flex w-max gap-1.5 pb-1'>
         {MODE_OPTIONS.map((item) => {
           const selected = mode === item.value && !(item.value === 'global' && customModeActive)
+          const Icon = MODE_ICONS[item.value]
           return (
             <button
               key={item.value}
@@ -35,14 +45,17 @@ export default function ModeSelector({
               disabled={disabled}
               onClick={() => onSelectMode(item.value)}
               title={item.description}
-              className={`h-11 w-[76px] shrink-0 rounded-lg border px-1.5 py-1 text-center transition-[transform,border-color,background-color,color,box-shadow] duration-150 ease-out enabled:active:translate-y-px enabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${
+              className={`flex h-[52px] w-[84px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl border px-1.5 text-center transition-[transform,border-color,background-color,color] duration-150 ease-out enabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${
                 selected
-                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                  : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300'
+                  ? 'border-neutral-900 bg-white text-neutral-900 shadow-[0_0_0_1px_var(--color-neutral-900)]'
+                  : 'border-black/10 bg-white text-neutral-600 hover:bg-black/[0.03] hover:text-neutral-900'
               }`}
             >
-              <span className='block truncate text-xs font-medium'>{item.label}</span>
-              <span className='mt-0.5 block truncate text-[9px] leading-3 text-slate-400'>
+              <span className='flex items-center gap-1 text-xs font-medium'>
+                <Icon className='size-3.5' strokeWidth={1.8} aria-hidden />
+                {item.label}
+              </span>
+              <span className='block max-w-full truncate text-[10px] leading-3 text-neutral-500'>
                 {item.description}
               </span>
             </button>
@@ -57,14 +70,17 @@ export default function ModeSelector({
               disabled={disabled}
               onClick={() => onSelectCustomMode(item)}
               title={item.name}
-              className={`h-11 w-[86px] shrink-0 rounded-lg border px-1.5 py-1 text-center transition-[transform,border-color,background-color,color,box-shadow] duration-150 ease-out enabled:active:translate-y-px enabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${
+              className={`flex h-[52px] w-[92px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl border px-1.5 text-center transition-[transform,border-color,background-color,color] duration-150 ease-out enabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${
                 selected
-                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                  : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300'
+                  ? 'border-neutral-900 bg-white text-neutral-900 shadow-[0_0_0_1px_var(--color-neutral-900)]'
+                  : 'border-black/10 bg-white text-neutral-600 hover:bg-black/[0.03] hover:text-neutral-900'
               }`}
             >
-              <span className='block truncate text-xs font-medium'>{item.name}</span>
-              <span className='mt-0.5 block truncate text-[9px] leading-3 text-slate-400'>
+              <span className='flex max-w-full items-center gap-1 text-xs font-medium'>
+                <Waypoints className='size-3.5 shrink-0' strokeWidth={1.8} aria-hidden />
+                <span className='truncate'>{item.name}</span>
+              </span>
+              <span className='block max-w-full truncate text-[10px] leading-3 text-neutral-500'>
                 自定义代理
               </span>
             </button>

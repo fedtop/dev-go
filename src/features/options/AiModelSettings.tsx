@@ -19,6 +19,7 @@ import {
 import { useStorageItem } from '@/utils/useStorageItem'
 
 import { SectionHeader } from './layout'
+import { ChevronDown } from 'lucide-react'
 
 /** 当前配置的一行摘要：服务 · 模型 · Key 状态 */
 function ConfigSummary({ config, apiKey }: { config: LlmConfig; apiKey: string }) {
@@ -32,7 +33,7 @@ function ConfigSummary({ config, apiKey }: { config: LlmConfig; apiKey: string }
   return (
     <span className='flex flex-wrap items-center gap-x-2 gap-y-0.5'>
       {service && <span>{service}</span>}
-      <span className='rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[12px] text-slate-700'>
+      <span className='rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[12px] text-neutral-700'>
         {config.model}
       </span>
       {missingKey && <span className='text-amber-600'>缺少 API Key</span>}
@@ -57,26 +58,26 @@ function ModelCard({
 
   return (
     <section
-      className={`rounded-xl border bg-white/90 shadow-sm transition-colors ${
-        open ? 'border-indigo-200' : 'border-slate-200'
+      className={`rounded-xl border bg-white transition-colors ${
+        open ? 'border-accent-200' : 'border-neutral-200'
       }`}
     >
       <div className='flex items-start justify-between gap-4 p-5'>
         <div className='min-w-0'>
           <div className='flex items-center gap-2'>
-            <h2 className='text-base font-semibold text-slate-800'>{title}</h2>
+            <h2 className='text-base font-semibold text-neutral-800'>{title}</h2>
             <span
               className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
                 badge.tone === 'fast'
                   ? 'bg-emerald-50 text-emerald-600'
-                  : 'bg-indigo-50 text-indigo-600'
+                  : 'bg-accent-50 text-accent-600'
               }`}
             >
               {badge.text}
             </span>
           </div>
-          <p className='mt-1 text-xs leading-relaxed text-slate-400'>{desc}</p>
-          <div className='mt-2.5 text-sm text-slate-500'>{summary}</div>
+          <p className='mt-1 text-xs leading-relaxed text-neutral-500'>{desc}</p>
+          <div className='mt-2.5 text-sm text-neutral-500'>{summary}</div>
         </div>
         <Button
           variant={open ? 'default' : 'primary'}
@@ -84,10 +85,14 @@ function ModelCard({
           onClick={() => setOpen((value) => !value)}
           className='shrink-0 !px-3.5 !py-1.5 text-sm'
         >
-          {open ? '收起 ▴' : '配置 ▾'}
+          {open ? '收起' : '配置'}
+          <ChevronDown
+            className={`size-3.5 transition-transform ${open ? 'rotate-180' : ''}`}
+            aria-hidden
+          />
         </Button>
       </div>
-      {open && <div className='border-t border-slate-100 px-5 pt-4 pb-5'>{children}</div>}
+      {open && <div className='border-t border-neutral-100 px-5 pt-4 pb-5'>{children}</div>}
     </section>
   )
 }
@@ -123,15 +128,15 @@ export default function AiModelSettings() {
         summary={
           <span className='flex flex-wrap items-center gap-x-2'>
             <ConfigSummary config={chatModel.config} apiKey={chatModel.apiKey} />
-            {chatModel.inherited && <span className='text-slate-400'>（沿用翻译模型）</span>}
+            {chatModel.inherited && <span className='text-neutral-500'>（沿用翻译模型）</span>}
           </span>
         }
       >
         <div className='flex flex-col gap-4'>
           <LlmConfigForm target='assistant' />
           {!chatModel.inherited && (
-            <div className='flex items-center justify-between gap-4 border-t border-slate-100 pt-3'>
-              <span className='text-xs text-slate-400'>
+            <div className='flex items-center justify-between gap-4 border-t border-neutral-100 pt-3'>
+              <span className='text-xs text-neutral-500'>
                 不想单独维护一套配置时，可以改回沿用翻译模型
               </span>
               <Button

@@ -8,13 +8,14 @@ import { formatShortcut } from '@/utils/shortcut'
 import { useCommandShortcuts } from '@/utils/useCommandShortcuts'
 import { getActiveHostname } from '@/utils/tabs'
 import { useStorageItem } from '@/utils/useStorageItem'
+import { ArrowUpRight } from 'lucide-react'
 
 function Row({ title, desc, children }: { title: string; desc: ReactNode; children: ReactNode }) {
   return (
-    <div className='flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
+    <div className='flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-white px-3 py-2.5'>
       <div className='flex min-w-0 flex-col'>
-        <span className='text-sm font-medium text-slate-800'>{title}</span>
-        <span className='truncate text-xs text-slate-400'>{desc}</span>
+        <span className='text-sm font-medium text-neutral-800'>{title}</span>
+        <span className='truncate text-xs text-neutral-500'>{desc}</span>
       </div>
       <div className='shrink-0'>{children}</div>
     </div>
@@ -134,9 +135,10 @@ export default function FunctionPage() {
       <button
         type='button'
         onClick={openEnhanceSettings}
-        className='self-end text-xs text-slate-400 transition-colors hover:text-indigo-600'
+        className='self-end text-xs text-neutral-500 transition-colors hover:text-accent-600'
       >
-        管理全部网站与更多功能 ↗
+        管理全部网站与更多功能
+        <ArrowUpRight className='ml-0.5 inline size-3 -translate-y-px' aria-hidden />
       </button>
     </div>
   )

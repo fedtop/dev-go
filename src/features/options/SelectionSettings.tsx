@@ -30,7 +30,7 @@ export default function SelectionSettings() {
         title='AI 动作说明'
         desc='结果在气泡里流式显示，可以复制，也可以「继续追问」带到侧边栏 AI 助手接着聊。'
       >
-        <ul className='flex flex-col gap-2 text-sm text-slate-600'>
+        <ul className='flex flex-col gap-2 text-sm text-neutral-600'>
           <li>
             <b>翻译</b>：使用翻译设置里的引擎（谷歌 / 微软 / 翻译模型）。
           </li>

@@ -15,6 +15,7 @@ import { useStorageItem } from '@/utils/useStorageItem'
 import type { WordResult } from '@/types/word'
 import Button from '@/ui/Button'
 import Select from '@/ui/Select'
+import { Volume2 } from 'lucide-react'
 
 export default function TranslatePage() {
   const [text, setText] = useState('')
@@ -95,7 +96,7 @@ export default function TranslatePage() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && translate()}
-            className='min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500'
+            className='min-w-0 flex-1 rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-sm text-neutral-700 placeholder:text-neutral-400 outline-none transition-colors focus:border-accent-500'
           />
           <Button variant='primary' onClick={translate} loading={loading} className='shrink-0'>
             查询
@@ -108,7 +109,7 @@ export default function TranslatePage() {
 
         {/* 查词结果卡片 */}
         {result && (
-          <div className='relative rounded-lg border border-slate-200 bg-white p-3 shadow-sm'>
+          <div className='relative rounded-lg border border-neutral-200 bg-white p-3'>
             <button
               type='button'
               title='复制译文'
@@ -120,34 +121,36 @@ export default function TranslatePage() {
 
             {/* 词 + 音标 + 朗读 */}
             <div className='flex flex-wrap items-center gap-x-3 gap-y-1 pr-6'>
-              <span className='text-[15px] font-semibold text-slate-800'>{result.query}</span>
+              <span className='text-[15px] font-semibold text-neutral-800'>{result.query}</span>
               {result.phonetic && (
-                <span className='font-mono text-xs text-slate-400'>/{result.phonetic}/</span>
+                <span className='font-mono text-xs text-neutral-500'>/{result.phonetic}/</span>
               )}
               <button
                 type='button'
                 title='朗读'
                 onClick={() => readText(result.speakUrl)}
-                className='text-slate-400 transition-colors hover:text-blue-600'
+                className='text-neutral-500 transition-colors hover:text-accent-600'
               >
-                🔊
+                <Volume2 className='size-4' aria-hidden />
               </button>
             </div>
 
             {/* 译文 */}
             {result.translation && (
-              <p className='mt-1.5 text-sm text-slate-600'>{result.translation}</p>
+              <p className='mt-1.5 text-sm text-neutral-600'>{result.translation}</p>
             )}
 
             {/* 释义（按词性） */}
             {result.entries.length > 0 && (
-              <div className='mt-2 flex flex-col gap-1 border-t border-slate-100 pt-2'>
+              <div className='mt-2 flex flex-col gap-1 border-t border-neutral-100 pt-2'>
                 {result.entries.map((entry) => (
                   <div key={entry.pos || 'misc'} className='flex gap-2 text-[13px] leading-relaxed'>
                     {entry.pos && (
-                      <span className='shrink-0 font-mono text-xs text-blue-500'>{entry.pos}.</span>
+                      <span className='shrink-0 font-mono text-xs text-accent-500'>
+                        {entry.pos}.
+                      </span>
                     )}
-                    <span className='text-slate-600'>{entry.terms.join('；')}</span>
+                    <span className='text-neutral-600'>{entry.terms.join('；')}</span>
                   </div>
                 ))}
               </div>

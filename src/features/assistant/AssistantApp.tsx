@@ -23,6 +23,22 @@ import { buildSystemPrompt, repairHistory, runAgent, type AgentEvent } from './a
 import { formatPageContent, isBuiltinTool, readPage, READ_PAGE_TOOL } from './page-tools'
 import ToolsPanel from './ToolsPanel'
 import { executeFrameTool, useActiveTabId, useWebmcpTools, type FrameTool } from './webmcp-client'
+import {
+  ArrowLeft,
+  ArrowUp,
+  ArrowUpRight,
+  FileText,
+  Languages,
+  ListChecks,
+  Settings,
+  Sparkles,
+  Square,
+  SquarePen,
+  Wrench,
+  X,
+  type LucideIcon,
+} from 'lucide-react'
+import IconButton from '@/ui/IconButton'
 
 type ToolStatus = 'running' | 'awaiting' | 'done' | 'error' | 'rejected'
 
@@ -49,18 +65,21 @@ interface Prompt {
   withPage?: boolean
 }
 
-const QUICK_ACTIONS: Array<{ label: string; prompt: string }> = [
+const QUICK_ACTIONS: Array<{ label: string; prompt: string; icon: LucideIcon }> = [
   {
     label: '总结本页',
+    icon: FileText,
     prompt: '总结这个网页的主要内容：先用一两句话概括，再分点列出关键信息。',
   },
   {
     label: '提取要点',
+    icon: ListChecks,
     prompt:
       '提取这个网页里的关键信息（结论、数据、步骤、注意事项等），用列表列出，不要遗漏重要细节。',
   },
   {
     label: '用中文讲讲',
+    icon: Languages,
     prompt: '用简体中文介绍这个网页讲了什么、适合谁看，以及最值得关注的部分。',
   },
 ]
@@ -357,31 +376,31 @@ export default function AssistantApp() {
   }, [configReady, quote, webTools.length])
 
   return (
-    <div className='sidepanel-shell flex h-full flex-col text-slate-800'>
-      <header className='flex shrink-0 items-center justify-between gap-2 border-b border-slate-200/70 px-3 py-2.5'>
+    <div className='sidepanel-shell flex h-full flex-col text-neutral-800'>
+      <header className='flex shrink-0 items-center justify-between gap-2 border-b border-black/5 px-3 py-2'>
         <div className='min-w-0'>
           <div className='flex items-center gap-1.5'>
             <img src='/icons/48.png' alt='' className='h-5 w-5' />
             <h1 className='text-sm font-semibold'>AI 助手</h1>
           </div>
-          <p className='truncate text-[11px] text-slate-400' title={page.url}>
+          <p className='truncate text-[11px] text-neutral-500' title={page.url}>
             {host || '当前页面'}
             {webTools.length > 0 && ` · ${webTools.length} 个网页工具`}
           </p>
         </div>
         <div className='flex shrink-0 items-center gap-1.5'>
           {view === 'chat' && items.length > 0 && (
-            <Button onClick={clear} className='!px-2 !py-1 text-xs'>
-              新对话
-            </Button>
+            <IconButton label='新对话' onClick={clear}>
+              <SquarePen strokeWidth={1.8} />
+            </IconButton>
           )}
-          <Button
+          <IconButton
+            label={view === 'chat' ? '设置' : '返回对话'}
             onClick={() => setView(view === 'chat' ? 'settings' : 'chat')}
             disabled={view === 'settings' && !configReady}
-            className='!px-2 !py-1 text-xs'
           >
-            {view === 'chat' ? '设置' : '返回'}
-          </Button>
+            {view === 'chat' ? <Settings strokeWidth={1.8} /> : <ArrowLeft strokeWidth={1.8} />}
+          </IconButton>
         </div>
       </header>
 
@@ -432,13 +451,13 @@ export default function AssistantApp() {
                   />
                 ))}
                 {running && items[items.length - 1]?.kind !== 'assistant' && (
-                  <p className='animate-pulse text-xs text-slate-400'>思考中…</p>
+                  <p className='animate-pulse text-xs text-neutral-500'>思考中…</p>
                 )}
               </div>
             )}
           </div>
 
-          <footer className='shrink-0 border-t border-slate-200/70 p-2.5'>
+          <footer className='shrink-0 border-t border-black/5 p-2.5'>
             {items.length > 0 && !running && (
               <div className='mb-2 flex flex-wrap gap-1.5'>
                 {QUICK_ACTIONS.map((action) => (
@@ -447,26 +466,27 @@ export default function AssistantApp() {
                     type='button'
                     disabled={!configReady}
                     onClick={() => void send({ text: action.prompt, withPage: true })}
-                    className='rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11px] text-slate-500 transition-colors hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-50'
+                    className='inline-flex items-center gap-1 rounded-full border border-black/10 bg-white px-2.5 py-1 text-[11px] text-neutral-600 transition-colors hover:bg-black/5 hover:text-neutral-900 disabled:opacity-50'
                   >
+                    <action.icon className='size-3' aria-hidden />
                     {action.label}
                   </button>
                 ))}
               </div>
             )}
-            <div className='popup-field flex flex-col gap-1.5 rounded-xl border bg-white px-2.5 py-2'>
+            <div className='flex flex-col gap-1.5 rounded-2xl bg-white px-3 py-2 shadow-[0_0_0_1px_rgb(0_0_0/0.08),0_6px_20px_rgb(0_0_0/0.06)] transition-shadow focus-within:shadow-[0_0_0_1px_rgb(0_0_0/0.15),0_6px_20px_rgb(0_0_0/0.08)]'>
               {quote && (
-                <div className='flex items-start gap-1.5 rounded-md bg-slate-50 px-2 py-1 text-[11px] text-slate-500'>
-                  <span className='line-clamp-3 flex-1 border-l-2 border-indigo-300 pl-1.5 whitespace-pre-wrap'>
+                <div className='flex items-start gap-1.5 rounded-md bg-neutral-50 px-2 py-1 text-[11px] text-neutral-500'>
+                  <span className='line-clamp-3 flex-1 border-l-2 border-accent-300 pl-1.5 whitespace-pre-wrap'>
                     {quote}
                   </span>
                   <button
                     type='button'
                     title='移除引用'
                     onClick={() => setQuote('')}
-                    className='shrink-0 text-slate-400 hover:text-slate-600'
+                    className='shrink-0 text-neutral-500 hover:text-neutral-600'
                   >
-                    ✕
+                    <X className='size-3.5' aria-hidden />
                   </button>
                 </div>
               )}
@@ -479,25 +499,33 @@ export default function AssistantApp() {
                   placeholder={placeholder}
                   onChange={(event) => setInput(event.target.value)}
                   onKeyDown={onKeyDown}
-                  className='max-h-40 min-h-10 flex-1 resize-none bg-transparent text-sm leading-relaxed outline-none placeholder:text-slate-400 disabled:cursor-not-allowed'
+                  className='max-h-40 min-h-10 flex-1 resize-none bg-transparent text-sm leading-relaxed outline-none placeholder:text-neutral-400 disabled:cursor-not-allowed'
                 />
                 {running ? (
-                  <Button onClick={stop} className='shrink-0 !px-2.5 !py-1 text-xs'>
-                    停止
-                  </Button>
+                  <button
+                    type='button'
+                    title='停止'
+                    aria-label='停止'
+                    onClick={stop}
+                    className='flex size-8 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-white transition-colors hover:bg-neutral-700'
+                  >
+                    <Square className='size-3 fill-current' aria-hidden />
+                  </button>
                 ) : (
-                  <Button
-                    variant='primary'
+                  <button
+                    type='button'
+                    title='发送'
+                    aria-label='发送'
                     onClick={submit}
                     disabled={!input.trim() || !configReady || tabId == null}
-                    className='shrink-0 !px-2.5 !py-1 text-xs'
+                    className='flex size-8 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-white transition-colors hover:bg-neutral-700 disabled:cursor-not-allowed disabled:bg-black/10 disabled:text-neutral-400'
                   >
-                    发送
-                  </Button>
+                    <ArrowUp className='size-4' strokeWidth={2.2} aria-hidden />
+                  </button>
                 )}
               </div>
             </div>
-            <p className='mt-1 px-1 text-[10px] text-slate-400'>
+            <p className='mt-1 px-1 text-[10px] text-neutral-500'>
               {config.model ? `${config.model} · ` : ''}Enter 发送，Shift + Enter 换行
             </p>
           </footer>
@@ -531,10 +559,10 @@ function SettingsView({
 }) {
   return (
     <div className='popup-main min-h-0 flex-1 overflow-y-auto px-3 py-3'>
-      <section className='flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm'>
+      <section className='flex flex-col gap-3 rounded-lg border border-neutral-200 bg-white p-3'>
         <div>
           <h2 className='text-sm font-semibold'>对话模型</h2>
-          <p className='text-[11px] leading-relaxed text-slate-400'>
+          <p className='text-[11px] leading-relaxed text-neutral-500'>
             用于侧边栏助手和划词的解释、总结、润色，建议选能力强、支持工具调用的模型。
             翻译模型在设置页单独配置，可以选更快的模型。
             {inherited && '当前沿用翻译模型，保存后单独生效。'}
@@ -542,10 +570,10 @@ function SettingsView({
         </div>
         <LlmConfigForm compact target='assistant' onSaved={onSaved} />
       </section>
-      <section className='mt-2.5 flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm'>
+      <section className='mt-2.5 flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-white px-3 py-2.5'>
         <div className='min-w-0'>
           <p className='text-sm font-medium'>执行网页工具前确认</p>
-          <p className='text-[11px] leading-relaxed text-slate-400'>
+          <p className='text-[11px] leading-relaxed text-neutral-500'>
             网页通过 WebMCP 提供、且未声明为只读的工具（可能提交表单、下单等），执行前先让你确认
             {!webmcpSupported &&
               '。浏览器尚未开启 WebMCP：在 chrome://flags 启用「WebMCP for testing」后可用'}
@@ -558,9 +586,10 @@ function SettingsView({
         onClick={() =>
           void sendRuntimeMessage({ type: 'open-options-page' }).catch(() => undefined)
         }
-        className='mt-3 w-full text-center text-[11px] text-slate-400 hover:text-indigo-600'
+        className='mt-3 w-full text-center text-[11px] text-neutral-500 hover:text-accent-600'
       >
-        打开完整设置页 ↗
+        打开完整设置页
+        <ArrowUpRight className='ml-0.5 inline size-3 -translate-y-px' aria-hidden />
       </button>
     </div>
   )
@@ -576,10 +605,13 @@ function EmptyState({
   onQuickAction: (prompt: string) => void
 }) {
   return (
-    <div className='flex flex-col items-center gap-4 pt-8 text-center'>
+    <div className='flex flex-col items-center gap-4 pt-10 text-center'>
+      <span className='flex size-10 items-center justify-center rounded-full bg-black/5 text-neutral-700'>
+        <Sparkles className='size-5' strokeWidth={1.8} aria-hidden />
+      </span>
       <div className='flex flex-col gap-1'>
-        <p className='text-sm font-medium text-slate-600'>有什么可以帮你？</p>
-        <p className='text-xs leading-relaxed text-slate-400'>
+        <p className='text-[15px] font-semibold text-neutral-900'>有什么可以帮你？</p>
+        <p className='text-xs leading-relaxed text-neutral-500'>
           可以总结网页、就网页内容提问；在网页上选中文字后点「问 AI」，会带着选中内容来这里。
           {webToolCount > 0 && `当前网页还提供了 ${webToolCount} 个工具，AI 可以替你在网页上操作。`}
         </p>
@@ -591,10 +623,17 @@ function EmptyState({
             type='button'
             disabled={disabled}
             onClick={() => onQuickAction(action.prompt)}
-            className='rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs text-slate-600 shadow-sm transition-colors hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-50'
+            className='flex items-start gap-2.5 rounded-xl border border-black/10 bg-white px-3 py-2.5 text-left text-xs transition-colors hover:bg-black/[0.03] disabled:cursor-not-allowed disabled:opacity-50'
           >
-            <span className='font-medium'>{action.label}</span>
-            <span className='ml-2 text-slate-400'>{action.prompt}</span>
+            <action.icon
+              className='mt-px size-4 shrink-0 text-neutral-500'
+              strokeWidth={1.8}
+              aria-hidden
+            />
+            <span className='min-w-0'>
+              <span className='block font-medium text-neutral-900'>{action.label}</span>
+              <span className='mt-0.5 block leading-relaxed text-neutral-500'>{action.prompt}</span>
+            </span>
           </button>
         ))}
       </div>
@@ -608,14 +647,19 @@ function ChatRow({ item, onDecide }: { item: ChatItem; onDecide: (allowed: boole
     return (
       <div className='ml-8 flex flex-col items-end gap-1 self-end'>
         {item.quote && (
-          <p className='line-clamp-4 max-w-full rounded-lg border-l-2 border-indigo-300 bg-white/70 px-2 py-1 text-[11px] whitespace-pre-wrap text-slate-500'>
+          <p className='line-clamp-4 max-w-full rounded-lg border-l-2 border-accent-300 bg-white/70 px-2 py-1 text-[11px] whitespace-pre-wrap text-neutral-500'>
             {item.quote}
           </p>
         )}
-        <div className='rounded-2xl rounded-br-md bg-indigo-600 px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words text-white'>
+        <div className='rounded-2xl rounded-br-md bg-[#f4f4f4] px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words text-neutral-900'>
           {label ?? item.text}
         </div>
-        {item.withPage && <span className='text-[10px] text-slate-400'>📄 已附带网页内容</span>}
+        {item.withPage && (
+          <span className='inline-flex items-center gap-1 text-[10px] text-neutral-500'>
+            <FileText className='size-3' aria-hidden />
+            已附带网页内容
+          </span>
+        )}
       </div>
     )
   }
@@ -632,15 +676,15 @@ function ChatRow({ item, onDecide }: { item: ChatItem; onDecide: (allowed: boole
     return (
       <div className='mr-4 flex flex-col gap-1'>
         {item.reasoning && (
-          <details className='text-[11px] text-slate-400' open={!item.done && !item.text}>
+          <details className='text-[11px] text-neutral-500' open={!item.done && !item.text}>
             <summary className='cursor-pointer select-none'>思考过程</summary>
-            <p className='mt-1 border-l-2 border-slate-200 pl-2 whitespace-pre-wrap break-words'>
+            <p className='mt-1 border-l-2 border-neutral-200 pl-2 whitespace-pre-wrap break-words'>
               {item.reasoning}
             </p>
           </details>
         )}
         {item.text && (
-          <div className='rounded-2xl rounded-bl-md border border-slate-200 bg-white px-3 py-2 text-sm leading-relaxed shadow-sm'>
+          <div className='px-1 py-1 text-sm leading-relaxed text-neutral-900'>
             <Markdown text={item.text} />
           </div>
         )}
@@ -655,22 +699,25 @@ function ChatRow({ item, onDecide }: { item: ChatItem; onDecide: (allowed: boole
         ? 'text-amber-600'
         : item.status === 'done'
           ? 'text-emerald-600'
-          : 'text-slate-400'
+          : 'text-neutral-500'
   const displayName = item.name === READ_PAGE_TOOL.name ? '读取网页内容' : item.name
 
   return (
-    <div className='mr-4 rounded-lg border border-slate-200 bg-white/80 px-2.5 py-2 text-xs shadow-sm'>
+    <div className='mr-4 rounded-lg border border-neutral-200 bg-white px-2.5 py-2 text-xs'>
       <div className='flex items-center justify-between gap-2'>
-        <span className='truncate font-mono font-medium text-slate-700'>🔧 {displayName}</span>
+        <span className='flex min-w-0 items-center gap-1.5 font-mono font-medium text-neutral-700'>
+          <Wrench className='size-3.5 shrink-0 text-neutral-500' aria-hidden />
+          <span className='truncate'>{displayName}</span>
+        </span>
         <span className={`shrink-0 ${tone}`}>{TOOL_STATUS_LABELS[item.status]}</span>
       </div>
       <details className='mt-1' open={item.status === 'awaiting'}>
-        <summary className='cursor-pointer select-none text-slate-400'>参数与结果</summary>
-        <pre className='mt-1 max-h-32 overflow-auto rounded bg-slate-50 p-1.5 font-mono text-[11px] whitespace-pre-wrap break-all text-slate-600'>
+        <summary className='cursor-pointer select-none text-neutral-500'>参数与结果</summary>
+        <pre className='mt-1 max-h-32 overflow-auto rounded bg-neutral-50 p-1.5 font-mono text-[11px] whitespace-pre-wrap break-all text-neutral-600'>
           {formatJson(item.args)}
         </pre>
         {item.result != null && (
-          <pre className='mt-1 max-h-48 overflow-auto rounded bg-slate-50 p-1.5 font-mono text-[11px] whitespace-pre-wrap break-all text-slate-600'>
+          <pre className='mt-1 max-h-48 overflow-auto rounded bg-neutral-50 p-1.5 font-mono text-[11px] whitespace-pre-wrap break-all text-neutral-600'>
             {formatJson(item.result)}
           </pre>
         )}

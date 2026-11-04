@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
 export const INPUT_CLASS =
-  'popup-field w-full rounded-lg border px-3 py-2 text-sm text-slate-700 outline-none transition-colors placeholder:text-slate-400'
+  'popup-field w-full rounded-lg border px-3 py-2 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-400'
 
 export function Card({
   title,
@@ -16,11 +16,11 @@ export function Card({
   children: ReactNode
 }) {
   return (
-    <section className='rounded-xl border border-slate-200 bg-white/90 p-5 shadow-sm'>
+    <section className='rounded-xl border border-black/10 bg-white p-5'>
       <div className='flex items-start justify-between gap-4'>
         <div className='min-w-0'>
-          <h2 className='text-base font-semibold text-slate-800'>{title}</h2>
-          {desc && <p className='mt-1 text-xs leading-relaxed text-slate-400'>{desc}</p>}
+          <h2 className='text-[15px] font-semibold text-neutral-900'>{title}</h2>
+          {desc && <p className='mt-1 text-xs leading-relaxed text-neutral-500'>{desc}</p>}
         </div>
         {extra && <div className='shrink-0'>{extra}</div>}
       </div>
@@ -41,8 +41,8 @@ export function Row({
   return (
     <div className='flex items-center justify-between gap-6'>
       <div className='flex min-w-0 flex-col'>
-        <span className='text-sm text-slate-700'>{label}</span>
-        {hint && <span className='text-xs leading-relaxed text-slate-400'>{hint}</span>}
+        <span className='text-sm text-neutral-900'>{label}</span>
+        {hint && <span className='text-xs leading-relaxed text-neutral-500'>{hint}</span>}
       </div>
       <div className='shrink-0'>{children}</div>
     </div>
@@ -53,8 +53,8 @@ export function Row({
 export function SectionHeader({ title, desc }: { title: string; desc: string }) {
   return (
     <div>
-      <h1 className='text-xl font-semibold text-slate-800'>{title}</h1>
-      <p className='mt-1 text-sm text-slate-400'>{desc}</p>
+      <h1 className='text-xl font-semibold tracking-tight text-neutral-900'>{title}</h1>
+      <p className='mt-1 text-sm text-neutral-500'>{desc}</p>
     </div>
   )
 }

@@ -62,14 +62,14 @@ export default function Select({
       <button
         type='button'
         onClick={() => setOpen((v) => !v)}
-        className='popup-field flex w-full items-center justify-between gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm text-slate-700 transition-colors'
+        className='popup-field flex w-full items-center justify-between gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm text-neutral-700 transition-colors'
       >
         <span className='truncate'>{current?.label ?? ''}</span>
         <svg
           width='10'
           height='10'
           viewBox='0 0 12 12'
-          className={`shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`shrink-0 text-neutral-500 transition-transform ${open ? 'rotate-180' : ''}`}
         >
           <path d='M2 4l4 4 4-4' stroke='currentColor' strokeWidth='1.5' fill='none' />
         </svg>

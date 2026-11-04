@@ -4,7 +4,7 @@ import type { NetworkProxyProfile, NetworkProxyScheme } from '@/utils/settings'
 import { SCHEME_OPTIONS } from './model'
 
 const INPUT_CLASS =
-  'min-w-0 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-500'
+  'min-w-0 rounded-lg border border-neutral-300 bg-white px-2.5 py-1.5 text-sm text-neutral-700 placeholder:text-neutral-400 outline-none transition-colors focus:border-accent-500'
 
 interface ProxyServerFieldsProps {
   profile: NetworkProxyProfile
@@ -61,7 +61,7 @@ export default function ProxyServerFields({ profile, onChange, labeled }: ProxyS
       {fields.map(({ label, control }) =>
         labeled ? (
           <label key={label} className='flex min-w-0 flex-col gap-1'>
-            <span className='text-[11px] font-medium text-slate-500'>{label}</span>
+            <span className='text-[11px] font-medium text-neutral-500'>{label}</span>
             {control}
           </label>
         ) : (

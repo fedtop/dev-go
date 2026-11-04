@@ -59,12 +59,12 @@ function Field({
 }) {
   return (
     <label className={`flex flex-col ${compact ? 'gap-1' : 'gap-1.5'}`}>
-      <span className={compact ? 'text-[11px] text-slate-400' : 'text-sm text-slate-700'}>
+      <span className={compact ? 'text-[11px] text-neutral-500' : 'text-sm text-neutral-700'}>
         {label}
       </span>
       {children}
       {hint && (
-        <span className={`leading-relaxed text-slate-400 ${compact ? 'text-[11px]' : 'text-xs'}`}>
+        <span className={`leading-relaxed text-neutral-500 ${compact ? 'text-[11px]' : 'text-xs'}`}>
           {hint}
         </span>
       )}
@@ -235,7 +235,7 @@ export default function LlmConfigForm({
     setTesting(false)
   }
 
-  const inputClass = `popup-field w-full rounded-lg border text-slate-700 outline-none transition-colors placeholder:text-slate-400 ${
+  const inputClass = `popup-field w-full rounded-lg border text-neutral-700 outline-none transition-colors placeholder:text-neutral-400 ${
     compact ? 'px-2.5 py-1.5 text-[13px]' : 'px-3 py-2 text-sm'
   }`
   const buttonClass = compact ? '!px-2.5 !py-1 text-xs' : ''
@@ -309,7 +309,7 @@ export default function LlmConfigForm({
       </Field>
 
       {assistantPrefilled && (
-        <p className={`leading-relaxed text-slate-400 ${compact ? 'text-[11px]' : 'text-xs'}`}>
+        <p className={`leading-relaxed text-neutral-500 ${compact ? 'text-[11px]' : 'text-xs'}`}>
           已用翻译的 AI 配置预填。助手需要模型支持工具调用，可改用 Coding Plan
           等更强的模型，保存后生效。
         </p>
@@ -335,7 +335,7 @@ export default function LlmConfigForm({
         <button
           type='button'
           onClick={() => setShowPrompt(true)}
-          className='self-start text-[11px] text-slate-400 transition-colors hover:text-indigo-600'
+          className='self-start text-[11px] text-neutral-500 transition-colors hover:text-accent-600'
         >
           {forAssistant ? '+ 自定义要求' : '+ 自定义要求（术语表、语气风格）'}
         </button>

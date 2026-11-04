@@ -21,6 +21,7 @@ import {
 
 import { readSelection, replaceSelection, type Rect, type SelectionSnapshot } from './selection-dom'
 import { useSelectionAi } from './useSelectionAi'
+import { Volume2 } from 'lucide-react'
 
 const MAX_SELECTION_LEN = 5000
 const BUBBLE_WIDTH = 380
@@ -429,7 +430,7 @@ function TranslateView({ state, source }: { state: TranslateState | null; source
             onClick={() => speak(source, 'en-US')}
             className='cursor-pointer border-0 bg-transparent p-0 text-[13px] opacity-85'
           >
-            🔊
+            <Volume2 className='size-3.5' aria-hidden />
           </button>
         </div>
       )}

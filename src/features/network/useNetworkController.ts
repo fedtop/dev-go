@@ -59,6 +59,22 @@ export function useNetworkController({ withPageContext }: { withPageContext: boo
   const [reloadOnSwitch, setReloadOnSwitch] = useState(false)
 
   const bypassList = useMemo(() => normalizeBypassList(bypassText), [bypassText])
+  /** 最近一次从存储载入或保存的代理配置，用于判断表单是否有未保存的改动 */
+  const [savedProfileKey, setSavedProfileKey] = useState('')
+  const profileDirty = useMemo(
+    () =>
+      Boolean(savedProfileKey) &&
+      JSON.stringify(normalizeProfileFromForm(profile, bypassText)) !== savedProfileKey,
+    [profile, bypassText, savedProfileKey],
+  )
+
+  /** 用已保存的配置重置表单 */
+  const resetProfileForm = (nextProfile: NetworkProxyProfile) => {
+    const text = nextProfile.bypassList.join('\n')
+    setProfile(nextProfile)
+    setBypassText(text)
+    setSavedProfileKey(JSON.stringify(normalizeProfileFromForm(nextProfile, text)))
+  }
   const currentHostBypassed = Boolean(currentHost && bypassList.includes(currentHost))
 
   useEffect(() => {
@@ -98,8 +114,7 @@ export function useNetworkController({ withPageContext }: { withPageContext: boo
 
         setMode(storedMode)
         setAppliedMode(storedMode)
-        setProfile(storedProfile)
-        setBypassText(storedProfile.bypassList.join('\n'))
+        resetProfileForm(storedProfile)
         setCustomProxyModes(storedCustomProxyModes)
         setActiveCustomProxyModeId(validActiveCustomProxyModeId)
         setReloadOnSwitch(storedReload)
@@ -216,8 +231,7 @@ export function useNetworkController({ withPageContext }: { withPageContext: boo
     }
 
     await persistNormalizedProxyProfile(nextProfile)
-    setProfile(nextProfile)
-    setBypassText(nextProfile.bypassList.join('\n'))
+    resetProfileForm(nextProfile)
     return nextProfile
   }
 
@@ -257,8 +271,7 @@ export function useNetworkController({ withPageContext }: { withPageContext: boo
           })
           return
         }
-        setProfile(nextProfile)
-        setBypassText(nextProfile.bypassList.join('\n'))
+        resetProfileForm(nextProfile)
       }
 
       const nextStatus = await sendRuntimeMessage({ type: 'apply-network-mode', mode: nextMode })
@@ -356,8 +369,7 @@ export function useNetworkController({ withPageContext }: { withPageContext: boo
       const nextProfile = normalizeProfileFromForm(profile, nextBypassList.join('\n'))
 
       const persisted = await persistNormalizedProxyProfile(nextProfile)
-      setProfile(nextProfile)
-      setBypassText(nextProfile.bypassList.join('\n'))
+      resetProfileForm(nextProfile)
 
       if (persisted && usesProxyProfile(appliedMode)) {
         const nextStatus = await sendRuntimeMessage({ type: 'sync-network-proxy' })
@@ -443,8 +455,7 @@ export function useNetworkController({ withPageContext }: { withPageContext: boo
     try {
       await networkActiveCustomProxyModeId.setValue(customMode.id)
 
-      setProfile(nextProfile)
-      setBypassText(nextProfile.bypassList.join('\n'))
+      resetProfileForm(nextProfile)
       setActiveCustomProxyModeId(customMode.id)
 
       const nextStatus = await sendRuntimeMessage({
@@ -509,8 +520,7 @@ export function useNetworkController({ withPageContext }: { withPageContext: boo
       setMode(nextStatus.mode)
       setAppliedMode(nextStatus.mode)
       setStatus(nextStatus)
-      setProfile(nextProfile)
-      setBypassText(nextProfile.bypassList.join('\n'))
+      resetProfileForm(nextProfile)
 
       if (reloadOnSwitch && nextStatus.ok && nextStatus.mode !== prevAppliedMode) {
         await reloadActiveTab()
@@ -543,8 +553,7 @@ export function useNetworkController({ withPageContext }: { withPageContext: boo
       await persistCustomProxyModes(nextCustomProxyModes, nextActiveCustomProxyModeId)
       if (removingActiveCustomProxyMode && mode === 'global') {
         const nextProfile = await getNetworkProxyProfile('global')
-        setProfile(nextProfile)
-        setBypassText(nextProfile.bypassList.join('\n'))
+        resetProfileForm(nextProfile)
         await syncProxyIfActive()
       }
       setCustomModeStatus(target ? `已删除「${target.name}」` : '自定义模式已删除')
@@ -581,6 +590,7 @@ export function useNetworkController({ withPageContext }: { withPageContext: boo
     mode,
     profile,
     setProfile,
+    profileDirty,
     bypassText,
     setBypassText,
     customProxyModes,

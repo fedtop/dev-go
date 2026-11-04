@@ -15,6 +15,14 @@ import { useNetworkController } from './useNetworkController'
 export default function NetworkSettings() {
   const c = useNetworkController({ withPageContext: false })
 
+  // 有未保存的代理配置时，关闭或刷新设置页前提醒
+  useEffect(() => {
+    if (!c.profileDirty) return
+    const onBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault()
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [c.profileDirty])
+
   return (
     <div className='flex flex-col gap-5'>
       <SectionHeader
@@ -106,13 +114,27 @@ export default function NetworkSettings() {
             </p>
           </div>
 
-          <div className='flex items-center justify-between gap-3 border-t border-slate-100 pt-3'>
+          {/* 吸底：表单很长时保存按钮始终可见；有未保存的改动时高亮提示 */}
+          <div
+            className={`sticky bottom-3 z-10 -mx-2 flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors ${
+              c.profileDirty
+                ? 'border-amber-300 bg-amber-50 shadow-md'
+                : 'border-slate-100 bg-white/95 backdrop-blur'
+            }`}
+          >
             <p
               className={`min-w-0 flex-1 truncate text-xs ${
-                c.customModeError ? 'text-rose-500' : 'text-slate-400'
+                c.customModeError
+                  ? 'text-rose-500'
+                  : c.profileDirty
+                    ? 'font-medium text-amber-700'
+                    : 'text-slate-400'
               }`}
             >
-              {c.customModeStatus || '更改后保存到当前模式'}
+              {c.profileDirty
+                ? '代理服务器或绕过列表有未保存的修改，保存后才会生效'
+                : c.customModeStatus ||
+                  '代理服务器与绕过列表修改后需保存；规则列表与代理域名即时生效'}
             </p>
             {c.canSaveProxyProfile && (
               <Button variant='primary' onClick={c.saveProxyProfile} loading={c.busy}>

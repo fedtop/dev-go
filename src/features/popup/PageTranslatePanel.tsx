@@ -17,6 +17,7 @@ import { useStorageItem } from '@/utils/useStorageItem'
 import Button from '@/ui/Button'
 import Select from '@/ui/Select'
 import Switch from '@/ui/Switch'
+import { formatShortcut } from '@/utils/shortcut'
 import { getActiveHostname } from '@/utils/tabs'
 
 /** 打开设置页的指定分区（如 #translate、#models），并关闭 popup */
@@ -38,6 +39,18 @@ export default function PageTranslatePanel() {
   /** null：当前页面无法注入内容脚本（浏览器内置页、扩展商店等） */
   const [pageActive, setPageActive] = useState<boolean | null>(null)
   const [busy, setBusy] = useState(false)
+  /** 整页翻译命令当前绑定的快捷键（chrome://extensions/shortcuts 里设置；默认不带键） */
+  const [shortcut, setShortcut] = useState('')
+
+  useEffect(() => {
+    void browser.commands
+      ?.getAll()
+      .then((commands) =>
+        setShortcut(
+          commands.find((command) => command.name === 'inline-translate')?.shortcut ?? '',
+        ),
+      )
+  }, [])
 
   useEffect(() => {
     getActiveHostname().then(setHostname)
@@ -139,11 +152,16 @@ export default function PageTranslatePanel() {
         onClick={() => void togglePage()}
       >
         {pageActive ? '显示原文' : '翻译当前页面'}
+        {shortcut && (
+          <kbd className='ml-1.5 font-sans text-xs opacity-75'>{formatShortcut(shortcut)}</kbd>
+        )}
       </Button>
       <p className='text-left text-[11px] leading-snug text-slate-400'>
         {unsupported
           ? '当前页面不支持翻译（浏览器内置页 / 扩展商店），普通网页请刷新后重试'
-          : '译文随滚动按需加载 · 也可通过右键菜单或快捷键切换'}
+          : shortcut
+            ? `译文随滚动按需加载 · 也可通过右键菜单或 ${formatShortcut(shortcut)} 切换`
+            : '译文随滚动按需加载 · 也可通过右键菜单切换；快捷键可在设置页「通用」里设置'}
       </p>
     </section>
   )

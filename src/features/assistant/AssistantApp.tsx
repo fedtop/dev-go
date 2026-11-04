@@ -28,6 +28,7 @@ import {
   ArrowUp,
   ArrowUpRight,
   FileText,
+  Globe,
   Languages,
   ListChecks,
   Settings,
@@ -378,15 +379,20 @@ export default function AssistantApp() {
   return (
     <div className='sidepanel-shell flex h-full flex-col text-neutral-800'>
       <header className='flex shrink-0 items-center justify-between gap-2 border-b border-black/5 px-3 py-2'>
-        <div className='min-w-0'>
-          <div className='flex items-center gap-1.5'>
-            <img src='/icons/48.png' alt='' className='h-5 w-5' />
-            <h1 className='text-sm font-semibold'>AI 助手</h1>
+        {/* 浏览器侧边栏自带扩展图标与名称，这里只交代助手当前读的是哪个网页 */}
+        <div className='flex min-w-0 items-center gap-2' title={page.url}>
+          <Globe className='size-4 shrink-0 text-neutral-500' strokeWidth={1.8} aria-hidden />
+          <div className='min-w-0'>
+            <p className='truncate text-[13px] font-medium text-neutral-900'>
+              {page.title || host || '当前页面'}
+            </p>
+            {(host || webTools.length > 0) && (
+              <p className='truncate text-[11px] text-neutral-500'>
+                {host}
+                {webTools.length > 0 && `${host ? ' · ' : ''}${webTools.length} 个网页工具`}
+              </p>
+            )}
           </div>
-          <p className='truncate text-[11px] text-neutral-500' title={page.url}>
-            {host || '当前页面'}
-            {webTools.length > 0 && ` · ${webTools.length} 个网页工具`}
-          </p>
         </div>
         <div className='flex shrink-0 items-center gap-1.5'>
           {view === 'chat' && items.length > 0 && (

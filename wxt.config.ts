@@ -35,6 +35,11 @@ export default defineConfig({
     plugins: [aiIns(), tailwindcss()],
   }),
 
+  // 源码包（Firefox 上架审核用）不能带本地专属文件：开发种子备份含个人数据
+  zip: {
+    excludeSources: ['devgo-backup.json', 'web-ext.config.ts'],
+  },
+
   autoIcons: {
     baseIconPath: 'assets/icon.png',
   },

@@ -16,7 +16,8 @@ import {
   type PopupShortcutTab,
 } from '@/utils/settings'
 import type { PopupShortcutMessage, PopupShortcutResponse } from '@/utils/messaging'
-import { formatShortcut } from '@/utils/shortcut'
+import { formatShortcut, openShortcutSettings } from '@/utils/shortcut'
+import { useCommandShortcuts } from '@/utils/useCommandShortcuts'
 
 const DEFAULT_POPUP_COMMAND = 'open-default'
 const DEFAULT_POPUP_TAB: PopupShortcutTab = 'translate'
@@ -29,7 +30,7 @@ const TAB_COMMANDS: Record<string, string> = {
 
 export default function App() {
   const [active, setActive] = useState('translate')
-  const [shortcuts, setShortcuts] = useState<Record<string, string>>({})
+  const shortcuts = useCommandShortcuts()
   const [defaultShortcutTab, setDefaultShortcutTab] = useState<PopupShortcutTab>(DEFAULT_POPUP_TAB)
   const activeRef = useRef(active)
 
@@ -74,11 +75,6 @@ export default function App() {
       }
       if (tab) popupInitialTab.setValue('')
       selectTab(isPopupShortcutTab(lastActiveTab) ? lastActiveTab : defaultTab)
-    })
-
-    // 读取实际注册的命令快捷键（用户在 chrome://extensions/shortcuts 改动后会同步）
-    browser.commands?.getAll().then((cmds) => {
-      setShortcuts(Object.fromEntries(cmds.map((c) => [c.name, c.shortcut || ''])))
     })
   }, [selectTab])
 
@@ -148,7 +144,7 @@ export default function App() {
         <button
           type='button'
           title='修改快捷键'
-          onClick={openShortcutSettings}
+          onClick={() => void openShortcutSettings().finally(() => window.close())}
           className='group flex items-center gap-1 transition-colors hover:text-indigo-600'
         >
           快捷键
@@ -176,17 +172,6 @@ export default function App() {
       </footer>
     </div>
   )
-}
-
-/**
- * 打开快捷键设置：Chrome 有专门的快捷键页（扩展无权自行修改快捷键）；
- * Firefox 没有可直接打开的地址，退回设置页的快捷键说明。
- */
-function openShortcutSettings() {
-  const opening = import.meta.env.FIREFOX
-    ? browser.tabs.create({ url: browser.runtime.getURL('/options.html#general') })
-    : browser.tabs.create({ url: 'chrome://extensions/shortcuts' })
-  void opening.finally(() => window.close())
 }
 
 /** 打开设置页（全局设置都在设置页，弹窗只放当前页面相关的操作） */

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { POPUP_PAGES } from '@/features/popup/pages'
 import Button from '@/ui/Button'
@@ -6,7 +6,8 @@ import Select from '@/ui/Select'
 import { buildBackup, restoreBackup } from '@/utils/backup'
 import { sendRuntimeMessage } from '@/utils/messaging'
 import { defaultPopupTab, syncStatus } from '@/utils/settings'
-import { formatShortcut } from '@/utils/shortcut'
+import { formatShortcut, openShortcutSettings } from '@/utils/shortcut'
+import { useCommandShortcuts } from '@/utils/useCommandShortcuts'
 import { useStorageItem } from '@/utils/useStorageItem'
 
 import { Card, Row, SectionHeader } from './layout'
@@ -37,31 +38,27 @@ function formatSyncTime(timestamp: number): string {
 }
 
 function ShortcutsCard() {
-  const [shortcuts, setShortcuts] = useState<Array<{ name: string; shortcut: string }>>([])
-
-  useEffect(() => {
-    void browser.commands?.getAll().then((commands) => {
-      const byName = new Map(commands.map((command) => [command.name, command.shortcut ?? '']))
-      setShortcuts(
-        Object.keys(COMMAND_LABELS)
-          .filter((name) => byName.has(name))
-          .map((name) => ({ name, shortcut: byName.get(name) ?? '' })),
-      )
-    })
-  }, [])
+  const bound = useCommandShortcuts()
+  // 只列出当前浏览器实际注册的命令（如 Firefox 没有侧边栏命令）
+  const shortcuts = Object.keys(COMMAND_LABELS)
+    .filter((name) => name in bound)
+    .map((name) => ({ name, shortcut: bound[name] }))
 
   return (
     <Card
       title='快捷键'
-      desc='浏览器不允许扩展自行修改快捷键，需要在扩展快捷键设置页里自定义。'
+      desc={
+        import.meta.env.FIREFOX
+          ? '浏览器不允许扩展自行修改快捷键：在 about:addons 右上角齿轮 →「管理扩展快捷键」里自定义。'
+          : '浏览器不允许扩展自行修改快捷键，需要在扩展快捷键设置页里自定义；改完回到这里会自动刷新。'
+      }
       extra={
-        // Chrome 命令快捷键只能在系统设置页修改
-        <Button
-          onClick={() => void browser.tabs.create({ url: 'chrome://extensions/shortcuts' })}
-          className='!px-2.5 !py-1 text-xs'
-        >
-          自定义 ↗
-        </Button>
+        // Chrome 命令快捷键只能在系统设置页修改；Firefox 的 about:addons 扩展无权打开
+        !import.meta.env.FIREFOX && (
+          <Button onClick={() => void openShortcutSettings()} className='!px-2.5 !py-1 text-xs'>
+            自定义 ↗
+          </Button>
+        )
       }
     >
       <div className='flex flex-col gap-2'>

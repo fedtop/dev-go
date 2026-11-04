@@ -5,6 +5,7 @@ import Button from '@/ui/Button'
 import Switch from '@/ui/Switch'
 import { unlockHosts } from '@/utils/settings'
 import { formatShortcut } from '@/utils/shortcut'
+import { useCommandShortcuts } from '@/utils/useCommandShortcuts'
 import { getActiveHostname } from '@/utils/tabs'
 import { useStorageItem } from '@/utils/useStorageItem'
 
@@ -49,15 +50,7 @@ function OpenSidePanelButton() {
 }
 
 function AssistantRow() {
-  const [shortcut, setShortcut] = useState('')
-
-  useEffect(() => {
-    void browser.commands
-      ?.getAll()
-      .then((commands) =>
-        setShortcut(commands.find((command) => command.name === 'open-assistant')?.shortcut ?? ''),
-      )
-  }, [])
+  const shortcut = useCommandShortcuts()['open-assistant'] ?? ''
 
   return (
     <Row

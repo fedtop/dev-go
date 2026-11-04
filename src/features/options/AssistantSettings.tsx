@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import Button from '@/ui/Button'
 import Switch from '@/ui/Switch'
 import { assistantConfirmTools } from '@/utils/settings'
+import { formatShortcut } from '@/utils/shortcut'
+import { useCommandShortcuts } from '@/utils/useCommandShortcuts'
 import { useStorageItem } from '@/utils/useStorageItem'
 
 import { Card, Row, SectionHeader } from './layout'
@@ -11,17 +13,12 @@ import { Card, Row, SectionHeader } from './layout'
 export default function AssistantSettings() {
   const [confirmTools, setConfirmTools] = useStorageItem(assistantConfirmTools)
   const [windowId, setWindowId] = useState<number | null>(null)
-  const [shortcut, setShortcut] = useState('')
+  const shortcut = useCommandShortcuts()['open-assistant'] ?? ''
 
   useEffect(() => {
     if (chrome.sidePanel) {
       void browser.windows.getCurrent().then((win) => setWindowId(win.id ?? null))
     }
-    void browser.commands
-      ?.getAll()
-      .then((commands) =>
-        setShortcut(commands.find((command) => command.name === 'open-assistant')?.shortcut ?? ''),
-      )
   }, [])
 
   // sidePanel.open 必须在点击的同步调用栈里执行，所以提前取好 windowId
@@ -41,8 +38,8 @@ export default function AssistantSettings() {
           label='打开侧边栏'
           hint={
             shortcut
-              ? `快捷键 ${shortcut}，也可以在弹窗「功能」页打开`
-              : '可在 chrome://extensions/shortcuts 设置快捷键'
+              ? `快捷键 ${formatShortcut(shortcut)}，也可以在弹窗「功能」页打开`
+              : '未设置快捷键，可在「通用 → 快捷键」里设置'
           }
         >
           <Button onClick={open} disabled={windowId == null} className='!px-3 !py-1.5 text-sm'>

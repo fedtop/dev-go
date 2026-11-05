@@ -56,3 +56,5 @@ assets/google
 .agents
 skills-lock.json
 devgo-backup.json
+# 商店提交凭据（只用来设置 GitHub Secret，切勿提交）
+submit-keys.json

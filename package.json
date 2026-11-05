@@ -21,6 +21,7 @@
     "prettier": "prettier --write \"**/*.{js,cjs,mjs,jsx,ts,tsx,css,scss,less,html,json,md}\"",
     "prepare": "husky",
     "release": "standard-version",
+    "secrets:submit": "gh secret set SUBMIT_KEYS < submit-keys.json",
     "cz": "cz"
   },
   "lint-staged": {

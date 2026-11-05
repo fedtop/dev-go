@@ -26,7 +26,7 @@ pnpm exec eslint <改动的 .ts/.tsx/.js/.mjs/.cjs 文件>
 pnpm exec prettier --check <改动的文件>
 ```
 
-提交会经过 Husky + commitlint（约定式提交，见 `.cz-config.cjs`）；可用 `pnpm cz` 走交互式提交。发布用 `pnpm release`（standard-version）。
+提交会经过 Husky + commitlint（约定式提交，见 `.cz-config.cjs`）；可用 `pnpm cz` 走交互式提交。发布用 `pnpm release`（standard-version）；提交 Chrome 应用商店的流程与 `SUBMIT_KEYS` 配置见 `docs/publishing.md`。
 
 ## 架构
 

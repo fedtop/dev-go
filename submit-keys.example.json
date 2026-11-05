@@ -1,0 +1,9 @@
+{
+  "$schema": "https://github.com/PlasmoHQ/bpp/raw/main/keys.schema.json",
+  "chrome": {
+    "extId": "kcofdbjhicjdbmldlcffcijglkifnnjn",
+    "clientId": "<Google OAuth 客户端 ID>",
+    "clientSecret": "<Google OAuth 客户端密钥>",
+    "refreshToken": "<gcp-refresh-token 生成的 refresh token>"
+  }
+}
